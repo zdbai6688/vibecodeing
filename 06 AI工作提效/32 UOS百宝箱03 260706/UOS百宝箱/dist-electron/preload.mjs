@@ -331,3 +331,10 @@ contextBridge.exposeInMainWorld('usbBootAPI', {
   create: (iso, device, password) => ipcRenderer.invoke('phase2-usb', 'create', { iso, device, password })
 })
 
+
+// 系统应用集成 API
+contextBridge.exposeInMainWorld('systemApp', {
+  launchApp: (appName) => ipcRenderer.invoke('systemapp-launch', appName),
+  callDbus: (service, objectPath, method, args) => ipcRenderer.invoke('systemapp-dbus', { service, objectPath, method, args }),
+  callCli: (command) => ipcRenderer.invoke('systemapp-cli', command)
+})

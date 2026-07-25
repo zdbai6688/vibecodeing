@@ -1841,6 +1841,77 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
         }
         
       
+
+      case 'file-search': {
+        const { keyword, filters } = params
+        if (!keyword) return { success: false, error: '请输入搜索关键词' }
+        
+        const searchRoot = os.homedir()
+        let cmd = ''
+        const escapedKeyword = keyword.replace(/[^\u4e00-\u9fa5a-zA-Z0-9._-]/g, '')
+        if (!escapedKeyword) return { success: false, error: '请输入有效的搜索关键词' }
+        
+        cmd = 'find ' + searchRoot + ' -maxdepth 5 -iname "*' + escapedKeyword + '*" -not -path "*/.*" 2>/dev/null'
+        
+        if (filters && filters.type) {
+          const typeMap = {
+            'document': '\( -iname "*.pdf" -o -iname "*.doc" -o -iname "*.docx" -o -iname "*.txt" -o -iname "*.xls" -o -iname "*.xlsx" -o -iname "*.ppt" -o -iname "*.pptx" -o -iname "*.csv" -o -iname "*.md" \)',
+            'image': '\( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.bmp" -o -iname "*.webp" -o -iname "*.svg" -o -iname "*.ico" \)',
+            'video': '\( -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.wmv" -o -iname "*.flv" -o -iname "*.webm" \)',
+            'audio': '\( -iname "*.mp3" -o -iname "*.wav" -o -iname "*.flac" -o -iname "*.aac" -o -iname "*.ogg" -o -iname "*.wma" \)',
+            'archive': '\( -iname "*.zip" -o -iname "*.tar" -o -iname "*.gz" -o -iname "*.bz2" -o -iname "*.xz" -o -iname "*.rar" -o -iname "*.7z" \)',
+            'executable': '\( -executable -type f \)'
+          }
+          if (typeMap[filters.type]) {
+            cmd = 'find ' + searchRoot + ' -maxdepth 5 ' + typeMap[filters.type] + ' -not -path "*/.*" 2>/dev/null | xargs -I{} find {} -maxdepth 0 -iname "*' + escapedKeyword + '*" 2>/dev/null'
+          }
+        }
+        
+        if (filters && filters.size) {
+          const sizeMap = { '-1k': '-size -1k', '1k-100k': '-size +1k -size -100k', '100k-1m': '-size +100k -size -1M', '1m-10m': '-size +1M -size -10M', '10m-100m': '-size +10M -size -100M', '+100m': '-size +100M' }
+          if (sizeMap[filters.size]) cmd += ' ' + sizeMap[filters.size]
+        }
+        
+        if (filters && filters.date) {
+          const now = new Date()
+          let dateAfter = ''
+          if (filters.date === 'today') dateAfter = new Date(now.getFullYear(),now.getMonth(),now.getDate()).toISOString().split('T')[0]
+          else if (filters.date === 'week') { const d = new Date(now); d.setDate(d.getDate()-7); dateAfter = d.toISOString().split('T')[0] }
+          else if (filters.date === 'month') { const d = new Date(now); d.setMonth(d.getMonth()-1); dateAfter = d.toISOString().split('T')[0] }
+          else if (filters.date === 'year') { const d = new Date(now); d.setFullYear(d.getFullYear()-1); dateAfter = d.toISOString().split('T')[0] }
+          if (dateAfter) cmd += ' -newer ' + dateAfter
+        }
+        
+        cmd += ' 2>/dev/null'
+        
+        const maxResults = 80
+        let output = ''
+        try {
+          output = execSync(cmd, { timeout: 30000, encoding: 'utf-8', maxBuffer: 10*1024*1024 }).toString()
+        } catch(e) {
+          if (e.stdout) output = e.stdout.toString()
+          else return { success: false, error: '搜索超时或出错: ' + e.message }
+        }
+        
+        const lines = output.split('\n').filter(Boolean).slice(0, maxResults)
+        const files = lines.map(line => {
+          try {
+            const stat = fs.statSync(line)
+            const sizeStr = stat.size < 1024 ? stat.size + 'B' : stat.size < 1024*1024 ? (stat.size/1024).toFixed(1) + 'KB' : stat.size < 1024*1024*1024 ? (stat.size/1024/1024).toFixed(1) + 'MB' : (stat.size/1024/1024/1024).toFixed(2) + 'GB'
+            const ext = path.extname(line).toLowerCase()
+            let type = '文件'
+            if (['.pdf','.doc','.docx','.txt','.xls','.xlsx','.ppt','.pptx','.csv','.md'].includes(ext)) type = '文档'
+            else if (['.jpg','.jpeg','.png','.gif','.bmp','.webp','.svg','.ico'].includes(ext)) type = '图片'
+            else if (['.mp4','.avi','.mkv','.mov','.wmv','.flv','.webm'].includes(ext)) type = '视频'
+            else if (['.mp3','.wav','.flac','.aac','.ogg','.wma'].includes(ext)) type = '音频'
+            else if (['.zip','.tar','.gz','.bz2','.xz','.rar','.7z'].includes(ext)) type = '压缩包'
+            return { name: path.basename(line), path: line, type, sizeStr, dateStr: new Date(stat.mtime).toLocaleDateString('zh-CN'), isDir: stat.isDirectory() }
+          } catch { return null }
+        }).filter(Boolean)
+        
+        return { success: true, files }
+      }
+
       default:
         return { success: false, error: '未知工具: ' + tool }
     }
