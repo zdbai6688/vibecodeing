@@ -312,3 +312,11 @@ contextBridge.exposeInMainWorld('remoteAPI', {
   batchExec: (hosts, cmd, password) => ipcRenderer.invoke('remote-batch-exec', hosts, cmd, password),
   transferFile: (host, filePath, remotePath, password) => ipcRenderer.invoke('remote-transfer', host, filePath, remotePath, password)
 })
+
+// APT 更新历史 API
+contextBridge.exposeInMainWorld('aptHistoryAPI', {
+  list: () => ipcRenderer.invoke('apt-history', 'list'),
+  rollback: (packageName, targetVersion, password) => ipcRenderer.invoke('apt-history', 'rollback', { packageName, targetVersion, password }),
+  packageVersions: (packageName) => ipcRenderer.invoke('apt-history', 'package-versions', { packageName }),
+  compare: (packageName, versionA, versionB) => ipcRenderer.invoke('apt-history', 'compare', { packageName, versionA, versionB })
+})

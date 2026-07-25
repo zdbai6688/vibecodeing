@@ -179,6 +179,7 @@ const NAV = [
   {id:'security',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>`,label:'安全补丁',desc:'系统安全更新与漏洞修复'},
   {id:'scripts',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>`,label:'实用脚本',desc:'微信多开/文件导出等'},
   {id:'tools',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>`,label:'高效工具',desc:'文档、图片、音视频处理工具箱'},
+    {id:'apthistory',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>`,label:'更新历史',desc:'APT 更新历史查看与版本回滚'},
   {id:'pkgmanager',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="2" y1="9" x2="6" y2="9"/><line x1="2" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="22" y2="9"/><line x1="18" y1="15" x2="22" y2="15"/></svg></span>`,label:'软件管理',desc:'deb 软件包搜索、安装与卸载'},
   // ===== 其他 ===== 
     {id:'localsend',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>`,label:'局域网传输',desc:'基于 Python 的局域网文件共享传输'},
@@ -334,6 +335,7 @@ function switchPage(id){
   else if(id==='scripts') renderScriptsPage(el)
   else if(id==='tools') renderToolsPage(el)
     else if(id==='localsend') renderLocalSend(el)
+    else if(id==='apthistory') renderAptHistory(el)
   else if(id==='pkgmanager') renderPkgManager(el)
   else if(id==='changelog') renderChangelog(el)
   else if(id==='feedback') renderFeedback(el)
@@ -3143,6 +3145,311 @@ function showToast(msg){
   t.style.opacity = '1'
   if(_toastTimer) clearTimeout(_toastTimer)
   _toastTimer = setTimeout(() => { t.style.opacity = '0' }, 3000)
+}
+
+// ============ APT 更新历史与回滚 ============
+let _aptHistoryData = null
+
+function escHtml(s) {
+  if (!s) return ''
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+async function renderAptHistory(el){
+  el.innerHTML = '<div style="display:flex;gap:12px;margin-bottom:16px">' +
+    '<div class="tabs" style="display:flex;gap:0;background:#f0f0f0;border-radius:8px;padding:2px">' +
+      '<button class="tab-btn active" data-tab="history" onclick="switchAptTab(this,\'history\')" style="padding:6px 18px;border:none;border-radius:6px;cursor:pointer;font-size:12px;background:var(--primary);color:#fff;font-weight:500">\ud83d\udccb 更新历史</button>' +
+      '<button class="tab-btn" data-tab="rollback" onclick="switchAptTab(this,\'rollback\')" style="padding:6px 18px;border:none;border-radius:6px;cursor:pointer;font-size:12px;background:transparent;color:#666">\ud83d\udd04 版本回滚</button>' +
+    '</div>' +
+    '<div style="flex:1"></div>' +
+    '<div style="display:flex;gap:6px;align-items:center">' +
+      '<span id="aptHistoryCount" style="font-size:12px;color:var(--text-sec)">\u52a0\u8f7d\u4e2d...</span>' +
+      '<button class="btn btn-sm" onclick="refreshAptHistory()" style="padding:3px 10px;font-size:11px">\ud83d\udd04 \u5237\u65b0</button>' +
+    '</div>' +
+  '</div>' +
+  '<div id="aptHistoryContent" style="flex:1;overflow-y:auto"><div style="text-align:center;padding:30px;color:var(--text-sec)">\u23f3 \u6b63\u5728\u52a0\u8f7d\u66f4\u65b0\u5386\u53f2...</div></div>'
+
+  await refreshAptHistory()
+}
+
+async function refreshAptHistory(){
+  var cnt = document.getElementById('aptHistoryCount')
+  var content = document.getElementById('aptHistoryContent')
+  if(!content) return
+  cnt.textContent = '\u23f3 \u52a0\u8f7d\u4e2d...'
+  content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-sec)">\u23f3 \u6b63\u5728\u89e3\u6790 APT \u66f4\u65b0\u5386\u53f2...</div>'
+
+  try{
+    var r = await window.aptHistoryAPI.list()
+    if(r && r.success && r.entries){
+      _aptHistoryData = r.entries
+      cnt.textContent = '\ud83d\udccb \u5171 ' + r.entries.length + ' \u6761\u8bb0\u5f55'
+      renderAptHistoryList(r.entries)
+    } else {
+      content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger)">\u274c ' + escHtml(r&&r.error||'\u83b7\u53d6\u5386\u53f2\u5931\u8d25') + '</div>'
+    }
+  }catch(e){
+    content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger)">\u274c ' + escHtml(e.message) + '</div>'
+  }
+}
+
+function renderAptHistoryList(entries){
+  var content = document.getElementById('aptHistoryContent')
+  if(!content || !entries.length){
+    content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-sec)">\u6682\u65e0\u66f4\u65b0\u8bb0\u5f55</div>'
+    return
+  }
+  
+  var html = '<div style="display:flex;flex-direction:column;gap:8px">'
+  for(var i=0;i<entries.length;i++){
+    var e = entries[i]
+    var totalChanges = e.install.length + e.upgrade.length + e.remove.length + e.purge.length + e.downgrade.length
+    var dateStr = e.startDate || '\u672a\u77e5\u65f6\u95f4'
+    
+    var actionType = '\ud83d\udce6'
+    var actionLabel = '\u66f4\u65b0'
+    if(e.install.length > 0 && e.upgrade.length === 0 && e.remove.length === 0 && e.purge.length === 0) {
+      actionType = '\u2795'
+      actionLabel = '\u5b89\u88c5'
+    } else if(e.remove.length > 0 || e.purge.length > 0) {
+      actionType = '\u2796'
+      actionLabel = '\u5220\u9664'
+    } else if(e.downgrade.length > 0) {
+      actionType = '\u2b07'
+      actionLabel = '\u964d\u7ea7'
+    }
+    
+    html += '<div class="apt-entry" onclick="toggleAptEntry(this)" style="background:#fff;border-radius:10px;padding:12px 16px;cursor:pointer;border:1px solid #eee;transition:all .15s">' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<span style="font-size:16px">' + actionType + '</span>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:13px;font-weight:500;color:var(--text)">' + escHtml(actionLabel) + ' \u00b7 ' + totalChanges + ' \u4e2a\u8f6f\u4ef6\u5305</div>' +
+          '<div style="font-size:11px;color:var(--text-sec);margin-top:2px">' + escHtml(dateStr) + '</div>' +
+        '</div>' +
+        '<span style="font-size:11px;color:var(--text-ter);white-space:nowrap">\u25be \u5c55\u5f00</span>' +
+      '</div>' +
+      '<div class="apt-entry-detail" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #eee">'
+    
+    // commandline
+    if(e.commandline){
+      html += '<div style="font-size:11px;color:var(--text-sec);margin-bottom:6px;word-break:break-all"><code style="background:#f5f6f8;padding:2px 6px;border-radius:3px;font-size:11px">' + escHtml(e.commandline) + '</code></div>'
+    }
+    
+    // install
+    if(e.install.length){
+      html += '<div style="margin-bottom:6px"><span style="font-size:11px;font-weight:500;color:var(--success)">\u2795 \u5b89\u88c5 (' + e.install.length + ')</span></div>'
+      for(var j=0;j<e.install.length;j++){
+        var p = e.install[j]
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#f0faf0;border-radius:4px;margin-bottom:3px;font-size:12px">' +
+          '<span style="font-weight:500">' + escHtml(p.name) + '</span>' +
+          '<span style="color:var(--text-sec);font-size:11px">' + escHtml(p.arch) + '</span>' +
+          '<span style="margin-left:auto;color:var(--success);font-size:11px">' + escHtml(p.newVersion) + '</span></div>'
+      }
+    }
+    
+    // upgrade
+    if(e.upgrade.length){
+      html += '<div style="margin-bottom:6px;margin-top:8px"><span style="font-size:11px;font-weight:500;color:var(--primary)">\u2b06 \u5347\u7ea7 (' + e.upgrade.length + ')</span></div>'
+      for(var j=0;j<e.upgrade.length;j++){
+        var p = e.upgrade[j]
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#f0f4ff;border-radius:4px;margin-bottom:3px;font-size:12px">' +
+          '<span style="font-weight:500">' + escHtml(p.name) + '</span>' +
+          '<span style="color:var(--text-sec);font-size:11px">' + escHtml(p.arch) + '</span>' +
+          '<span style="margin-left:auto;font-size:11px">' +
+            '<span style="color:#e53935;text-decoration:line-through">' + escHtml(p.oldVersion) + '</span>' +
+            ' \u2192 ' +
+            '<span style="color:var(--success);font-weight:500">' + escHtml(p.newVersion) + '</span>' +
+          '</span>' +
+          '<span class="rollback-btn" data-pkg="' + escHtml(p.name) + '" data-ver="' + escHtml(p.oldVersion) + '" onclick="event.stopPropagation();doRollbackBtn(this)" style="display:inline-block;padding:2px 8px;font-size:10px;margin-left:4px;cursor:pointer;color:var(--warning);border:1px solid var(--warning);border-radius:4px;background:transparent">\u21a9 \u56de\u6eda</span>' +
+        '</div>'
+      }
+    }
+    
+    // downgrade
+    if(e.downgrade.length){
+      html += '<div style="margin-bottom:6px;margin-top:8px"><span style="font-size:11px;font-weight:500;color:var(--warning)">\u2b07 \u964d\u7ea7 (' + e.downgrade.length + ')</span></div>'
+      for(var j=0;j<e.downgrade.length;j++){
+        var p = e.downgrade[j]
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#fff8e6;border-radius:4px;margin-bottom:3px;font-size:12px">' +
+          '<span style="font-weight:500">' + escHtml(p.name) + '</span>' +
+          '<span style="color:var(--text-sec);font-size:11px">' + escHtml(p.arch) + '</span>' +
+          '<span style="margin-left:auto;font-size:11px">' +
+            '<span style="color:#e53935;text-decoration:line-through">' + escHtml(p.oldVersion) + '</span>' +
+            ' \u2192 ' +
+            '<span style="color:var(--warning);font-weight:500">' + escHtml(p.newVersion) + '</span>' +
+          '</span></div>'
+      }
+    }
+    
+    // remove
+    if(e.remove.length){
+      html += '<div style="margin-bottom:6px;margin-top:8px"><span style="font-size:11px;font-weight:500;color:var(--danger)">\u2796 \u5220\u9664 (' + e.remove.length + ')</span></div>'
+      for(var j=0;j<e.remove.length;j++){
+        var p = e.remove[j]
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#fff0f0;border-radius:4px;margin-bottom:3px;font-size:12px">' +
+          '<span style="font-weight:500">' + escHtml(p.name) + '</span>' +
+          '<span style="color:var(--text-sec);font-size:11px">' + escHtml(p.arch) + '</span>' +
+          '<span style="margin-left:auto;color:var(--danger);font-size:11px">' + escHtml(p.version) + '</span></div>'
+      }
+    }
+    
+    // purge
+    if(e.purge.length){
+      html += '<div style="margin-bottom:6px;margin-top:8px"><span style="font-size:11px;font-weight:500;color:var(--danger)">\ud83d\uddd1 \u5f7b\u5e95\u5220\u9664 (' + e.purge.length + ')</span></div>'
+      for(var j=0;j<e.purge.length;j++){
+        var p = e.purge[j]
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#fff0f0;border-radius:4px;margin-bottom:3px;font-size:12px">' +
+          '<span style="font-weight:500">' + escHtml(p.name) + '</span>' +
+          '<span style="margin-left:auto;color:var(--danger);font-size:11px">' + escHtml(p.version) + '</span></div>'
+      }
+    }
+    
+    html += '</div></div>'
+  }
+  html += '</div>'
+  content.innerHTML = html
+}
+
+function toggleAptEntry(el){
+  var detail = el.querySelector('.apt-entry-detail')
+  if(detail){
+    var isHidden = detail.style.display === 'none'
+    detail.style.display = isHidden ? 'block' : 'none'
+    var arrow = el.querySelector('span[style*="white-space:nowrap"]')
+    if(arrow) arrow.textContent = isHidden ? '\u25be \u6536\u8d77' : '\u25b8 \u5c55\u5f00'
+  }
+}
+
+function doRollbackBtn(btn){
+  var pkgName = btn.getAttribute('data-pkg')
+  var targetVer = btn.getAttribute('data-ver')
+  showRollbackDialog(pkgName, targetVer)
+}
+
+function switchAptTab(btn, tab){
+  document.querySelectorAll('.tab-btn').forEach(function(b){
+    b.style.background = 'transparent'
+    b.style.color = '#666'
+  })
+  btn.style.background = 'var(--primary)'
+  btn.style.color = '#fff'
+  btn.style.fontWeight = '500'
+
+  var content = document.getElementById('aptHistoryContent')
+  if(!content) return
+  
+  if(tab === 'history'){
+    if(_aptHistoryData) renderAptHistoryList(_aptHistoryData)
+    else refreshAptHistory()
+  } else if(tab === 'rollback'){
+    renderRollbackPanel(content)
+  }
+}
+
+function renderRollbackPanel(el){
+  el.innerHTML = '<div style="max-width:600px;margin:0 auto">' +
+    '<div style="font-size:14px;font-weight:600;margin-bottom:10px">\ud83d\udd04 \u8f6f\u4ef6\u5305\u7248\u672c\u56de\u6eda</div>' +
+    '<div style="font-size:12px;color:var(--text-sec);margin-bottom:14px">\u8f93\u5165\u8f6f\u4ef6\u5305\u540d\u79f0\uff0c\u67e5\u770b\u53ef\u7528\u7248\u672c\u5e76\u9009\u62e9\u56de\u6eda</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:14px">' +
+      '<input id="rollbackPkgInput" placeholder="\u8f93\u5165\u8f6f\u4ef6\u5305\u540d\u79f0\uff0c\u5982: dde-printer" style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none" onkeydown="if(event.key===\'Enter\') searchRollbackPkg()">' +
+      '<button class="btn btn-primary" onclick="searchRollbackPkg()">\ud83d\udd0d \u67e5\u8be2</button>' +
+    '</div>' +
+    '<div id="rollbackResult"></div>' +
+  '</div>'
+}
+
+async function searchRollbackPkg(){
+  var input = document.getElementById('rollbackPkgInput')
+  var result = document.getElementById('rollbackResult')
+  var pkgName = input && input.value.trim()
+  if(!pkgName){ result.innerHTML = '<div style="color:var(--danger);font-size:12px">\u8bf7\u8f93\u5165\u8f6f\u4ef6\u5305\u540d\u79f0</div>'; return }
+  
+  result.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 \u67e5\u8be2\u4e2d...</div>'
+  
+  try{
+    var r = await window.aptHistoryAPI.packageVersions(pkgName)
+    if(r && r.success){
+      var h = '<div style="background:#fff;border-radius:10px;padding:16px;border:1px solid #eee">'
+      h += '<div style="font-size:13px;font-weight:500;margin-bottom:8px">\ud83d\udce6 ' + escHtml(pkgName) + '</div>'
+      
+      if(r.currentVersion){
+        h += '<div style="font-size:12px;color:var(--text-sec);margin-bottom:10px">\u5f53\u524d\u7248\u672c: <span style="color:var(--primary);font-weight:500">' + escHtml(r.currentVersion) + '</span></div>'
+      }
+      
+      if(r.versions && r.versions.length){
+        h += '<div style="font-size:12px;font-weight:500;color:var(--text-sec);margin-bottom:6px">\u53ef\u7528\u7248\u672c (' + r.versions.length + '):</div>'
+        h += '<div style="display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto">'
+        for(var k=0;k<r.versions.length;k++){
+          var v = r.versions[k]
+          h += '<div style="display:flex;align-items:center;padding:6px 10px;background:' + (v.isCurrent?'#e8f5e9':'#f8f9fa') + ';border-radius:6px;font-size:12px">' +
+            '<span style="flex:1">' + escHtml(v.version) + '</span>'
+          if(v.isCurrent){
+            h += '<span style="color:var(--success);font-size:11px;font-weight:500">\u2713 \u5f53\u524d\u7248\u672c</span>'
+          } else {
+            h += '<span class="rollback-exec-btn" data-pkg="' + escHtml(pkgName) + '" data-ver="' + escHtml(v.version) + '" onclick="doExecuteRollback(this)" style="display:inline-block;padding:3px 10px;font-size:11px;cursor:pointer;color:#fff;background:var(--warning);border:none;border-radius:4px">\u21a9 \u56de\u6eda\u5230\u6b64\u7248\u672c</span>'
+          }
+          h += '</div>'
+        }
+        h += '</div>'
+      } else {
+        h += '<div style="color:var(--text-sec);font-size:12px">\u6ca1\u6709\u627e\u5230\u5176\u4ed6\u53ef\u7528\u7248\u672c</div>'
+      }
+      h += '</div>'
+      result.innerHTML = h
+    } else {
+      result.innerHTML = '<div style="color:var(--danger);font-size:12px">\u274c ' + escHtml(r&&r.error||'\u67e5\u8be2\u5931\u8d25') + '</div>'
+    }
+  }catch(e){
+    result.innerHTML = '<div style="color:var(--danger);font-size:12px">\u274c ' + escHtml(e.message) + '</div>'
+  }
+}
+
+function doExecuteRollback(btn){
+  var pkgName = btn.getAttribute('data-pkg')
+  var targetVersion = btn.getAttribute('data-ver')
+  executeRollback(pkgName, targetVersion)
+}
+
+async function executeRollback(pkgName, targetVersion){
+  if(!confirm('\u786e\u8ba4\u8981\u5c06 ' + pkgName + ' \u56de\u6eda\u5230 ' + targetVersion + ' \u7248\u672c\uff1f\n\n\u6b64\u64cd\u4f5c\u53ef\u80fd\u9700\u8981 sudo \u5bc6\u7801\u3002')) return
+  
+  var password = prompt('\u8bf7\u8f93\u5165 sudo \u5bc6\u7801\uff08\u7559\u7a7a\u5219\u5c1d\u8bd5\u65e0\u5bc6\u7801\u6267\u884c\uff09:')
+  if(password === null) return
+  
+  var resultEl = document.getElementById('rollbackResult')
+  if(resultEl) resultEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 \u6b63\u5728\u56de\u6eda ' + pkgName + ' \u5230 ' + targetVersion + '\uff0c\u8bf7\u7a0d\u5019...</div>'
+  
+  try{
+    var r = await window.aptHistoryAPI.rollback(pkgName, targetVersion, password || '')
+    if(r && r.success){
+      if(resultEl) resultEl.innerHTML = '<div style="background:#e8f5e9;border-radius:10px;padding:16px;border:1px solid #c8e6c9">' +
+        '<div style="font-size:14px;color:var(--success);font-weight:500;margin-bottom:8px">\u2705 \u56de\u6eda\u6210\u529f</div>' +
+        '<div style="font-size:11px;color:var(--text);max-height:200px;overflow-y:auto;font-family:monospace;white-space:pre-wrap;background:#f5f6f8;padding:8px;border-radius:4px">' + escHtml(r.output||'') + '</div>' +
+        '<button class="btn btn-sm" onclick="refreshAptHistory()" style="margin-top:8px;padding:4px 12px;font-size:11px">\ud83d\udd04 \u5237\u65b0\u5386\u53f2</button></div>'
+    } else {
+      if(resultEl) resultEl.innerHTML = '<div style="background:#fff0f0;border-radius:10px;padding:16px;border:1px solid #ffcdd2">' +
+        '<div style="font-size:14px;color:var(--danger);font-weight:500;margin-bottom:8px">\u274c \u56de\u6eda\u5931\u8d25</div>' +
+        '<div style="font-size:12px;color:var(--text)">' + escHtml(r&&r.error||'\u672a\u77e5\u9519\u8bef') + '</div></div>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<div style="background:#fff0f0;border-radius:10px;padding:16px;border:1px solid #ffcdd2">' +
+      '<div style="font-size:14px;color:var(--danger);font-weight:500;margin-bottom:8px">\u274c \u56de\u6eda\u5931\u8d25</div>' +
+      '<div style="font-size:12px;color:var(--text)">' + escHtml(e.message) + '</div></div>'
+  }
+}
+
+function showRollbackDialog(pkgName, oldVersion){
+  // Switch to rollback tab
+  var rollbackBtn = document.querySelector('.tab-btn[data-tab="rollback"]')
+  if(rollbackBtn) {
+    rollbackBtn.click()
+    // Fill the package name
+    var input = document.getElementById('rollbackPkgInput')
+    if(input) {
+      input.value = pkgName
+      searchRollbackPkg()
+    }
+  }
 }
 
 </script>
