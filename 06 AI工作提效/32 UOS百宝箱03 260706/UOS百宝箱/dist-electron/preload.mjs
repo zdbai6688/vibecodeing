@@ -183,7 +183,11 @@ contextBridge.exposeInMainWorld('perfAPI', {
   analyzeCPU: () => ipcRenderer.invoke('perf-analyze-cpu'),
   analyzeDisk: () => ipcRenderer.invoke('perf-analyze-disk'),
   analyzeMemory: () => ipcRenderer.invoke('perf-analyze-memory'),
-  runPerf: (args) => ipcRenderer.invoke('perf-run', args)
+  runPerf: (args) => ipcRenderer.invoke('perf-run', args),
+  analyzeCPUHotspot: () => ipcRenderer.invoke('perf-cpu-hotspot'),
+  analyzeMemoryLeak: () => ipcRenderer.invoke('perf-memory-leak'),
+  straceAnalyze: (pid) => ipcRenderer.invoke('perf-strace', pid),
+  generateReport: () => ipcRenderer.invoke('perf-generate-report')
 })
 
 // 系统崩溃分析 API
@@ -214,8 +218,8 @@ contextBridge.exposeInMainWorld('ntpAPI', {
 contextBridge.exposeInMainWorld('proxyAPI', {
   getConfig: () => ipcRenderer.invoke('proxy-get-config'),
   setConfig: (config) => ipcRenderer.invoke('proxy-set-config', config),
-  testConnection: (proxyUrl) => ipcRenderer.invoke('proxy-test', proxyUrl),
-  setSystemProxy: (config, password) => ipcRenderer.invoke('proxy-set-system', config, password)
+  testConnection: (opts) => ipcRenderer.invoke('proxy-test', opts),
+  setSystemProxy: (config, password) => ipcRenderer.invoke('proxy-set-system', { config, password })
 })
 
 // 截图录屏 API
@@ -320,3 +324,10 @@ contextBridge.exposeInMainWorld('aptHistoryAPI', {
   packageVersions: (packageName) => ipcRenderer.invoke('apt-history', 'package-versions', { packageName }),
   compare: (packageName, versionA, versionB) => ipcRenderer.invoke('apt-history', 'compare', { packageName, versionA, versionB })
 })
+
+// USB 启动盘制作 API
+contextBridge.exposeInMainWorld('usbBootAPI', {
+  listDevices: () => ipcRenderer.invoke('phase2-usb', 'list'),
+  create: (iso, device, password) => ipcRenderer.invoke('phase2-usb', 'create', { iso, device, password })
+})
+

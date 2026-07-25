@@ -590,43 +590,6 @@ ipcMain.handle('set-auto-start', (_, enable) => {
   } catch(e) { return { success: false, error: e.message } }
 })
 
-// Phase 3: 系统安全扫描
-ipcMain.handle('phase3-security-scan', async (_, action, params) => {
-  try {
-    const scriptDir = path.join(__dirname, '../resources/scripts/Phase3');
-    const scriptPath = path.join(scriptDir, 'security_scan.sh');
-    const password = params?.password || '';
-    
-    if (action === 'full' || action === 'quick' || action === 'tools') {
-      let result;
-      if (action === 'full') {
-        result = execSync('bash "' + scriptPath + '" full', { timeout: 120000, encoding: 'utf-8' });
-      } else if (action === 'quick') {
-        result = execSync('bash "' + scriptPath + '" quick', { timeout: 60000, encoding: 'utf-8' });
-      } else {
-        result = execSync('bash "' + scriptPath + '" tools', { timeout: 10000, encoding: 'utf-8' });
-      }
-      try {
-        const data = JSON.parse(result);
-        return data;
-      } catch(e) {
-        return { success: true, raw: result };
-      }
-    } else if (action === 'install-tools') {
-      const sudoCmd = password ? 'echo "' + password.replace(/"/g, '\\"') + '" | sudo -S' : 'sudo';
-      const result = execSync(sudoCmd + ' bash "' + scriptPath + '" install-tools', { timeout: 180000, encoding: 'utf-8' });
-      try {
-        const data = JSON.parse(result);
-        return data;
-      } catch(e) {
-        return { success: true, raw: result };
-      }
-    }
-    return { success: false, error: '未知操作: ' + action };
-  } catch(e) { return { success: false, error: e.message } }
-});
-
-
 // ========== 应用生命周期 ==========
 
 app.whenReady().then(() => {
@@ -791,20 +754,6 @@ ipcMain.handle('get-monitor-detail', async (_, type) => {
       const out = execOut("ip route 2>/dev/null || route -n 2>/dev/null")
       if (!out) return { success: false, error: '无法获取路由表' }
       return { success: true, lines: out.trim().split('\n').filter(Boolean) }
-    }
-    case 'net-traffic': {
-      const scriptPath = path.join(__dirname, '../resources/scripts/Phase3/net_traffic.sh')
-      try {
-        const out = execSync('bash "' + scriptPath + '"', { timeout: 15000, encoding: 'utf-8' }).toString()
-        const data = JSON.parse(out)
-        if (data.connections) {
-          data.success = true
-          return data
-        }
-        return { success: true, connections: [], total: { bytes_sent: 0, bytes_received: 0, connections: 0 } }
-      } catch(e) {
-        return { success: false, error: e.message }
-      }
     }
     // ========== 用户与登录审计 ==========
     case 'login-history': {
@@ -1892,84 +1841,6 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
         }
         
       
-
-      case 'file-search': {
-        const { keyword, filters } = params
-        if (!keyword) return { success: false, error: '请输入搜索关键词' }
-        
-        const searchRoot = os.homedir()
-        let cmd = ''
-        
-        const escapedKeyword = keyword.replace(/[^一-龥a-zA-Z0-9._-]/g, '')
-        if (!escapedKeyword) return { success: false, error: '请输入有效的搜索关键词' }
-        
-        cmd = 'find ' + searchRoot + ' -maxdepth 5 -iname "*' + escapedKeyword + '*" -not -path "*/.*" 2>/dev/null'
-        
-        if (filters && filters.type) {
-          const typeMap = {
-            'document': '\( -iname "*.pdf" -o -iname "*.doc" -o -iname "*.docx" -o -iname "*.txt" -o -iname "*.xls" -o -iname "*.xlsx" -o -iname "*.ppt" -o -iname "*.pptx" -o -iname "*.csv" -o -iname "*.md" \)',
-            'image': '\( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.gif" -o -iname "*.bmp" -o -iname "*.webp" -o -iname "*.svg" -o -iname "*.ico" \)',
-            'video': '\( -iname "*.mp4" -o -iname "*.avi" -o -iname "*.mkv" -o -iname "*.mov" -o -iname "*.wmv" -o -iname "*.flv" -o -iname "*.webm" \)',
-            'audio': '\( -iname "*.mp3" -o -iname "*.wav" -o -iname "*.flac" -o -iname "*.aac" -o -iname "*.ogg" -o -iname "*.wma" \)',
-            'archive': '\( -iname "*.zip" -o -iname "*.tar" -o -iname "*.gz" -o -iname "*.bz2" -o -iname "*.xz" -o -iname "*.rar" -o -iname "*.7z" \)',
-            'executable': '\( -executable -type f \)'
-          }
-          if (typeMap[filters.type]) {
-            cmd = 'find ' + searchRoot + ' -maxdepth 5 ' + typeMap[filters.type] + ' -not -path "*/.*" 2>/dev/null'
-            if (escapedKeyword) {
-              cmd += ' | xargs -I{} find {} -maxdepth 0 -iname "*' + escapedKeyword + '*" 2>/dev/null'
-            }
-          }
-        }
-        
-        if (filters && filters.size) {
-          const sizeMap = {
-            '+1M': '+1M', '+10M': '+10M', '+100M': '+100M', '+1G': '+1G',
-            '-1M': '-1M', '-10M': '-10M'
-          }
-          if (sizeMap[filters.size]) {
-            cmd = 'find ' + searchRoot + ' -maxdepth 5 -size ' + sizeMap[filters.size] + ' -iname "*' + escapedKeyword + '*" -not -path "*/.*" 2>/dev/null'
-          }
-        }
-        
-        try {
-          const result = execSync(cmd, { timeout: 15000, encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 })
-          const lines = result.split('\n').filter(l => l.trim()).slice(0, 80)
-          
-          const files = lines.map(function(l) {
-            var name = l.split('/').pop() || l
-            var stats
-            try { stats = fs.statSync(l) } catch(e) { return null }
-            if (!stats) return null
-            
-            var sizeStr = ''
-            if (stats.isDirectory()) {
-              sizeStr = '<DIR>'
-            } else {
-              var bytes = stats.size
-              if (bytes < 1024) sizeStr = bytes + ' B'
-              else if (bytes < 1024 * 1024) sizeStr = (bytes / 1024).toFixed(1) + ' KB'
-              else if (bytes < 1024 * 1024 * 1024) sizeStr = (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-              else sizeStr = (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB'
-            }
-            
-            var dateStr = stats.mtime ? stats.mtime.toISOString().split('T')[0] : ''
-            
-            return {
-              name: name,
-              path: l,
-              type: stats.isDirectory() ? 'dir' : 'file',
-              sizeStr: sizeStr,
-              dateStr: dateStr
-            }
-          }).filter(Boolean)
-          
-          return { success: true, files: files }
-        } catch(e) {
-          return { success: false, error: e.message || '搜索失败', files: [] }
-        }
-      }
-
       default:
         return { success: false, error: '未知工具: ' + tool }
     }
@@ -2116,77 +1987,1156 @@ ipcMain.handle('pkg-manager', async (_, action, params) => {
     return { success: false, error: e.message || String(e) }
   }
 })
-// ========== Phase 2: 实用功能 IPC ==========
 
-ipcMain.handle('phase2-startup', async (_, action, params) => {
+// ========== Phase 3: 防火墙规则管理器 ==========
+ipcMain.handle('firewall-list-rules', async () => {
+  const { execSync } = require('child_process')
   try {
-    const scriptDir = path.join(__dirname, '../resources/scripts/Phase2')
-    const scriptPath = path.join(scriptDir, 'startup_mgr.sh')
-    let result
-    if (action === 'list') {
-      result = execSync('bash "' + scriptPath + '" list', { timeout: 10000, encoding: 'utf-8' })
-      const lines = result.split('\n').filter(l => l.trim())
-      const autostartItems = []
-      for (const line of lines) {
-        if (line.startsWith('FILE:')) {
-          const parts = line.split('|')
-          const file = parts[0].replace('FILE:', '')
-          const name = parts[1].replace('NAME:', '')
-          const enabled = parts[2].replace('ENABLED:', '') === 'true'
-          autostartItems.push({ file: path.join(os.homedir(), '.config/autostart', file), name, enabled })
+    const raw = execSync("sudo iptables -L -n --line-numbers 2>/dev/null || iptables -L -n --line-numbers 2>/dev/null", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const chains = {}; let currentChain = ''
+    raw.split('\n').forEach(l => {
+      if (l.startsWith('Chain ')) {
+        const m = l.match(/^Chain (\S+)/); if (m) { currentChain = m[1]; chains[currentChain] = chains[currentChain] || [] }
+      } else if (currentChain && l.trim() && !l.includes('target') && !l.startsWith('num')) {
+        const parts = l.trim().split(/\s+/); if (parts.length >= 2) chains[currentChain].push({ raw: l.trim(), parts })
+      }
+    })
+    // Also get nftables rules
+    let nftRules = ''
+    try { nftRules = execSync("sudo nft list ruleset 2>/dev/null || nft list ruleset 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString() } catch {}
+    return { success: true, iptables: chains, nftables: nftRules, enabled: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('firewall-add-rule', async (_, rule) => {
+  const { execSync } = require('child_process'); const { sudoExec } = global
+  try {
+    let cmd = ''
+    if (rule.type === 'port') cmd = `iptables -A INPUT -p ${rule.proto||'tcp'} --dport ${rule.port} -j ${rule.action||'ACCEPT'}`
+    else if (rule.type === 'ip') cmd = `iptables -A INPUT -s ${rule.ip} -j ${rule.action||'ACCEPT'}`
+    else if (rule.type === 'icmp') cmd = 'iptables -A INPUT -p icmp -j ACCEPT'
+    const result = sudoExec(cmd + ' 2>&1', rule.password||'')
+    return { success: true, output: result }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('firewall-remove-rule', async (_, idx) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`iptables -D INPUT ${parseInt(idx)+1} 2>&1`, { timeout: 5000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('firewall-toggle-rule', async (_, idx) => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync(`iptables -L INPUT -n --line-numbers 2>/dev/null`, { timeout: 5000, encoding: 'utf-8' }).toString()
+    const lines = raw.split('\n').filter(l => l.trim() && /^\d+/.test(l.trim()))
+    const line = lines[parseInt(idx)]; if (!line) return { success: false, error: '规则不存在' }
+    if (line.includes('DROP')) execSync(`iptables -R INPUT ${parseInt(idx)+1} ${line.replace('DROP','ACCEPT')} 2>&1`, { timeout: 5000 })
+    else execSync(`iptables -R INPUT ${parseInt(idx)+1} ${line.replace('ACCEPT','DROP')} 2>&1`, { timeout: 5000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('firewall-get-status', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("sudo ufw status 2>/dev/null || echo 'disabled'", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const enabled = raw.includes('active') || raw.includes('Status: active')
+    return { success: true, ufwStatus: enabled, raw }
+  } catch(e) { return { success: true, ufwStatus: false } }
+})
+ipcMain.handle('firewall-set-status', async (_, enable) => {
+  const { execSync } = require('child_process'); const { sudoExec } = global
+  try {
+    const result = sudoExec(`ufw ${enable?'enable':'disable'} 2>&1`, '')
+    return { success: true, output: result }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('firewall-backup-rules', async () => {
+  const { execSync } = require('child_process'); const fs = require('fs'); const path = require('path')
+  try {
+    const backupDir = path.join(require('electron').app.getPath('userData'), 'firewall_backups')
+    if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true })
+    const file = path.join(backupDir, `iptables_backup_${Date.now()}.rules`)
+    const raw = execSync("sudo iptables-save 2>/dev/null || iptables-save 2>/dev/null", { timeout: 10000, encoding: 'utf-8' }).toString()
+    fs.writeFileSync(file, raw)
+    return { success: true, file }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('firewall-restore-rules', async () => {
+  const { execSync } = require('child_process'); const fs = require('fs'); const path = require('path')
+  try {
+    const backupDir = path.join(require('electron').app.getPath('userData'), 'firewall_backups')
+    if (!fs.existsSync(backupDir)) return { success: false, error: '无备份文件' }
+    const files = fs.readdirSync(backupDir).filter(f => f.endsWith('.rules')).sort()
+    if (!files.length) return { success: false, error: '无备份文件' }
+    const file = path.join(backupDir, files[files.length-1])
+    const raw = fs.readFileSync(file, 'utf-8')
+    execSync("sudo iptables-restore <<< '" + raw.replace(/'/g, "'\\''") + "' 2>/dev/null", { timeout: 10000 })
+    return { success: true, file: files[files.length-1] }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('firewall-add-port', async (_, port, proto) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`sudo iptables -A INPUT -p ${proto||'tcp'} --dport ${parseInt(port)} -j ACCEPT 2>&1`, { timeout: 5000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: 网络流量监控 ==========
+ipcMain.handle('netflow-get-traffic', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("cat /proc/net/dev 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const lines = raw.split('\n').filter(l => l.includes(':'))
+    const interfaces = lines.map(l => {
+      const parts = l.trim().split(/\s+/); const name = parts[0].replace(':','')
+      return { name, rxBytes: parseInt(parts[1])||0, txBytes: parseInt(parts[9])||0 }
+    })
+    const totalRx = interfaces.reduce((s,i) => s+i.rxBytes, 0)
+    const totalTx = interfaces.reduce((s,i) => s+i.txBytes, 0)
+    return { success: true, interfaces, totalRx, totalTx }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('netflow-get-process-traffic', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("ss -tupn 2>/dev/null | tail -n +2", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const lines = raw.split('\n').filter(l => l.trim())
+    const procs = []
+    lines.forEach(l => {
+      const m = l.match(/users:\(\("([^"]+)"/)
+      if (m) {
+        const name = m[1]
+        const existing = procs.find(p => p.name === name)
+        if (existing) existing.connections++
+        else procs.push({ name, connections: 1 })
+      }
+    })
+    return { success: true, processes: procs.sort((a,b) => b.connections - a.connections).slice(0,20) }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('netflow-get-traffic-history', async () => {
+  const { execSync } = require('child_process'); const fs = require('fs'); const path = require('path')
+  try {
+    const histFile = path.join(require('electron').app.getPath('userData'), 'traffic_history.json')
+    if (!fs.existsSync(histFile)) return { success: true, history: [] }
+    const data = JSON.parse(fs.readFileSync(histFile, 'utf-8'))
+    return { success: true, history: Array.isArray(data) ? data.slice(-60) : [] }
+  } catch(e) { return { success: true, history: [] } }
+})
+
+// ========== Phase 3: 系统安全扫描 ==========
+ipcMain.handle('secscan-run', async (_, type) => {
+  const { execSync } = require('child_process')
+  try {
+    let output = ''
+    if (type === 'lynis') { try { output = execSync("sudo lynis audit system --quick 2>/dev/null || echo 'lynis not installed'", { timeout: 60000, encoding: 'utf-8' }).toString() } catch { output = 'lynis not installed' } }
+    else if (type === 'rkhunter') { try { output = execSync("sudo rkhunter --check --skip-keypress 2>/dev/null || echo 'rkhunter not installed'", { timeout: 120000, encoding: 'utf-8' }).toString() } catch { output = 'rkhunter not installed' } }
+    else if (type === 'chkrootkit') { try { output = execSync("sudo chkrootkit 2>/dev/null || echo 'chkrootkit not installed'", { timeout: 60000, encoding: 'utf-8' }).toString() } catch { output = 'chkrootkit not installed' } }
+    else if (type === 'weakpass') {
+      const users = execSync("awk -F: '($3>=1000){print $1}' /etc/passwd 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString().trim().split('\n')
+      output = users.map(u => `User: ${u}`).join('\n') + '\n(弱密码检测需要安装 john/chkrootkit 等工具)'
+    }
+    else if (type === 'quick') {
+      const parts = []
+      try { parts.push(`开放端口: ${execSync("ss -tlnp 2>/dev/null | wc -l", { timeout: 5000, encoding: 'utf-8' }).toString().trim()}`) } catch {}
+      try { parts.push(`登录失败: ${execSync("lastb 2>/dev/null | wc -l", { timeout: 5000, encoding: 'utf-8' }).toString().trim()}`) } catch {}
+      try { parts.push(`root登录: ${execSync("last root 2>/dev/null | head -5 | wc -l", { timeout: 5000, encoding: 'utf-8' }).toString().trim()}`) } catch {}
+      output = parts.join('\n')
+    }
+    return { success: true, output, type }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('secscan-get-results', async () => {
+  const fs = require('fs'); const path = require('path')
+  try {
+    const f = path.join(require('electron').app.getPath('userData'), 'secscan_results.json')
+    if (!fs.existsSync(f)) return { success: true, results: [] }
+    return { success: true, results: JSON.parse(fs.readFileSync(f,'utf-8')) }
+  } catch(e) { return { success: true, results: [] } }
+})
+ipcMain.handle('secscan-install-tool', async (_, tool) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`sudo apt-get install -y ${tool} 2>&1`, { timeout: 120000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: 系统更新历史与回滚 ==========
+ipcMain.handle('updatehist-get-history', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("grep -E '^(Start-Date|Commandline|Install|Upgrade|Remove|End-Date)' /var/log/apt/history.log 2>/dev/null | head -200", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const entries = []; let current = {}
+    raw.split('\n').forEach(l => {
+      if (l.startsWith('Start-Date:')) { current = { date: l.replace('Start-Date:','').trim() } }
+      else if (l.startsWith('Commandline:')) current.cmd = l.replace('Commandline:','').trim()
+      else if (l.startsWith('Install:')) current.install = l.replace('Install:','').trim()
+      else if (l.startsWith('Upgrade:')) current.upgrade = l.replace('Upgrade:','').trim()
+      else if (l.startsWith('Remove:')) current.remove = l.replace('Remove:','').trim()
+      else if (l.startsWith('End-Date:')) { entries.push(current); current = {} }
+    })
+    return { success: true, entries: entries.slice(-50).reverse() }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('updatehist-rollback', async (_, pkg, version, password) => {
+  const { execSync } = require('child_process'); const { sudoExec } = global
+  try {
+    const result = sudoExec(`apt-get install -y ${pkg}=${version.replace(/[^a-zA-Z0-9.+~-]/g,'')} 2>&1`, password)
+    return { success: true, output: result }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('updatehist-get-status', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("apt list --upgradable 2>/dev/null | tail -n +2", { timeout: 15000, encoding: 'utf-8' }).toString()
+    const updates = raw.split('\n').filter(l => l.trim()).map(l => {
+      const m = l.match(/^([^/]+)/); return m ? m[1] : l
+    })
+    return { success: true, upgradable: updates.length, packages: updates.slice(0,30) }
+  } catch(e) { return { success: true, upgradable: 0, packages: [] } }
+})
+
+// ========== Phase 3: 系统配置导入导出 ==========
+ipcMain.handle('configio-export', async (_, sections, filePath) => {
+  const { execSync } = require('child_process'); const fs = require('fs'); const path = require('path')
+  try {
+    const config = {}
+    if (!sections || sections.includes('sources')) config.sources = execSync("cat /etc/apt/sources.list 2>/dev/null && ls /etc/apt/sources.list.d/ 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString()
+    if (!sections || sections.includes('network')) config.network = execSync("cat /etc/network/interfaces 2>/dev/null; nmcli connection show 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString()
+    if (!sections || sections.includes('firewall')) config.firewall = execSync("iptables-save 2>/dev/null || echo 'no iptables'", { timeout: 5000, encoding: 'utf-8' }).toString()
+    if (!sections || sections.includes('services')) config.services = execSync("systemctl list-unit-files --type=service 2>/dev/null | head -50", { timeout: 5000, encoding: 'utf-8' }).toString()
+    if (!sections || sections.includes('hostname')) config.hostname = execSync("hostnamectl 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString()
+    if (!sections || sections.includes('time')) config.time = execSync("timedatectl 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const outPath = filePath || path.join(require('electron').app.getPath('desktop'), `uos_config_export_${Date.now()}.json`)
+    fs.writeFileSync(outPath, JSON.stringify(config, null, 2), 'utf-8')
+    return { success: true, file: outPath }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('configio-import', async (_, filePath) => {
+  const fs = require('fs'); const { execSync } = require('child_process')
+  try {
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+    const report = {}
+    if (data.hostname) { try { report.hostname = execSync(`hostnamectl set-hostname ${(data.hostname.match(/Static hostname:\s*(\S+)/)||[])[1]||''} 2>&1`, { timeout: 5000 }).toString() } catch(e) { report.hostname = e.message } }
+    if (data.time) { try { const tz = (data.time.match(/Time zone:\s*(\S+)/)||[])[1]; if (tz) report.time = execSync(`timedatectl set-timezone ${tz} 2>&1`, { timeout: 5000 }).toString() } catch(e) { report.time = e.message } }
+    return { success: true, report }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('configio-preview', async (_, filePath) => {
+  const fs = require('fs')
+  try {
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+    return { success: true, data }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('configio-compare', async (_, filePath) => {
+  const fs = require('fs'); const { execSync } = require('child_process')
+  try {
+    const imported = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+    const current = {}
+    try { current.sources = execSync("cat /etc/apt/sources.list 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString() } catch {}
+    try { current.hostname = execSync("cat /etc/hostname 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString() } catch {}
+    return { success: true, imported, current, diff: Object.keys(imported).filter(k => imported[k] !== current[k]) }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: 系统性能分析 ==========
+ipcMain.handle('perf-analyze-cpu', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const top = execSync("ps aux --sort=-%cpu 2>/dev/null | head -15", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const load = execSync("cat /proc/loadavg 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim()
+    const uptime = execSync("uptime 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim()
+    return { success: true, topProcesses: top, loadAverage: load, uptime }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('perf-analyze-disk', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const iostat = execSync("iostat -x 1 2 2>/dev/null || cat /proc/diskstats 2>/dev/null | head -20", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const df = execSync("df -h 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString()
+    return { success: true, iostat, df }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('perf-analyze-memory', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const free = execSync("free -h 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString()
+    const slab = execSync("cat /proc/meminfo 2>/dev/null | head -20", { timeout: 3000, encoding: 'utf-8' }).toString()
+    const topMem = execSync("ps aux --sort=-%mem 2>/dev/null | head -15", { timeout: 5000, encoding: 'utf-8' }).toString()
+    return { success: true, free, slab, topProcesses: topMem }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('perf-run', async (_, args) => {
+  const { execSync } = require('child_process')
+  try {
+    const result = execSync(`perf ${args||'stat -e cycles,instructions,cache-misses ls 2>&1'} 2>/dev/null || echo 'perf not available'`, { timeout: 30000, encoding: 'utf-8' }).toString()
+    return { success: true, output: result }
+  } catch(e) { return { success: false, error: e.message } }
+})
+// ========== Phase 3: 系统性能分析 - CPU 热点 ==========
+ipcMain.handle('perf-cpu-hotspot', async () => {
+  const { execSync } = require('child_process')
+  const scriptPath = path.join(__dirname, '../resources/scripts/Phase3/perf_analyze.sh');
+  try {
+    const result = execSync('bash "' + scriptPath + '" cpuhotspot', { timeout: 15000, encoding: 'utf-8' });
+    return JSON.parse(result);
+  } catch (e) {
+    try {
+      const top = execSync("ps aux --sort=-%cpu 2>/dev/null | head -15", { timeout: 5000, encoding: 'utf-8' }).toString()
+      return { success: true, fallback: true, topProcesses: top }
+    } catch(e2) { return { success: false, error: e.message } }
+  }
+})
+
+// ========== Phase 3: 系统性能分析 - 内存泄漏 ==========
+ipcMain.handle('perf-memory-leak', async () => {
+  const { execSync } = require('child_process')
+  const scriptPath = path.join(__dirname, '../resources/scripts/Phase3/perf_analyze.sh');
+  try {
+    const result = execSync('bash "' + scriptPath + '" memoryleak', { timeout: 15000, encoding: 'utf-8' });
+    return JSON.parse(result);
+  } catch (e) {
+    try {
+      const meminfo = execSync("cat /proc/meminfo 2>/dev/null | head -30", { timeout: 3000, encoding: 'utf-8' }).toString()
+      const topRSS = execSync("ps aux --sort=-%rss 2>/dev/null | head -15", { timeout: 5000, encoding: 'utf-8' }).toString()
+      return { success: true, fallback: true, meminfo, topProcesses: topRSS }
+    } catch(e2) { return { success: false, error: e.message } }
+  }
+})
+
+// ========== Phase 3: 系统性能分析 - strace 跟踪 ==========
+ipcMain.handle('perf-strace', async (_, pid) => {
+  const { execSync } = require('child_process')
+  const scriptPath = path.join(__dirname, '../resources/scripts/Phase3/perf_analyze.sh');
+  try {
+    const result = execSync('bash "' + scriptPath + '" strace ' + (pid || ''), { timeout: 15000, encoding: 'utf-8' });
+    return JSON.parse(result);
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+// ========== Phase 3: 系统性能分析 - 生成报告 ==========
+ipcMain.handle('perf-generate-report', async () => {
+  const { execSync } = require('child_process')
+  const scriptPath = path.join(__dirname, '../resources/scripts/Phase3/perf_analyze.sh');
+  try {
+    const result = execSync('bash "' + scriptPath + '" report', { timeout: 30000, encoding: 'utf-8' });
+    return JSON.parse(result);
+  } catch (e) {
+    try {
+      const host = execSync('hostname 2>/dev/null', { timeout: 3000, encoding: 'utf-8' }).toString().trim() || 'unknown'
+      const ts = new Date().toISOString().replace(/[T:.]/g, '_').slice(0,19)
+      const reportPath = '/tmp/perf_report_' + host + '_' + ts + '.txt'
+      const cpu = execSync("top -bn1 2>/dev/null | grep '%Cpu'", { timeout: 5000, encoding: 'utf-8' }).toString()
+      const mem = execSync('free -h 2>/dev/null', { timeout: 3000, encoding: 'utf-8' }).toString()
+      const disk = execSync("df -h 2>/dev/null | grep '^/'", { timeout: 3000, encoding: 'utf-8' }).toString()
+      const procs = execSync("ps aux --sort=-%cpu 2>/dev/null | head -11", { timeout: 5000, encoding: 'utf-8' }).toString()
+      const lines = [
+        '============================================',
+        '  UOS 系统性能分析报告',
+        '  生成时间: ' + new Date().toLocaleString('zh-CN'),
+        '  主机名: ' + host,
+        '============================================',
+        '',
+        '[CPU 使用率]',
+        cpu,
+        '',
+        '[内存使用]',
+        mem,
+        '',
+        '[磁盘使用]',
+        disk,
+        '',
+        '[Top 进程]',
+        procs,
+        '============================================'
+      ]
+      require('fs').writeFileSync(reportPath, lines.join('\n'), 'utf-8')
+      return { success: true, report_file: reportPath, report_content: lines.join('\n') }
+    } catch(e2) { return { success: false, error: e2.message } }
+  }
+})
+
+
+
+// ========== Phase 3: 系统崩溃分析 ==========
+ipcMain.handle('crash-list-coredumps', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("coredumpctl list 2>/dev/null || ls -la /var/lib/systemd/coredump/ 2>/dev/null || echo 'No coredumpctl available'", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const lines = raw.split('\n').filter(l => l.trim())
+    return { success: true, items: lines.map(l => ({ raw: l })) }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('crash-analyze', async (_, id) => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync(`coredumpctl info ${parseInt(id)||''} 2>/dev/null || echo 'Cannot analyze'`, { timeout: 30000, encoding: 'utf-8' }).toString()
+    return { success: true, info: raw }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('crash-get-logs', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("journalctl -p err -b 2>/dev/null | tail -100", { timeout: 15000, encoding: 'utf-8' }).toString()
+    const lines = raw.split('\n').filter(l => l.trim())
+    return { success: true, logs: lines.map(l => ({ raw: l })) }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: 等保合规检查 ==========
+ipcMain.handle('compliance-run-check', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const checks = []
+    // 密码策略
+    try { const pw = execSync("cat /etc/pam.d/common-password 2>/dev/null | grep password | head -5", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'pw-policy', name:'密码策略', status: pw.includes('pam_unix.so')?'pass':'fail', detail: pw.trim()||'未配置' }) } catch { checks.push({ id:'pw-policy', name:'密码策略', status:'unknown', detail:'无法检测' }) }
+    // 登录失败锁定
+    try { const faillock = execSync("cat /etc/pam.d/common-auth 2>/dev/null | grep -i faillock", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'faillock', name:'登录失败锁定', status: faillock?'pass':'fail', detail: faillock.trim()||'未配置登录锁定' }) } catch { checks.push({ id:'faillock', name:'登录失败锁定', status:'unknown', detail:'无法检测' }) }
+    // 审计日志
+    try { const audit = execSync("service auditd status 2>/dev/null | head -5", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'auditd', name:'审计服务(auditd)', status: audit.includes('active')||audit.includes('running')?'pass':'fail', detail: audit.trim() }) } catch { checks.push({ id:'auditd', name:'审计服务(auditd)', status:'fail' }) }
+    // SSH 配置
+    try { const ssh = execSync("cat /etc/ssh/sshd_config 2>/dev/null | grep -E 'PermitRootLogin|PasswordAuthentication'", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'ssh-config', name:'SSH 安全配置', status: ssh.includes('no')?'pass':'warn', detail: ssh.trim()||'默认配置' }) } catch { checks.push({ id:'ssh-config', name:'SSH 安全配置', status:'unknown' }) }
+    // 防火墙
+    try { const fw = execSync("sudo iptables -L 2>/dev/null | head -10", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'firewall', name:'防火墙规则', status: fw.includes('ACCEPT')||fw.includes('DROP')?'pass':'warn', detail: fw.trim()||'无规则' }) } catch { checks.push({ id:'firewall', name:'防火墙规则', status:'warn' }) }
+    // SELinux/AppArmor
+    try { const aa = execSync("aa-status 2>/dev/null || echo 'not found'", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'apparmor', name:'AppArmor', status: aa.includes('enforce')?'pass':aa.includes('not found')?'fail':'warn', detail: aa.trim() }) } catch { checks.push({ id:'apparmor', name:'AppArmor', status:'unknown' }) }
+    // 磁盘加密
+    try { const crypt = execSync("lsblk -o NAME,TYPE,MOUNTPOINT 2>/dev/null | grep -i crypt", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'encrypt', name:'磁盘加密', status: crypt?'pass':'warn', detail: crypt.trim()||'未检测到磁盘加密' }) } catch { checks.push({ id:'encrypt', name:'磁盘加密', status:'unknown' }) }
+    // 系统更新
+    try { const up = execSync("apt list --upgradable 2>/dev/null | wc -l", { timeout: 10000, encoding: 'utf-8' }).toString(); checks.push({ id:'updates', name:'系统更新', status: parseInt(up)<=2?'pass':'warn', detail: `${parseInt(up)} 个可更新包` }) } catch { checks.push({ id:'updates', name:'系统更新', status:'unknown' }) }
+    const passed = checks.filter(c => c.status === 'pass').length
+    return { success: true, checks, total: checks.length, passed }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('compliance-get-results', async () => {
+  const fs = require('fs'); const path = require('path')
+  try {
+    const f = path.join(require('electron').app.getPath('userData'), 'compliance_results.json')
+    if (!fs.existsSync(f)) return { success: true, results: [] }
+    return { success: true, results: JSON.parse(fs.readFileSync(f,'utf-8')) }
+  } catch(e) { return { success: true, results: [] } }
+})
+ipcMain.handle('compliance-fix-item', async (_, id, password) => {
+  const { execSync } = require('child_process'); const { sudoExec } = global
+  try {
+    let result = ''
+    if (id === 'faillock') result = sudoExec("echo 'auth required pam_faillock.so' >> /etc/pam.d/common-auth 2>&1", password)
+    else if (id === 'apparmor') result = sudoExec("systemctl enable apparmor && systemctl start apparmor 2>&1", password)
+    else if (id === 'auditd') result = sudoExec("systemctl enable auditd && systemctl start auditd 2>&1", password)
+    else result = sudoExec(`echo 'Manual fix needed for ${id}'`, password)
+    return { success: true, output: result }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('compliance-generate-report', async () => {
+  const fs = require('fs'); const path = require('path'); const { execSync } = require('child_process')
+  try {
+    const outDir = require('electron').app.getPath('desktop')
+    const file = path.join(outDir, `security_compliance_report_${Date.now()}.md`)
+    let md = '# 等保合规检查报告\n\n'
+    md += `生成时间: ${new Date().toLocaleString('zh-CN')}\n\n`
+    const res = await ipcMain.emit('compliance-run-check') || { checks: [{ id:'sample', name:'检查项', status:'pending', detail:'请先运行检查' }] }
+    md += '## 检查结果\n\n| 检查项 | 结果 | 详情 |\n|--------|------|------|\n'
+    for (const c of res.checks||[]) md += `| ${c.name} | ${c.status} | ${c.detail} |\n`
+    fs.writeFileSync(file, md, 'utf-8')
+    return { success: true, file }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: NTP 时间同步 ==========
+ipcMain.handle('ntp-get-status', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("timedatectl 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const ntpEnabled = raw.includes('NTP service: active') || raw.includes('NTP enabled: yes')
+    const synced = raw.includes('System clock synchronized: yes')
+    const timezoneMatch = raw.match(/Time zone:\s*(\S+)\s*/)
+    const timezone = timezoneMatch ? timezoneMatch[1] : 'UTC'
+    const tzOffsetMatch = raw.match(/Time zone:\s*\S+\s+\(([^)]+)\)/)
+    const tz_offset = tzOffsetMatch ? tzOffsetMatch[1] : ''
+    const datetimeMatch = raw.match(/Local time:\s*(.+)/)
+    const datetime = datetimeMatch ? datetimeMatch[1].trim() : ''
+    // Try to get NTP servers
+    let servers = []
+    try {
+      const chronyServers = execSync("chronyc sources -v 2>/dev/null | grep -E '^[\\^\\*\\+\\-]' || true", { timeout: 5000, encoding: 'utf-8' }).toString().trim()
+      if(chronyServers) {
+        servers = chronyServers.split('\n').filter(l => l.trim()).map(l => {
+          const parts = l.trim().split(/\s+/)
+          return parts[parts.length-1]
+        }).filter(Boolean)
+      } else {
+        const ntpqServers = execSync("ntpq -p 2>/dev/null | tail -n +3 || true", { timeout: 5000, encoding: 'utf-8' }).toString().trim()
+        if(ntpqServers) {
+          servers = ntpqServers.split('\n').filter(l => l.trim()).map(l => {
+            const parts = l.trim().split(/\s+/)
+            return parts[0]
+          }).filter(Boolean)
         }
       }
-      return { success: true, items: autostartItems, raw: lines.slice(50).join('\n') }
-    } else if (action === 'enable' || action === 'disable') {
-      const file = params?.file || ''
-      result = execSync('bash "' + scriptPath + '" ' + action + ' "' + file.replace(/"/g, '\\"') + '"', { timeout: 10000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'add') {
-      const name = params?.name || ''
-      const execPath = params?.exec || ''
-      const desc = params?.desc || name
-      result = execSync('bash "' + scriptPath + '" add "' + name.replace(/"/g, '\\"') + '" "' + execPath.replace(/"/g, '\\"') + '" "' + desc.replace(/"/g, '\\"') + '"', { timeout: 10000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'remove') {
-      const file = params?.file || ''
-      result = execSync('bash "' + scriptPath + '" remove "' + file.replace(/"/g, '\\"') + '"', { timeout: 10000, encoding: 'utf-8' })
-      return { success: true, output: result }
+    } catch(e) {}
+    if(!servers.length) {
+      servers = ['pool.ntp.org (chrony/ntp)']
     }
-    return { success: false, error: '未知操作' }
+    return { success: true, ntpEnabled, synced, timezone, tz_offset, datetime, servers }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('ntp-set-server', async (_, server) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`timedatectl set-ntp false 2>/dev/null`, { timeout: 5000 })
+    execSync(`bash -c 'echo "server ${server} iburst" > /etc/chrony/chrony.conf 2>/dev/null || echo "server ${server}" > /etc/ntp.conf 2>/dev/null'`, { timeout: 5000 })
+    execSync(`timedatectl set-ntp true 2>/dev/null`, { timeout: 5000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('ntp-sync-now', async () => {
+  const { execSync } = require('child_process')
+  try {
+    execSync("timedatectl set-ntp true 2>/dev/null", { timeout: 5000 })
+    const result = execSync("chronyc -a makestep 2>/dev/null || ntpdate -u time.windows.com 2>/dev/null || echo 'sync attempted'", { timeout: 15000, encoding: 'utf-8' }).toString()
+    return { success: true, output: result }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('ntp-set-timezone', async (_, tz) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`timedatectl set-timezone ${tz.replace(/[^a-zA-Z0-9_/]/g,'')} 2>&1`, { timeout: 5000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('ntp-get-timezones', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("timedatectl list-timezones 2>/dev/null", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const zones = raw.split('\n').filter(l => l.trim())
+    return { success: true, timezones: zones }
+  } catch(e) { return { success: true, timezones: ['Asia/Shanghai','UTC','America/New_York'] } }
+})
+
+// ========== Phase 3: 系统代理配置 ==========
+ipcMain.handle('proxy-get-config', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const config = { http: '', https: '', ftp: '', enabled: false, no_proxy: '', mode: 'none' }
+    // 从环境变量读取
+    try { config.http = execSync("echo $http_proxy 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim() } catch {}
+    try { config.https = execSync("echo $https_proxy 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim() } catch {}
+    try { config.ftp = execSync("echo $ftp_proxy 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim() } catch {}
+    try { config.no_proxy = execSync("echo $no_proxy 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim() } catch {}
+    // 从 gsettings 读取系统代理状态
+    try { config.mode = execSync("gsettings get org.gnome.system.proxy mode 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim().replace(/'/g,'') } catch { config.mode = 'none' }
+    config.enabled = config.mode !== 'none' && config.mode !== ''
+    // 如果环境变量为空，从 gsettings 读取详细配置
+    if (!config.http) {
+      try {
+        const host = execSync("gsettings get org.gnome.system.proxy.http host 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim().replace(/'/g,'')
+        const port = execSync("gsettings get org.gnome.system.proxy.http port 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim()
+        if (host && port) config.http = 'http://' + host + ':' + port
+      } catch {}
+    }
+    if (!config.https) {
+      try {
+        const host = execSync("gsettings get org.gnome.system.proxy.https host 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim().replace(/'/g,'')
+        const port = execSync("gsettings get org.gnome.system.proxy.https port 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim()
+        if (host && port) config.https = 'https://' + host + ':' + port
+      } catch {}
+    }
+    if (!config.ftp) {
+      try {
+        const host = execSync("gsettings get org.gnome.system.proxy.ftp host 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim().replace(/'/g,'')
+        const port = execSync("gsettings get org.gnome.system.proxy.ftp port 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim()
+        if (host && port) config.ftp = 'ftp://' + host + ':' + port
+      } catch {}
+    }
+    // 读取持久化存储的配置
+    try {
+      const proxyFile = require('path').join(require('electron').app.getPath('userData'), 'proxy-config.json')
+      if (require('fs').existsSync(proxyFile)) {
+        const saved = JSON.parse(require('fs').readFileSync(proxyFile, 'utf-8'))
+        if (saved.http) config.http = saved.http
+        if (saved.https) config.https = saved.https
+        if (saved.ftp) config.ftp = saved.ftp
+        if (saved.no_proxy) config.no_proxy = saved.no_proxy
+        if (saved.enabled !== undefined) config.enabled = saved.enabled
+      }
+    } catch {}
+    return { success: true, config }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('proxy-set-config', async (_, config) => {
+  try {
+    // 持久化保存配置
+    const { execSync } = require('child_process')
+    const path = require('path')
+    const fs = require('fs')
+    const app = require('electron').app
+    const proxyFile = path.join(app.getPath('userData'), 'proxy-config.json')
+    const dir = path.dirname(proxyFile)
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    fs.writeFileSync(proxyFile, JSON.stringify(config, null, 2))
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('proxy-test', async (_, { testUrl, config }) => {
+  const { execSync } = require('child_process')
+  try {
+    const url = testUrl || 'https://www.baidu.com'
+    const proxyUrl = config?.http || config?.https || ''
+    if (!proxyUrl) {
+      // 无代理直接测试
+      const start = Date.now()
+      const result = execSync("curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 " + url + " 2>/dev/null", { timeout: 15000, encoding: 'utf-8' }).toString().trim()
+      const latency = Date.now() - start
+      return { success: true, httpCode: result, latency, reachable: result === '200' || result === '301' || result === '302' }
+    }
+    const start = Date.now()
+    const result = execSync("curl -s -o /dev/null -w '%{http_code}' --proxy '" + proxyUrl + "' --connect-timeout 10 " + url + " 2>/dev/null", { timeout: 15000, encoding: 'utf-8' }).toString().trim()
+    const latency = Date.now() - start
+    return { success: true, httpCode: result, latency, reachable: result === '200' || result === '301' || result === '302' }
+  } catch(e) { return { success: false, error: '连接失败: ' + e.message } }
+})
+ipcMain.handle('proxy-set-system', async (_, { config, password }) => {
+  const { execSync } = require('child_process')
+  const { sudoExec } = global
+  try {
+    if (!config.enabled) {
+      // 禁用系统代理
+      sudoExec('gsettings set org.gnome.system.proxy mode none 2>&1', password)
+      // 清理环境变量文件
+      sudoExec('rm -f /etc/profile.d/proxy.sh 2>/dev/null', password)
+      return { success: true }
+    }
+    // 解析 HTTP 代理主机和端口
+    let httpHost = '', httpPort = '8080', httpsHost = '', httpsPort = '8080', ftpHost = '', ftpPort = '8080'
+    if (config.http) {
+      const m = config.http.match(/^(?:https?:\/\/)?(.+?)(?::(\d+))?$/)
+      if (m) { httpHost = m[1]; if (m[2]) httpPort = m[2] }
+    }
+    if (config.https) {
+      const m = config.https.match(/^(?:https?:\/\/)?(.+?)(?::(\d+))?$/)
+      if (m) { httpsHost = m[1]; if (m[2]) httpsPort = m[2] }
+    } else {
+      httpsHost = httpHost; httpsPort = httpPort
+    }
+    if (config.ftp) {
+      const m = config.ftp.match(/^(?:ftp:\/\/)?(.+?)(?::(\d+))?$/)
+      if (m) { ftpHost = m[1]; if (m[2]) ftpPort = m[2] }
+    } else {
+      ftpHost = httpHost; ftpPort = httpPort
+    }
+    // 设置系统代理 via gsettings
+    const cmds = [
+      "gsettings set org.gnome.system.proxy mode manual",
+      "gsettings set org.gnome.system.proxy.http host '" + httpHost.replace(/'/g, "'\\''") + "'",
+      "gsettings set org.gnome.system.proxy.http port " + httpPort,
+      "gsettings set org.gnome.system.proxy.https host '" + httpsHost.replace(/'/g, "'\\''") + "'",
+      "gsettings set org.gnome.system.proxy.https port " + httpsPort,
+      "gsettings set org.gnome.system.proxy.ftp host '" + ftpHost.replace(/'/g, "'\\''") + "'",
+      "gsettings set org.gnome.system.proxy.ftp port " + ftpPort
+    ]
+    if (config.no_proxy) {
+      var noProxyList = "[" + config.no_proxy.split(',').map(function(s) { return "'" + s.trim().replace(/'/g, "'\\''") + "'"; }).join(', ') + "]"
+      cmds.push("gsettings set org.gnome.system.proxy ignore-hosts " + noProxyList)
+    }
+    sudoExec(cmds.join(' && '), password)
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+// ========== Phase 3: 截图录屏 ==========
+ipcMain.handle('capture-screenshot', async (_, mode) => {
+  const { execSync } = require('child_process'); const fs = require('fs'); const path = require('path')
+  try {
+    const dir = require('electron').app.getPath('pictures')
+    const file = path.join(dir, `screenshot_${Date.now()}.png`)
+    if (mode === 'full') execSync(`gnome-screenshot -f '${file}' 2>/dev/null || deepin-screenshot -f '${file}' 2>/dev/null || import -window root '${file}' 2>/dev/null`, { timeout: 15000 })
+    else if (mode === 'area') execSync(`gnome-screenshot -a -f '${file}' 2>/dev/null || deepin-screenshot 2>/dev/null || import '${file}' 2>/dev/null`, { timeout: 30000 })
+    else if (mode === 'delay') execSync(`gnome-screenshot -d 5 -f '${file}' 2>/dev/null || deepin-screenshot -d 5 2>/dev/null`, { timeout: 30000 })
+    if (!fs.existsSync(file)) return { success: false, error: '截图失败，请检查 gnome-screenshot/deepin-screenshot 是否安装' }
+    const dataUrl = 'data:image/png;base64,' + fs.readFileSync(file).toString('base64')
+    return { success: true, file, dataUrl }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('capture-start-recording', async () => {
+  const { spawn } = require('child_process'); const path = require('path')
+  try {
+    const dir = require('electron').app.getPath('videos')
+    const file = path.join(dir, `recording_${Date.now()}.mp4`)
+    const proc = spawn('ffmpeg', ['-f','x11grab','-video_size','1920x1080','-i',':0.0','-codec:v','libx264','-r','15',file], { detached: true })
+    global.__recordingProc = proc; global.__recordingFile = file
+    return { success: true, file }
+  } catch(e) { return { success: false, error: '录屏需要 ffmpeg: ' + e.message } }
+})
+ipcMain.handle('capture-stop-recording', async () => {
+  try {
+    if (global.__recordingProc) { global.__recordingProc.kill('SIGTERM'); global.__recordingProc = null }
+    return { success: true, file: global.__recordingFile || '' }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('capture-recording-status', async () => {
+  return { success: true, recording: !!global.__recordingProc, file: global.__recordingFile || '' }
+})
+
+// ========== Phase 3: 快捷键管理 ==========
+ipcMain.handle('hotkey-list', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("gsettings list-recursively org.gnome.desktop.wm.keybindings 2>/dev/null | head -50", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const lines = raw.split('\n').filter(l => l.trim()).map(l => {
+      const parts = l.split(' ');
+      const key = parts[0]||'';
+      const val = parts.slice(2).join(' ').replace(/'/g,'')||'';
+      return { key: key.split('.').pop(), value: val }
+    })
+    return { success: true, shortcuts: lines }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('hotkey-set', async (_, key, cmd) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ name 'custom' 2>/dev/null; gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ binding '${key}' 2>/dev/null; gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/ command '${cmd}' 2>/dev/null`, { timeout: 5000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('hotkey-reset', async () => {
+  const { execSync } = require('child_process')
+  try {
+    execSync("gsettings reset-recursively org.gnome.desktop.wm.keybindings 2>/dev/null", { timeout: 5000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('hotkey-export', async () => {
+  const { execSync } = require('child_process'); const fs = require('fs'); const path = require('path')
+  try {
+    const raw = execSync("gsettings list-recursively org.gnome.desktop.wm.keybindings 2>/dev/null", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const file = path.join(require('electron').app.getPath('desktop'), `shortcuts_export_${Date.now()}.dconf`)
+    fs.writeFileSync(file, raw, 'utf-8')
+    return { success: true, file }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('hotkey-import', async (_, path) => {
+  const { execSync } = require('child_process'); const fs = require('fs')
+  try {
+    const data = fs.readFileSync(path, 'utf-8')
+    data.split('\n').filter(l => l.trim()).forEach(l => {
+      try { execSync(`dconf write '${l.split(' ')[0].replace('org.gnome','/org/gnome').replace(/\./g,'/')}' \"${l.split(' ').slice(1).join(' ')}\" 2>/dev/null`, { timeout: 3000 }) } catch {}
+    })
+    return { success: true }
   } catch(e) { return { success: false, error: e.message } }
 })
 
-ipcMain.handle('phase2-search', async (_, params) => {
+// ========== Phase 3: 主题字体管理 ==========
+ipcMain.handle('theme-switch', async (_, mode) => {
+  const { execSync } = require('child_process')
   try {
-    const scriptDir = path.join(__dirname, '../resources/scripts/Phase2')
-    const scriptPath = path.join(scriptDir, 'file_search.sh')
-    const name = params?.name || ''
-    const searchPath = params?.path || os.homedir()
-    const type = params?.type || 'any'
-    const size = params?.size || 'any'
-    const date = params?.date || 'any'
-    if (!name) return { success: false, error: '请指定搜索关键词' }
-    const result = execSync('bash "' + scriptPath + '" "' + name.replace(/"/g, '\\"') + '" "' + searchPath.replace(/"/g, '\\"') + '" ' + type + ' ' + size + ' ' + date, { timeout: 30000, encoding: 'utf-8' })
-    const lines = result.split('\n').filter(l => l.trim())
-    const files = lines.map(l => {
-      const parts = l.split('|')
-      if (parts[0] === 'FILE') return { type: 'file', size: parts[1], mtime: parts[2], path: parts.slice(3).join('|') }
-      if (parts[0] === 'DIR') return { type: 'dir', path: parts.slice(3).join('|') }
-      return null
+    if (mode === 'dark') execSync("gsettings set org.gnome.desktop.interface gtk-theme 'deepin-dark' 2>/dev/null || gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null", { timeout: 5000 })
+    else if (mode === 'light') execSync("gsettings set org.gnome.desktop.interface gtk-theme 'deepin' 2>/dev/null || gsettings set org.gnome.desktop.interface color-scheme 'prefer-light' 2>/dev/null", { timeout: 5000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('theme-list-fonts', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("fc-list :lang=zh 2>/dev/null | head -50", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const fonts = raw.split('\n').filter(l => l.trim()).map(l => {
+      const m = l.match(/^([^:]+)/); return { path: m?m[1].trim():l, name: l.split(':')[1]?.trim()||'' }
+    })
+    return { success: true, fonts }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('theme-install-font', async (_, fontPath) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`cp '${fontPath}' /usr/share/fonts/ 2>/dev/null || cp '${fontPath}' ~/.fonts/ 2>/dev/null && fc-cache -f 2>/dev/null`, { timeout: 10000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('theme-uninstall-font', async (_, name) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`fc-list | grep -i '${name.replace(/[^a-zA-Z0-9_-]/g,'')}' | head -1 | cut -d: -f1 | xargs -I{} rm -f {} 2>/dev/null && fc-cache -f 2>/dev/null`, { timeout: 10000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('theme-list-icons', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("ls /usr/share/icons/ 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const themes = raw.split('\n').filter(l => l.trim())
+    return { success: true, themes }
+  } catch(e) { return { success: true, themes: [] } }
+})
+ipcMain.handle('theme-switch-icons', async (_, name) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`gsettings set org.gnome.desktop.interface icon-theme '${name}' 2>/dev/null`, { timeout: 5000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: 打印机管理 ==========
+ipcMain.handle('printer-list', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("lpstat -p 2>/dev/null || echo 'No printers'", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const printers = raw.split('\n').filter(l => l.startsWith('printer')).map(l => {
+      const m = l.match(/printer (\S+)/); return m ? { name: m[1], status: l.includes('idle')?'idle':l.includes('disabled')?'disabled':'active' } : null
     }).filter(Boolean)
-    return { success: true, files, total: files.length }
+    return { success: true, printers }
   } catch(e) { return { success: false, error: e.message } }
 })
-
-ipcMain.handle('phase2-health', async () => {
+ipcMain.handle('printer-add', async (_, name, options) => {
+  const { execSync } = require('child_process')
   try {
-    const scriptDir = path.join(__dirname, '../resources/scripts/Phase2')
-    const scriptPath = path.join(scriptDir, 'health_check.sh')
-    const result = execSync('bash "' + scriptPath + '"', { timeout: 30000, encoding: 'utf-8' })
-    return { success: true, report: result }
+    execSync(`lpadmin -p '${name}' ${options?.device?'-v '+options.device:''} -E 2>/dev/null || echo 'Need cups'`, { timeout: 15000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('printer-remove', async (_, name) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`lpadmin -x '${name}' 2>/dev/null`, { timeout: 10000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('printer-test-page', async (_, name) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`lp -d '${name}' /etc/passwd 2>/dev/null || echo 'Test job sent'`, { timeout: 10000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('printer-queue', async (_, name) => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync(`lpq -P '${name}' 2>/dev/null || echo 'No queue'`, { timeout: 5000, encoding: 'utf-8' }).toString()
+    const jobs = raw.split('\n').filter(l => l.trim() && !l.startsWith('Rank')).slice(1).map(l => ({ raw: l }))
+    return { success: true, jobs }
   } catch(e) { return { success: false, error: e.message } }
 })
 
+// ========== Phase 3: 网络共享管理 ==========
+ipcMain.handle('netshare-samba-status', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const samba = execSync("systemctl status smbd 2>/dev/null | head -10", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const shares = execSync("smbstatus -S 2>/dev/null || testparm -s 2>/dev/null | grep -A1 '\\[' || echo 'No shares'", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const active = samba.includes('active') || samba.includes('running')
+    return { success: true, active, status: samba, shares }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('netshare-samba-set', async (_, config) => {
+  const { execSync } = require('child_process')
+  try {
+    const shareConf = `[${config.name||'share'}]\npath = ${config.path||'/tmp'}\nvalid users = ${config.users||'nobody'}\nread only = ${config.readonly?'yes':'no'}\nguest ok = yes\n`
+    execSync(`bash -c 'echo "${shareConf}" >> /etc/samba/smb.conf' 2>/dev/null && systemctl restart smbd 2>/dev/null`, { timeout: 10000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('netshare-nfs-status', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const nfs = execSync("systemctl status nfs-kernel-server 2>/dev/null || systemctl status nfs-server 2>/dev/null | head -10", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const exports = execSync("exportfs -v 2>/dev/null || cat /etc/exports 2>/dev/null || echo 'No exports'", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const active = nfs.includes('active') || nfs.includes('running')
+    return { success: true, active, status: nfs, exports }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('netshare-nfs-set', async (_, config) => {
+  const { execSync } = require('child_process')
+  try {
+    const exportLine = config.path||'/tmp' + ' ' + config.clients||'*\(rw,sync,no_subtree_check)' + '\n'
+    execSync(`bash -c 'echo "${exportLine}" >> /etc/exports' 2>/dev/null && exportfs -ra 2>/dev/null`, { timeout: 10000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('netshare-remove', async (_, sharePath, type) => {
+  const { execSync } = require('child_process')
+  try {
+    if (type === 'samba') execSync(`sed -i '/\\[${sharePath}\\]/,/^$/d' /etc/samba/smb.conf 2>/dev/null && systemctl restart smbd 2>/dev/null`, { timeout: 10000 })
+    else if (type === 'nfs') execSync(`sed -i '\\|${sharePath}|d' /etc/exports 2>/dev/null && exportfs -ra 2>/dev/null`, { timeout: 10000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: Docker 容器管理 ==========
+ipcMain.handle('docker-status', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("systemctl status docker 2>/dev/null | head -10", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const version = execSync("docker --version 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString().trim()
+    return { success: true, running: raw.includes('active')||raw.includes('running'), status: raw, version }
+  } catch(e) { return { success: false, error: 'Docker 未安装或未运行' } }
+})
+ipcMain.handle('docker-list-containers', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}' 2>/dev/null", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const containers = raw.split('\n').filter(l => l.trim()).map(l => {
+      const parts = l.split('\t'); return { id: parts[0]||'', name: parts[1]||'', image: parts[2]||'', status: parts[3]||'' }
+    })
+    return { success: true, containers }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('docker-list-images', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("docker images --format '{{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}' 2>/dev/null", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const images = raw.split('\n').filter(l => l.trim()).map(l => {
+      const parts = l.split('\t'); return { repo: parts[0]||'', tag: parts[1]||'', id: parts[2]||'', size: parts[3]||'' }
+    })
+    return { success: true, images }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('docker-start', async (_, id) => {
+  const { execSync } = require('child_process')
+  try { execSync(`docker start ${id} 2>&1`, { timeout: 15000 }); return { success: true } }
+  catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('docker-stop', async (_, id) => {
+  const { execSync } = require('child_process')
+  try { execSync(`docker stop ${id} 2>&1`, { timeout: 15000 }); return { success: true } }
+  catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('docker-remove-container', async (_, id) => {
+  const { execSync } = require('child_process')
+  try { execSync(`docker rm ${id} 2>&1`, { timeout: 10000 }); return { success: true } }
+  catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('docker-logs', async (_, id) => {
+  const { execSync } = require('child_process')
+  try { const raw = execSync(`docker logs --tail 50 ${id} 2>&1`, { timeout: 10000, encoding: 'utf-8' }).toString(); return { success: true, logs: raw } }
+  catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('docker-pull', async (_, name) => {
+  const { execSync } = require('child_process')
+  try { execSync(`docker pull ${name} 2>&1`, { timeout: 300000 }); return { success: true } }
+  catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('docker-remove-image', async (_, id) => {
+  const { execSync } = require('child_process')
+  try { execSync(`docker rmi ${id} 2>&1`, { timeout: 10000 }); return { success: true } }
+  catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: VPN 管理 ==========
+ipcMain.handle('vpn-list', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("nmcli connection show 2>/dev/null | grep -i vpn || echo 'No VPN connections'", { timeout: 10000, encoding: 'utf-8' }).toString()
+    const connections = raw.split('\n').filter(l => l.trim() && !l.startsWith('NAME')).map(l => {
+      const parts = l.trim().split(/\s+/); return { name: parts[0]||'', type: parts[1]||'', state: parts[3]||'' }
+    })
+    return { success: true, connections }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('vpn-add', async (_, config) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`nmcli connection add type vpn vpn-type ${config.type||'l2tp'} con-name '${config.name||'vpn'}' ifname '*' 2>&1`, { timeout: 15000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('vpn-remove', async (_, name) => {
+  const { execSync } = require('child_process')
+  try { execSync(`nmcli connection delete '${name}' 2>&1`, { timeout: 10000 }); return { success: true } }
+  catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('vpn-connect', async (_, name) => {
+  const { execSync } = require('child_process')
+  try { execSync(`nmcli connection up '${name}' 2>&1`, { timeout: 30000 }); return { success: true } }
+  catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('vpn-disconnect', async (_, name) => {
+  const { execSync } = require('child_process')
+  try { execSync(`nmcli connection down '${name}' 2>&1`, { timeout: 15000 }); return { success: true } }
+  catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('vpn-status', async (_, name) => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync(`nmcli connection show '${name}' 2>/dev/null | head -20`, { timeout: 10000, encoding: 'utf-8' }).toString()
+    return { success: true, info: raw }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('vpn-import', async (_, path) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`nmcli connection import type openvpn file '${path}' 2>&1 || nmcli connection import type l2tp file '${path}' 2>&1`, { timeout: 15000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: 系统升级助手 ==========
+ipcMain.handle('upgrade-check', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("cat /etc/os-release 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const versionId = (raw.match(/VERSION_ID="?([^"\n]+)"?/m)||[])[1] || 'unknown'
+    const name = (raw.match(/PRETTY_NAME="?([^"\n]+)"?/m)||[])[1] || raw.match(/NAME="?([^"\n]+)"?/m)?.[1] || 'UOS'
+    const upgradable = execSync("apt list --upgradable 2>/dev/null | wc -l", { timeout: 15000, encoding: 'utf-8' }).toString().trim()
+    return { success: true, currentVersion: versionId, osName: name, upgradable: parseInt(upgradable)||0 }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('upgrade-preflight', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const checks = []
+    try { const disk = execSync("df / | tail -1 | awk '{print $4}' 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString().trim(); checks.push({ name:'磁盘空间', status: parseInt(disk)>500000?'pass':'warn', detail: `${disk} KB 可用` }) } catch { checks.push({ name:'磁盘空间', status:'unknown' }) }
+    try { const mem = execSync("free -m | grep Mem | awk '{print $7}' 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString().trim(); checks.push({ name:'可用内存', status: parseInt(mem)>500?'pass':'warn', detail: `${mem} MB 可用` }) } catch { checks.push({ name:'可用内存', status:'unknown' }) }
+    try { execSync("ping -c 1 -W 2 mirrors.ustc.edu.cn 2>/dev/null", { timeout: 5000 }); checks.push({ name:'网络连通', status:'pass', detail:'可访问镜像源' }) } catch { checks.push({ name:'网络连通', status:'warn', detail:'网络异常' }) }
+    try { const bat = execSync("cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || echo '100'", { timeout: 3000, encoding: 'utf-8' }).toString().trim(); checks.push({ name:'电源', status: parseInt(bat)>20?'pass':'warn', detail: `电量 ${bat}%` }) } catch { checks.push({ name:'电源', status:'pass', detail:'台式机' }) }
+    return { success: true, checks }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('upgrade-start', async (_, password) => {
+  const { execSync } = require('child_process'); const { sudoExec } = global
+  try {
+    const result = sudoExec('DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y 2>&1', password)
+    return { success: true, output: result }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('upgrade-progress', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const dpkg = execSync("pgrep -c dpkg 2>/dev/null || echo 0", { timeout: 3000, encoding: 'utf-8' }).toString().trim()
+    return { success: true, running: parseInt(dpkg) > 0 }
+  } catch(e) { return { success: true, running: false } }
+})
+ipcMain.handle('upgrade-rollback', async (_, password) => {
+  const { execSync } = require('child_process'); const { sudoExec } = global
+  try {
+    const result = sudoExec("dpkg --configure -a && apt-get install -f -y 2>&1", password)
+    return { success: true, output: result }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: 系统资产清单 ==========
+ipcMain.handle('asset-scan-hardware', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const info = {}
+    try { info.cpu = execSync("lscpu 2>/dev/null | head -20", { timeout: 5000, encoding: 'utf-8' }).toString() } catch {}
+    try { info.memory = execSync("free -h 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString() } catch {}
+    try { info.disk = execSync("lsblk -o NAME,SIZE,TYPE,MOUNTPOINT 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString() } catch {}
+    try { info.pci = execSync("lspci 2>/dev/null | head -30", { timeout: 5000, encoding: 'utf-8' }).toString() } catch {}
+    try { info.usb = execSync("lsusb 2>/dev/null | head -20", { timeout: 5000, encoding: 'utf-8' }).toString() } catch {}
+    try { info.network = execSync("ip link show 2>/dev/null", { timeout: 5000, encoding: 'utf-8' }).toString() } catch {}
+    try { info.system = execSync("dmidecode -t system 2>/dev/null | head -20", { timeout: 10000, encoding: 'utf-8' }).toString() } catch {}
+    return { success: true, hardware: info }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('asset-scan-software', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const info = {}
+    try { info.os = execSync("cat /etc/os-release 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString() } catch {}
+    try { info.kernel = execSync("uname -a 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString() } catch {}
+    try { info.packages = execSync("dpkg -l 2>/dev/null | wc -l", { timeout: 10000, encoding: 'utf-8' }).toString().trim() + ' packages' } catch {}
+    try { info.services = execSync("systemctl list-units --type=service --state=running 2>/dev/null | head -20", { timeout: 5000, encoding: 'utf-8' }).toString() } catch {}
+    return { success: true, software: info }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('asset-get-inventory', async () => {
+  const fs = require('fs'); const path = require('path'); const { execSync } = require('child_process')
+  try {
+    const cacheFile = path.join(require('electron').app.getPath('userData'), 'asset_inventory.json')
+    if (fs.existsSync(cacheFile)) {
+      const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'))
+      if (Date.now() - cached.timestamp < 300000) return { success: true, inventory: cached, cached: true }
+    }
+    const inventory = {}
+    try { inventory.hostname = execSync("hostname 2>/dev/null", { timeout: 3000, encoding: 'utf-8' }).toString().trim() } catch {}
+    try { inventory.serial = (execSync("dmidecode -t system 2>/dev/null | grep Serial | awk -F: '{print $2}'", { timeout: 10000, encoding: 'utf-8' }).toString().trim()) } catch {}
+    try { inventory.cpu = execSync("lscpu 2>/dev/null | grep 'Model name' | awk -F: '{print $2}'", { timeout: 5000, encoding: 'utf-8' }).toString().trim() } catch {}
+    try { inventory.memory = execSync("free -h 2>/dev/null | grep Mem | awk '{print $2}'", { timeout: 3000, encoding: 'utf-8' }).toString().trim() } catch {}
+    try { inventory.disk = execSync("df -h / 2>/dev/null | tail -1 | awk '{print $2}'", { timeout: 3000, encoding: 'utf-8' }).toString().trim() } catch {}
+    try { inventory.os = execSync("cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2", { timeout: 3000, encoding: 'utf-8' }).toString().trim().replace(/"/g,'') } catch {}
+    try { inventory.ip = execSync("hostname -I 2>/dev/null | awk '{print $1}'", { timeout: 3000, encoding: 'utf-8' }).toString().trim() } catch {}
+    try { inventory.mac = execSync("ip link show 2>/dev/null | grep 'link/ether' | head -1 | awk '{print $2}'", { timeout: 3000, encoding: 'utf-8' }).toString().trim() } catch {}
+    inventory.timestamp = Date.now()
+    inventory.scanDate = new Date().toISOString()
+    fs.writeFileSync(cacheFile, JSON.stringify(inventory, null, 2), 'utf-8')
+    return { success: true, inventory, cached: false }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('asset-export', async (_, format) => {
+  const fs = require('fs'); const path = require('path'); const { execSync } = require('child_process')
+  try {
+    const result = await ipcMain.emit('asset-get-inventory') || { inventory: {} }
+    const inv = result.inventory || {}
+    const dir = require('electron').app.getPath('desktop')
+    if (format === 'csv') {
+      const file = path.join(dir, `asset_inventory_${Date.now()}.csv`)
+      const csv = `主机名,序列号,CPU,内存,磁盘,操作系统,IP地址,MAC地址,扫描时间\n"${inv.hostname||''}","${inv.serial||''}","${inv.cpu||''}","${inv.memory||''}","${inv.disk||''}","${inv.os||''}","${inv.ip||''}","${inv.mac||''}","${inv.scanDate||''}"\n`
+      fs.writeFileSync(file, csv, 'utf-8')
+      return { success: true, file }
+    } else {
+      const file = path.join(dir, `asset_inventory_${Date.now()}.json`)
+      fs.writeFileSync(file, JSON.stringify(inv, null, 2), 'utf-8')
+      return { success: true, file }
+    }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== Phase 3: 远程管理工具 ==========
+ipcMain.handle('remote-list-keys', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const raw = execSync("cat ~/.ssh/authorized_keys 2>/dev/null || echo 'No keys'", { timeout: 5000, encoding: 'utf-8' }).toString()
+    const keys = raw.split('\n').filter(l => l.trim() && l.startsWith('ssh-')).map(l => {
+      const parts = l.split(/\s+/); return { type: parts[0]||'', key: parts[1]||'', comment: parts[2]||'' }
+    })
+    return { success: true, keys }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('remote-add-key', async (_, name, key) => {
+  const fs = require('fs'); const path = require('path')
+  try {
+    const sshDir = path.join(require('electron').app.getPath('home'), '.ssh')
+    if (!fs.existsSync(sshDir)) fs.mkdirSync(sshDir, { recursive: true, mode: 0o700 })
+    const authFile = path.join(sshDir, 'authorized_keys')
+    fs.appendFileSync(authFile, key + '\n', { mode: 0o600 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('remote-remove-key', async (_, name) => {
+  const fs = require('fs'); const path = require('path')
+  try {
+    const authFile = path.join(require('electron').app.getPath('home'), '.ssh', 'authorized_keys')
+    if (!fs.existsSync(authFile)) return { success: false, error: 'No authorized_keys' }
+    let data = fs.readFileSync(authFile, 'utf-8')
+    data = data.split('\n').filter(l => !l.includes(name)).join('\n')
+    fs.writeFileSync(authFile, data, 'utf-8')
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('remote-batch-exec', async (_, hosts, cmd, password) => {
+  const { execSync } = require('child_process')
+  try {
+    const results = []
+    for (const host of (hosts||[]).slice(0,5)) {
+      try {
+        const out = execSync(`ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 ${host} '${cmd.replace(/'/g,"'\\''")}' 2>&1`, { timeout: 30000, encoding: 'utf-8' }).toString()
+        results.push({ host, success: true, output: out })
+      } catch(e) { results.push({ host, success: false, error: e.message }) }
+    }
+    return { success: true, results }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('remote-transfer', async (_, host, filePath, remotePath, password) => {
+  const { execSync } = require('child_process')
+  try {
+    const out = execSync(`scp -o StrictHostKeyChecking=no '${filePath}' ${host}:'${remotePath||'~/'}' 2>&1`, { timeout: 60000, encoding: 'utf-8' }).toString()
+    return { success: true, output: out }
+  } catch(e) { return { success: false, error: e.message } }
+
+// ========== USB 启动盘制作 ==========
 ipcMain.handle('phase2-usb', async (_, action, params) => {
   try {
     const scriptDir = path.join(__dirname, '../resources/scripts/Phase2')
@@ -2199,380 +3149,88 @@ ipcMain.handle('phase2-usb', async (_, action, params) => {
         return { device: parts[1], size: parts[2], model: parts[3] || '' }
       })
       return { success: true, devices }
+    } else if (action === 'check-iso') {
+      const isoFile = params?.iso || ''
+      if (!isoFile) return { success: false, error: '请选择ISO文件' }
+      const result = execSync('bash "' + scriptPath + '" check-iso "' + isoFile.replace(/"/g, '\\"') + '"', { timeout: 10000, encoding: 'utf-8' })
+      if (result.startsWith('OK')) return { success: true, valid: true }
+      return { success: true, valid: false, error: result.replace('ERROR|', '') }
+    } else if (action === 'check-device') {
+      const usbDev = params?.device || ''
+      if (!usbDev) return { success: false, error: '请选择USB设备' }
+      const result = execSync('bash "' + scriptPath + '" check-device "' + usbDev.replace(/"/g, '\\"') + '"', { timeout: 10000, encoding: 'utf-8' })
+      if (result.startsWith('OK')) return { success: true, valid: true }
+      if (result.startsWith('MOUNTED')) return { success: true, valid: false, mounted: true, error: '设备已挂载，请先卸载' }
+      return { success: true, valid: false, error: result.replace('ERROR|', '') }
     } else if (action === 'create') {
       const isoFile = params?.iso || ''
       const usbDev = params?.device || ''
       if (!isoFile || !usbDev) return { success: false, error: '请选择ISO文件和USB设备' }
       const password = params?.password || ''
       if (!password) return { success: false, error: '需要管理员密码' }
-      const result = sudoExec('dd if="' + isoFile.replace(/"/g, '\\"') + '" of="' + usbDev.replace(/"/g, '\\"') + '" bs=4M status=progress oflag=sync 2>&1', password)
-      if (result && !result.includes('Error')) {
-        return { success: true, output: '启动盘制作完成！设备: ' + usbDev }
+      try {
+        const mountCheck = execSync('mount | grep "^' + usbDev.replace(/"/g, '\\"') + '" || true', { timeout: 5000, encoding: 'utf-8' })
+        if (mountCheck.trim()) {
+          const parts = mountCheck.split('\n').filter(l => l.trim())
+          for (const part of parts) {
+            const dev = part.split(' ')[0]
+            if (dev) sudoExec('umount "' + dev.replace(/"/g, '\\"') + '" 2>/dev/null', password)
+          }
+        }
+      } catch(e) {}
+      const ddResult = sudoExec('dd if="' + isoFile.replace(/"/g, '\\"') + '" of="' + usbDev.replace(/"/g, '\\"') + '" bs=4M status=progress oflag=sync 2>&1', password)
+      if (ddResult && !ddResult.includes('Error') && !ddResult.includes('error')) {
+        return { success: true, output: '启动盘制作完成！\n设备: ' + usbDev + '\nISO: ' + isoFile }
       } else {
-        return { success: false, error: result || '写入失败' }
+        return { success: false, error: ddResult || '写入失败，请检查权限或设备连接' }
       }
     }
     return { success: false, error: '未知操作' }
   } catch(e) { return { success: false, error: e.message } }
 })
 
-ipcMain.handle('phase2-benchmark', async (_, testType) => {
-  try {
-    const scriptDir = path.join(__dirname, '../resources/scripts/Phase2')
-    const scriptPath = path.join(scriptDir, 'benchmark.sh')
-    const result = execSync('bash "' + scriptPath + '" ' + (testType || 'all'), { timeout: 120000, encoding: 'utf-8' })
-    const lines = result.split('\n').filter(l => l.trim())
-    const results = {}
-    for (const line of lines) {
-      if (line.startsWith('RESULT:')) {
-        const parts = line.split(':')
-        results[parts[1]] = parts.slice(2).join(':')
-      }
-    }
-    return { success: true, raw: result, results }
-  } catch(e) { return { success: false, error: e.message } }
 })
 
-ipcMain.handle('phase2-backup', async (_, action, params) => {
+// ========== 系统应用集成 IPC ==========
+
+ipcMain.handle("systemapp-launch", async (_, appName) => {
   try {
-    const scriptDir = path.join(__dirname, '../resources/scripts/Phase2')
-    const scriptPath = path.join(scriptDir, 'sys_backup.sh')
-    if (action === 'backup') {
-      const result = execSync('bash "' + scriptPath + '" backup ""', { timeout: 60000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'restore') {
-      const dir = params?.dir || ''
-      const result = execSync('bash "' + scriptPath + '" restore "' + dir.replace(/"/g, '\\"') + '"', { timeout: 60000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'export') {
-      const dir = params?.dir || ''
-      const result = execSync('bash "' + scriptPath + '" export "' + dir.replace(/"/g, '\\"') + '"', { timeout: 30000, encoding: 'utf-8' })
-      const lines = result.split('\n').filter(l => l.startsWith('EXPORT|'))
-      if (lines.length > 0) {
-        return { success: true, file: lines[0].split('|')[1] }
-      }
-      return { success: true, output: result }
-    } else if (action === 'import') {
-      const archive = params?.file || ''
-      const result = execSync('bash "' + scriptPath + '" import "' + archive.replace(/"/g, '\\"') + '"', { timeout: 30000, encoding: 'utf-8' })
-      const lines = result.split('\n').filter(l => l.startsWith('IMPORT|'))
-      if (lines.length > 0) {
-        const importDir = lines[0].split('|')[1]
-        return { success: true, dir: importDir, output: '已导入备份到: ' + importDir }
-      }
-      return { success: true, output: result }
-    }
-    return { success: false, error: '未知操作' }
-  } catch(e) { return { success: false, error: e.message } }
-})
-
-ipcMain.handle('phase2-driver', async (_, action) => {
-  try {
-    const scriptDir = path.join(__dirname, '../resources/scripts/Phase2')
-    const scriptPath = path.join(scriptDir, 'driver_mgr.sh')
-    if (action === 'list') {
-      const result = execSync('bash "' + scriptPath + '" list', { timeout: 10000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'missing') {
-      const result = execSync('bash "' + scriptPath + '" missing', { timeout: 10000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    }
-    return { success: false, error: '未知操作' }
-  } catch(e) { return { success: false, error: e.message } }
-})
-
-ipcMain.handle('phase2-remote', async (_, action, params) => {
-  try {
-    const scriptDir = path.join(__dirname, '../resources/scripts/Phase2')
-    const scriptPath = path.join(scriptDir, 'remote_desktop.sh')
-    if (action === 'check') {
-      const result = execSync('bash "' + scriptPath + '" check', { timeout: 10000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'vnc_connect') {
-      const host = params?.host || ''
-      if (!host) return { success: false, error: '请输入VNC服务器地址' }
-      shell.openExternal('vnc://' + encodeURIComponent(host))
-      return { success: true, output: '正在连接 VNC: ' + host }
-    } else if (action === 'rdp_connect') {
-      const host = params?.host || ''
-      if (!host) return { success: false, error: '请输入RDP服务器地址' }
-      shell.openExternal('rdp://' + encodeURIComponent(host))
-      return { success: true, output: '正在连接 RDP: ' + host }
-    }
-    return { success: false, error: '未知操作' }
-    } catch(e) { return { success: false, error: e.message } }
-})
-
-// ========== Phase 3: 防火墙规则管理器 IPC ==========
-
-ipcMain.handle('phase3-firewall', async (_, action, params) => {
-  try {
-    const scriptDir = path.join(__dirname, '../resources/scripts/Phase3')
-    const scriptPath = path.join(scriptDir, 'firewall_mgr.sh')
-    const password = params?.password || ''
-    
-    if (action === 'list') {
-      const result = execSync('bash "' + scriptPath + '" list', { timeout: 10000, encoding: 'utf-8' })
-      const lines = result.split('\n').filter(l => l.trim())
-      const fwType = lines.find(l => l.startsWith('FWTYPE:'))?.replace('FWTYPE:', '') || 'unknown'
-      const rules = lines.filter(l => !l.startsWith('FWTYPE:')).join('\n')
-      return { success: true, fwType, rules, raw: result }
-    } else if (action === 'add') {
-      const ruleSpec = params?.rule || ''
-      if (!ruleSpec) return { success: false, error: '缺少规则参数' }
-      const sudoCmd = password ? 'echo "' + password.replace(/"/g, '\\"') + '" | sudo -S' : 'sudo'
-      const result = execSync(sudoCmd + ' bash "' + scriptPath + '" add "' + ruleSpec.replace(/"/g, '\\"') + '"', { timeout: 15000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'delete') {
-      const ruleSpec = params?.rule || ''
-      if (!ruleSpec) return { success: false, error: '缺少规则参数' }
-      const sudoCmd = password ? 'echo "' + password.replace(/"/g, '\\"') + '" | sudo -S' : 'sudo'
-      const result = execSync(sudoCmd + ' bash "' + scriptPath + '" delete "' + ruleSpec.replace(/"/g, '\\"') + '"', { timeout: 15000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'template') {
-      const templateName = params?.template || ''
-      const extraArg = params?.extra || ''
-      if (!templateName) return { success: false, error: '缺少模板名称' }
-      const sudoCmd = password ? 'echo "' + password.replace(/"/g, '\\"') + '" | sudo -S' : 'sudo'
-      const result = execSync(sudoCmd + ' bash "' + scriptPath + '" template "' + templateName.replace(/"/g, '\\"') + '" "' + extraArg.replace(/"/g, '\\"') + '"', { timeout: 15000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'backup') {
-      const backupFile = params?.file || ''
-      const sudoCmd = password ? 'echo "' + password.replace(/"/g, '\\"') + '" | sudo -S' : 'sudo'
-      const result = execSync(sudoCmd + ' bash "' + scriptPath + '" backup "' + backupFile.replace(/"/g, '\\"') + '"', { timeout: 15000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'restore') {
-      const restoreFile = params?.file || ''
-      if (!restoreFile) return { success: false, error: '请选择备份文件' }
-      const sudoCmd = password ? 'echo "' + password.replace(/"/g, '\\"') + '" | sudo -S' : 'sudo'
-      const result = execSync(sudoCmd + ' bash "' + scriptPath + '" restore "' + restoreFile.replace(/"/g, '\\"') + '"', { timeout: 15000, encoding: 'utf-8' })
-      return { success: true, output: result }
-    } else if (action === 'detect') {
-      const result = execSync('bash "' + scriptPath + '" detect', { timeout: 5000, encoding: 'utf-8' }).trim()
-      return { success: true, fwType: result }
-    }
-    return { success: false, error: '未知操作: ' + action }
-  } catch(e) { return { success: false, error: e.message } }
-})
-
-// ========== APT 更新历史与回滚 IPC ==========
-
-/** 解析 /var/log/apt/history.log 条目 */
-function parseAptHistoryLog(content) {
-  const entries = []
-  const blocks = content.split(/\n\n+/)
-  
-  for (const block of blocks) {
-    const lines = block.trim().split('\n')
-    if (lines.length < 2) continue
-    
-    let entry = { startDate: '', commandline: '', requestedBy: '', install: [], upgrade: [], remove: [], purge: [], downgrade: [], endDate: '' }
-    
-    for (const line of lines) {
-      if (line.startsWith('Start-Date:')) {
-        entry.startDate = line.replace('Start-Date:', '').trim()
-      } else if (line.startsWith('Commandline:')) {
-        entry.commandline = line.replace('Commandline:', '').trim()
-      } else if (line.startsWith('Requested-By:')) {
-        entry.requestedBy = line.replace('Requested-By:', '').trim()
-      } else if (line.startsWith('Install:')) {
-        entry.install = parsePkgList(line.replace('Install:', '').trim())
-      } else if (line.startsWith('Upgrade:')) {
-        entry.upgrade = parsePkgList(line.replace('Upgrade:', '').trim())
-      } else if (line.startsWith('Remove:')) {
-        entry.remove = parsePkgList(line.replace('Remove:', '').trim())
-      } else if (line.startsWith('Purge:')) {
-        entry.purge = parsePkgList(line.replace('Purge:', '').trim())
-      } else if (line.startsWith('Downgrade:')) {
-        entry.downgrade = parsePkgList(line.replace('Downgrade:', '').trim())
-      } else if (line.startsWith('End-Date:')) {
-        entry.endDate = line.replace('End-Date:', '').trim()
-      }
-    }
-    
-    if (entry.startDate && (entry.install.length || entry.upgrade.length || entry.remove.length || entry.purge.length || entry.downgrade.length)) {
-      entries.push(entry)
-    }
-  }
-  
-  return entries
-}
-
-/** 解析包列表: "pkg1:amd64 (1.0, 1.5), pkg2:amd64 (2.0)" */
-function parsePkgList(str) {
-  if (!str) return []
-  const items = []
-  let depth = 0, part = ''
-  for (const ch of str) {
-    if (ch === '(') depth++
-    else if (ch === ')') depth--
-    if (ch === ',' && depth === 0) {
-      items.push(part.trim())
-      part = ''
-      continue
-    }
-    part += ch
-  }
-  if (part.trim()) items.push(part.trim())
-  
-  return items.map(item => {
-    const pkgMatch = item.match(/^([^:]+):([^\s]+)\s+\(([^)]+)\)/)
-    if (pkgMatch) {
-      const versions = pkgMatch[3].split(',').map(v => v.trim())
-      return {
-        name: pkgMatch[1],
-        arch: pkgMatch[2],
-        oldVersion: versions.length > 1 ? versions[0] : null,
-        newVersion: versions.length > 1 ? versions[1] : versions[0],
-        version: versions.length === 1 ? versions[0] : null
-      }
-    }
-    return null
-  }).filter(Boolean)
-}
-
-ipcMain.handle('apt-history', async (_, action, params) => {
-  const { execSync } = require('child_process')
-  const fs = require('fs')
-  const path = require('path')
-
-  try {
-    switch(action) {
-      case 'list': {
-        const logDir = '/var/log/apt'
-        let allContent = ''
-        
-        const mainLog = path.join(logDir, 'history.log')
-        if (fs.existsSync(mainLog)) {
-          allContent += fs.readFileSync(mainLog, 'utf-8') + '\n\n'
-        }
-        
-        for (let i = 1; i <= 5; i++) {
-          const logFile = path.join(logDir, 'history.log.' + i)
-          if (fs.existsSync(logFile)) {
-            try {
-              allContent += fs.readFileSync(logFile, 'utf-8') + '\n\n'
-            } catch { /* 跳过 */ }
-          }
-          
-          const gzFile = path.join(logDir, 'history.log.' + i + '.gz')
-          if (fs.existsSync(gzFile)) {
-            try {
-              const gzContent = execSync('zcat "' + gzFile + '" 2>/dev/null', { timeout: 5000, encoding: 'utf-8' })
-              allContent += gzContent + '\n\n'
-            } catch { /* 跳过 */ }
-          }
-        }
-        
-        const gzLog = path.join(logDir, 'history.log.gz')
-        if (fs.existsSync(gzLog)) {
-          try {
-            allContent += execSync('zcat "' + gzLog + '" 2>/dev/null', { timeout: 5000, encoding: 'utf-8' }) + '\n\n'
-          } catch { /* 跳过 */ }
-        }
-        
-        const entries = parseAptHistoryLog(allContent)
-        entries.sort((a, b) => b.startDate.localeCompare(a.startDate))
-        
-        return { success: true, entries }
-      }
-      
-      case 'rollback': {
-        const password = params?.password || ''
-        const pkgName = params?.packageName || ''
-        const targetVersion = params?.targetVersion || ''
-        
-        if (!pkgName || !targetVersion) {
-          return { success: false, error: '缺少软件包名称或目标版本号' }
-        }
-        
-        const sudoPrefix = password
-          ? 'echo "' + password.replace(/"/g, '\\"') + '" | sudo -S'
-          : 'sudo'
-        
-        try {
-          const cmd = sudoPrefix + ' apt-get install ' + pkgName + '=' + targetVersion + ' -y --allow-downgrades --reinstall 2>&1'
-          const result = execSync(cmd, { timeout: 120000, encoding: 'utf-8' })
-          return { success: true, output: result }
-        } catch(e) {
-          return { success: false, error: '回滚失败: ' + (e.stderr || e.message || String(e)) }
-        }
-      }
-      
-      case 'package-versions': {
-        const pkgName = params?.packageName || ''
-        if (!pkgName) return { success: false, error: '缺少软件包名称' }
-        
-        try {
-          let currentVersion = ''
-          try {
-            const dpkgOutput = execSync('dpkg-query -W -f=\'${Version}\' "' + pkgName + '" 2>/dev/null', { timeout: 5000, encoding: 'utf-8' })
-            currentVersion = dpkgOutput.trim()
-          } catch { currentVersion = '' }
-          
-          const policyOutput = execSync('apt-cache policy "' + pkgName + '" 2>/dev/null', { timeout: 10000, encoding: 'utf-8' })
-          const lines = policyOutput.split('\n')
-          const versions = []
-          
-          for (const line of lines) {
-            const verMatch = line.match(/^\s+(\d[\w.+~-]*)/)
-            if (verMatch) {
-              versions.push({
-                version: verMatch[1],
-                isCurrent: verMatch[1] === currentVersion
-              })
-            }
-          }
-          
-          return { success: true, currentVersion, versions }
-        } catch(e) {
-          return { success: false, error: e.message }
-        }
-      }
-      
-      case 'compare': {
-        const pkgName = params?.packageName || ''
-        const versionA = params?.versionA || ''
-        const versionB = params?.versionB || ''
-        
-        if (!pkgName) return { success: false, error: '缺少软件包名称' }
-        
-        try {
-          const dpkgOutput = execSync('dpkg-query -W -f=\'${Package}\\t${Version}\\t${Status}\\t${Description}\' "' + pkgName + '" 2>/dev/null', { timeout: 5000, encoding: 'utf-8' })
-          const parts = dpkgOutput.trim().split('\t')
-          
-          let depends = ''
-          try {
-            depends = execSync('apt-cache depends "' + pkgName + '" 2>/dev/null', { timeout: 5000, encoding: 'utf-8' })
-          } catch {}
-          
-          let details = ''
-          try {
-            details = execSync('apt-cache show "' + pkgName + '" 2>/dev/null', { timeout: 5000, encoding: 'utf-8' })
-          } catch {}
-          
-          return {
-            success: true,
-            current: {
-              name: parts[0] || pkgName,
-              version: parts[1] || '',
-              status: parts[2] || '',
-              description: parts.slice(3).join('\t') || ''
-            },
-            oldVersion: versionA,
-            newVersion: versionB || parts[1] || '',
-            depends,
-            details
-          }
-        } catch(e) {
-          return { success: false, error: e.message }
-        }
-      }
-      
-      default:
-        return { success: false, error: '未知操作: ' + action }
-    }
+    const { execSync } = require("child_process")
+    execSync("gtk-launch " + appName.replace(/[^a-zA-Z0-9._-]/g, "") + " 2>/dev/null || " +
+      "xdg-open " + appName.replace(/[^a-zA-Z0-9._-]/g, "") + " 2>/dev/null || " +
+      appName.replace(/[^a-zA-Z0-9._-]/g, "") + " 2>/dev/null", { timeout: 10000 })
+    return { success: true }
   } catch(e) {
-    return { success: false, error: e.message || String(e) }
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle("systemapp-dbus", async (_, { service, objectPath, method, args }) => {
+  try {
+    const { execSync } = require("child_process")
+    const srv = service.replace(/[^a-zA-Z0-9._-]/g, "")
+    const obj = objectPath.replace(/[^a-zA-Z0-9._/-]/g, "")
+    const mtd = method.replace(/[^a-zA-Z0-9._-]/g, "")
+    const argsJson = args ? JSON.parse(JSON.stringify(args)) : []
+    let cmd = "gdbus call --session -d " + srv + " -o " + obj + " -m " + mtd
+    for (const a of argsJson) {
+      if (typeof a === "string") cmd += " " + JSON.stringify(a)
+      else if (typeof a === "number") cmd += " " + a
+      else if (typeof a === "boolean") cmd += a ? " true" : " false"
+    }
+    const result = execSync(cmd, { timeout: 15000, encoding: "utf-8" })
+    return { success: true, output: result.trim() }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle("systemapp-cli", async (_, command) => {
+  try {
+    const { execSync } = require("child_process")
+    const result = execSync(command, { timeout: 30000, encoding: "utf-8" })
+    return { success: true, output: result.trim() }
+  } catch(e) {
+    return { success: false, error: e.message, output: e.stdout?.toString?.() || "" }
   }
 })
