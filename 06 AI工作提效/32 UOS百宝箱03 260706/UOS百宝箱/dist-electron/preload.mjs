@@ -134,3 +134,181 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   },
   removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
 })
+// ========== Phase 3: 运维专家级功能 API ==========
+
+// 防火墙规则管理器 API
+contextBridge.exposeInMainWorld('firewallAPI', {
+  listRules: () => ipcRenderer.invoke('firewall-list-rules'),
+  addRule: (rule) => ipcRenderer.invoke('firewall-add-rule', rule),
+  removeRule: (idx) => ipcRenderer.invoke('firewall-remove-rule', idx),
+  toggleRule: (idx) => ipcRenderer.invoke('firewall-toggle-rule', idx),
+  getStatus: () => ipcRenderer.invoke('firewall-get-status'),
+  setStatus: (enable) => ipcRenderer.invoke('firewall-set-status', enable),
+  backupRules: () => ipcRenderer.invoke('firewall-backup-rules'),
+  restoreRules: () => ipcRenderer.invoke('firewall-restore-rules'),
+  addPort: (port, proto) => ipcRenderer.invoke('firewall-add-port', port, proto)
+})
+
+// 网络流量监控 API
+contextBridge.exposeInMainWorld('netflowAPI', {
+  getTraffic: () => ipcRenderer.invoke('netflow-get-traffic'),
+  getProcessTraffic: () => ipcRenderer.invoke('netflow-get-process-traffic'),
+  getTrafficHistory: () => ipcRenderer.invoke('netflow-get-traffic-history')
+})
+
+// 系统安全扫描 API
+contextBridge.exposeInMainWorld('secscanAPI', {
+  runScan: (type) => ipcRenderer.invoke('secscan-run', type),
+  getResults: () => ipcRenderer.invoke('secscan-get-results'),
+  installTool: (tool) => ipcRenderer.invoke('secscan-install-tool', tool)
+})
+
+// 系统更新历史 API
+contextBridge.exposeInMainWorld('updatehistAPI', {
+  getHistory: () => ipcRenderer.invoke('updatehist-get-history'),
+  rollback: (pkg, version, password) => ipcRenderer.invoke('updatehist-rollback', pkg, version, password),
+  getStatus: () => ipcRenderer.invoke('updatehist-get-status')
+})
+
+// 系统配置导入导出 API
+contextBridge.exposeInMainWorld('configioAPI', {
+  exportConfig: (sections, filePath) => ipcRenderer.invoke('configio-export', sections, filePath),
+  importConfig: (filePath) => ipcRenderer.invoke('configio-import', filePath),
+  previewConfig: (filePath) => ipcRenderer.invoke('configio-preview', filePath),
+  compareConfig: (filePath) => ipcRenderer.invoke('configio-compare', filePath)
+})
+
+// 系统性能分析 API
+contextBridge.exposeInMainWorld('perfAPI', {
+  analyzeCPU: () => ipcRenderer.invoke('perf-analyze-cpu'),
+  analyzeDisk: () => ipcRenderer.invoke('perf-analyze-disk'),
+  analyzeMemory: () => ipcRenderer.invoke('perf-analyze-memory'),
+  runPerf: (args) => ipcRenderer.invoke('perf-run', args)
+})
+
+// 系统崩溃分析 API
+contextBridge.exposeInMainWorld('crashAPI', {
+  listCoredumps: () => ipcRenderer.invoke('crash-list-coredumps'),
+  analyzeCoredump: (id) => ipcRenderer.invoke('crash-analyze', id),
+  getCrashLogs: () => ipcRenderer.invoke('crash-get-logs')
+})
+
+// 等保合规检查 API
+contextBridge.exposeInMainWorld('complianceAPI', {
+  runCheck: () => ipcRenderer.invoke('compliance-run-check'),
+  getResults: () => ipcRenderer.invoke('compliance-get-results'),
+  fixItem: (id, password) => ipcRenderer.invoke('compliance-fix-item', id, password),
+  generateReport: () => ipcRenderer.invoke('compliance-generate-report')
+})
+
+// NTP 时间同步 API
+contextBridge.exposeInMainWorld('ntpAPI', {
+  getStatus: () => ipcRenderer.invoke('ntp-get-status'),
+  setServer: (server) => ipcRenderer.invoke('ntp-set-server', server),
+  syncNow: () => ipcRenderer.invoke('ntp-sync-now'),
+  setTimezone: (tz) => ipcRenderer.invoke('ntp-set-timezone', tz),
+  getTimezones: () => ipcRenderer.invoke('ntp-get-timezones')
+})
+
+// 系统代理配置 API
+contextBridge.exposeInMainWorld('proxyAPI', {
+  getConfig: () => ipcRenderer.invoke('proxy-get-config'),
+  setConfig: (config) => ipcRenderer.invoke('proxy-set-config', config),
+  testConnection: (proxyUrl) => ipcRenderer.invoke('proxy-test', proxyUrl),
+  setSystemProxy: (config, password) => ipcRenderer.invoke('proxy-set-system', config, password)
+})
+
+// 截图录屏 API
+contextBridge.exposeInMainWorld('captureAPI', {
+  screenshot: (mode) => ipcRenderer.invoke('capture-screenshot', mode),
+  startRecording: () => ipcRenderer.invoke('capture-start-recording'),
+  stopRecording: () => ipcRenderer.invoke('capture-stop-recording'),
+  getRecordingStatus: () => ipcRenderer.invoke('capture-recording-status')
+})
+
+// 快捷键管理 API
+contextBridge.exposeInMainWorld('hotkeyAPI', {
+  listShortcuts: () => ipcRenderer.invoke('hotkey-list'),
+  setShortcut: (key, cmd) => ipcRenderer.invoke('hotkey-set', key, cmd),
+  resetDefault: () => ipcRenderer.invoke('hotkey-reset'),
+  exportShortcuts: () => ipcRenderer.invoke('hotkey-export'),
+  importShortcuts: (path) => ipcRenderer.invoke('hotkey-import', path)
+})
+
+// 主题字体管理 API
+contextBridge.exposeInMainWorld('themeAPI', {
+  switchTheme: (mode) => ipcRenderer.invoke('theme-switch', mode),
+  listFonts: () => ipcRenderer.invoke('theme-list-fonts'),
+  installFont: (path) => ipcRenderer.invoke('theme-install-font', path),
+  uninstallFont: (name) => ipcRenderer.invoke('theme-uninstall-font', name),
+  listIconThemes: () => ipcRenderer.invoke('theme-list-icons'),
+  switchIconTheme: (name) => ipcRenderer.invoke('theme-switch-icons', name)
+})
+
+// 打印机管理 API
+contextBridge.exposeInMainWorld('printerAPI', {
+  listPrinters: () => ipcRenderer.invoke('printer-list'),
+  addPrinter: (name, options) => ipcRenderer.invoke('printer-add', name, options),
+  removePrinter: (name) => ipcRenderer.invoke('printer-remove', name),
+  printTestPage: (name) => ipcRenderer.invoke('printer-test-page', name),
+  getPrintQueue: (name) => ipcRenderer.invoke('printer-queue', name)
+})
+
+// 网络共享管理 API
+contextBridge.exposeInMainWorld('netshareAPI', {
+  getSambaStatus: () => ipcRenderer.invoke('netshare-samba-status'),
+  setSambaShare: (config) => ipcRenderer.invoke('netshare-samba-set', config),
+  getNFSStatus: () => ipcRenderer.invoke('netshare-nfs-status'),
+  setNFSShare: (config) => ipcRenderer.invoke('netshare-nfs-set', config),
+  removeShare: (sharePath, type) => ipcRenderer.invoke('netshare-remove', sharePath, type)
+})
+
+// Docker 管理 API
+contextBridge.exposeInMainWorld('dockerAPI', {
+  getStatus: () => ipcRenderer.invoke('docker-status'),
+  listContainers: () => ipcRenderer.invoke('docker-list-containers'),
+  listImages: () => ipcRenderer.invoke('docker-list-images'),
+  startContainer: (id) => ipcRenderer.invoke('docker-start', id),
+  stopContainer: (id) => ipcRenderer.invoke('docker-stop', id),
+  removeContainer: (id) => ipcRenderer.invoke('docker-remove-container', id),
+  getContainerLogs: (id) => ipcRenderer.invoke('docker-logs', id),
+  pullImage: (name) => ipcRenderer.invoke('docker-pull', name),
+  removeImage: (id) => ipcRenderer.invoke('docker-remove-image', id)
+})
+
+// VPN 管理 API
+contextBridge.exposeInMainWorld('vpnAPI', {
+  listConnections: () => ipcRenderer.invoke('vpn-list'),
+  addConnection: (config) => ipcRenderer.invoke('vpn-add', config),
+  removeConnection: (name) => ipcRenderer.invoke('vpn-remove', name),
+  connect: (name) => ipcRenderer.invoke('vpn-connect', name),
+  disconnect: (name) => ipcRenderer.invoke('vpn-disconnect', name),
+  getStatus: (name) => ipcRenderer.invoke('vpn-status', name),
+  importConfig: (path) => ipcRenderer.invoke('vpn-import', path)
+})
+
+// 系统升级助手 API
+contextBridge.exposeInMainWorld('upgradeAPI', {
+  checkUpgrade: () => ipcRenderer.invoke('upgrade-check'),
+  preflightCheck: () => ipcRenderer.invoke('upgrade-preflight'),
+  startUpgrade: (password) => ipcRenderer.invoke('upgrade-start', password),
+  getProgress: () => ipcRenderer.invoke('upgrade-progress'),
+  rollback: (password) => ipcRenderer.invoke('upgrade-rollback', password)
+})
+
+// 系统资产清单 API
+contextBridge.exposeInMainWorld('assetAPI', {
+  scanHardware: () => ipcRenderer.invoke('asset-scan-hardware'),
+  scanSoftware: () => ipcRenderer.invoke('asset-scan-software'),
+  getInventory: () => ipcRenderer.invoke('asset-get-inventory'),
+  exportReport: (format) => ipcRenderer.invoke('asset-export', format)
+})
+
+// 远程管理工具 API
+contextBridge.exposeInMainWorld('remoteAPI', {
+  listSSHKeys: () => ipcRenderer.invoke('remote-list-keys'),
+  addSSHKey: (name, key) => ipcRenderer.invoke('remote-add-key', name, key),
+  removeSSHKey: (name) => ipcRenderer.invoke('remote-remove-key', name),
+  batchExec: (hosts, cmd, password) => ipcRenderer.invoke('remote-batch-exec', hosts, cmd, password),
+  transferFile: (host, filePath, remotePath, password) => ipcRenderer.invoke('remote-transfer', host, filePath, remotePath, password)
+})
