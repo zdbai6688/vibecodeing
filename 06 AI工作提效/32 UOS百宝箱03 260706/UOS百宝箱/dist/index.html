@@ -14,6 +14,27 @@ body{font-family:-apple-system,"Noto Sans CJK SC","PingFang SC","Microsoft YaHei
 .titlebar-btn{width:32px;height:24px;border:none;background:transparent;color:#8899aa;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
 .titlebar-btn:hover{background:rgba(0,0,0,0.05);color:#333}
 .titlebar-btn.close:hover{background:#e81123;color:#fff}
+.titlebar-search{position:relative;display:flex;align-items:center;flex:1;max-width:300px;margin:0 12px;-webkit-app-region:no-drag}
+.titlebar-search input{width:100%;height:28px;border:1px solid #e5e5ea;border-radius:14px;background:#f5f5f7;padding:0 32px 0 12px;font-size:12px;outline:none;transition:all .2s;color:var(--text)}
+.titlebar-search input:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 2px rgba(74,108,247,0.15)}
+.titlebar-search input::placeholder{color:#c7c7cc;font-size:11px}
+.titlebar-search .search-icon{position:absolute;right:8px;top:50%;transform:translateY(-50%);color:#c7c7cc;pointer-events:none;font-size:14px;display:flex;align-items:center}
+.titlebar-search .shortcut-hint{position:absolute;right:30px;top:50%;transform:translateY(-50%);font-size:9px;color:#c7c7cc;background:#fff;padding:1px 5px;border-radius:3px;border:1px solid #e5e5ea;pointer-events:none;display:none}
+.titlebar-search input:placeholder-shown ~ .shortcut-hint{display:block}
+.titlebar-search input:focus::placeholder{color:transparent}
+.search-dropdown{position:fixed;top:38px;left:170px;right:190px;max-height:400px;overflow-y:auto;background:#fff;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.12),0 2px 6px rgba(0,0,0,0.05);z-index:9999;display:none;border:1px solid #e5e5ea;padding:6px 0}
+.search-dropdown.show{display:block}
+.search-dropdown .s-group{padding:4px 0}
+.search-dropdown .s-group-header{padding:4px 14px 3px;font-size:10px;color:#c7c7cc;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.search-dropdown .s-item{display:flex;align-items:center;padding:7px 14px;cursor:pointer;transition:all .1s;border-left:3px solid transparent}
+.search-dropdown .s-item:hover,.search-dropdown .s-item.active{background:var(--primary-light);border-left-color:var(--primary)}
+.search-dropdown .s-item .s-ico{width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:8px;opacity:0.6;font-size:15px}
+.search-dropdown .s-item .s-info{flex:1;min-width:0}
+.search-dropdown .s-item .s-name{font-size:13px;font-weight:500;color:var(--text);line-height:1.3}
+.search-dropdown .s-item .s-desc{font-size:11px;color:var(--text-sec);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-dropdown .s-item .s-cat{font-size:10px;color:var(--text-ter);margin-left:8px;white-space:nowrap;background:#f5f5f7;padding:1px 6px;border-radius:3px}
+.search-dropdown .s-empty{padding:20px;text-align:center;color:var(--text-sec);font-size:13px}
+
 .sidebar{width:180px;background:var(--sidebar-bg);padding-top:44px;display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid #eee}
 .sidebar-logo{padding:14px 14px 10px;border-bottom:1px solid #f0f0f0}
 .sidebar-logo h1{color:var(--text);font-size:15px;font-weight:600}
@@ -149,7 +170,14 @@ body{font-family:-apple-system,"Noto Sans CJK SC","PingFang SC","Microsoft YaHei
 <div id="app">
   <div class="titlebar">
     <div class="titlebar-title">UOS运维工具箱 v1.1.5</div>
-    <div class="titlebar-actions">
+    
+    <div class="titlebar-search">
+      <input type="text" id="globalSearch" placeholder="搜索功能、工具、脚本..." autocomplete="off" spellcheck="false" oninput="doSearch(this.value)" onkeydown="searchKeydown(event)" onblur="setTimeout(()=>document.getElementById('searchDropdown').classList.remove('show'),200)" onfocus="if(this.value)doSearch(this.value)">
+      <span class="search-icon">&#x1F50D;</span>
+      <span class="shortcut-hint">Ctrl+K</span>
+      <div class="search-dropdown" id="searchDropdown"></div>
+    </div>
+<div class="titlebar-actions">
       <button class="titlebar-btn" onclick="window.windowControls?.minimize()">─</button>
       <button class="titlebar-btn" onclick="window.windowControls?.maximize()">□</button>
       <button class="titlebar-btn close" onclick="window.windowControls?.close()">✕</button>
@@ -181,7 +209,8 @@ const NAV = [
   {id:'tools',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>`,label:'高效工具',desc:'文档、图片、音视频处理工具箱'},
   {id:'pkgmanager',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="2" y1="9" x2="6" y2="9"/><line x1="2" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="22" y2="9"/><line x1="18" y1="15" x2="22" y2="15"/></svg></span>`,label:'软件管理',desc:'deb 软件包搜索、安装与卸载'},
   // ===== 其他 ===== 
-  {id:'changelog',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>`,label:'更新日志',desc:'版本更新记录与变更说明'},
+    {id:'localsend',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>`,label:'局域网传输',desc:'基于 Python 的局域网文件共享传输'},
+{id:'changelog',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>`,label:'更新日志',desc:'版本更新记录与变更说明'},
   {id:'feedback',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>`,label:'反馈建议',desc:'问题反馈与功能建议'},
   {id:'settings',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>`,label:'应用设置',desc:'应用偏好与行为配置'},
   {id:'about',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>`,label:'关于',desc:'版本信息'}
@@ -332,6 +361,7 @@ function switchPage(id){
   else if(id==='repair') renderRepair(el)
   else if(id==='scripts') renderScriptsPage(el)
   else if(id==='tools') renderToolsPage(el)
+    else if(id==='localsend') renderLocalSend(el)
   else if(id==='pkgmanager') renderPkgManager(el)
   else if(id==='changelog') renderChangelog(el)
   else if(id==='feedback') renderFeedback(el)
@@ -1498,6 +1528,9 @@ const TOOLS = [
     {id:'arping',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/></svg>`,name:'ARPing 网络探测',desc:'ARP 级别网络设备发现'},
     {id:'traceroute',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>`,name:'路由追踪',desc:'追踪网络数据包路由路径'}
   ]},
+    {cat:'📡',name:'局域网通信',items:[
+    {id:'localsend',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,name:'局域网文件传输',desc:'同局域网设备发现、文件发送和接收'}
+  ]},
   {cat:'🎮',name:'游戏娱乐',items:[
     {id:'game-2048',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>`,name:'2048',desc:'经典数字合成游戏'},
     {id:'game-snake',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,name:'贪吃蛇',desc:'经典贪吃蛇小游戏'},
@@ -1582,7 +1615,33 @@ function showToolModal(id,need){
     initSnake();
     <\/script>`}
   }
-  const modal=MODALS[id]||{title:'🧰 '+id,content:'<div class="sub">功能开发中...</div>'}
+
+    "localsend":{title:"📡 局域网文件传输",content:`<div class="sub" style="margin-bottom:8px">
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="btn" onclick="localsendScan()" id="lsScanBtn" style="font-size:12px;padding:6px 14px">🔍 扫描设备</button>
+        <button class="btn" onclick="localsendStartReceive()" id="lsReceiveBtn" style="font-size:12px;padding:6px 14px">📥 开启接收</button>
+        <button class="btn" onclick="localsendStopReceive()" id="lsStopBtn" style="font-size:12px;padding:6px 14px;display:none">⏹ 停止接收</button>
+        <span id="lsStatus" style="font-size:11px;color:var(--text-sec);padding:6px 0">就绪</span>
+      </div>
+      <div style="margin-bottom:8px"><strong>设备列表</strong></div>
+      <div id="lsDeviceList" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:60px;max-height:150px;overflow-y:auto;font-size:12px;background:#fafafa">
+        <div style="color:var(--text-ter);text-align:center;padding:20px 0">点击"扫描设备"搜索局域网内的设备</div>
+      </div>
+      <div style="margin:8px 0;display:flex;gap:8px;align-items:center">
+        <button class="btn" onclick="localsendSelectFile()" id="lsFileBtn" style="font-size:12px;padding:6px 14px">📂 选择文件</button>
+        <button class="btn" onclick="localsendSelectFolder()" id="lsFolderBtn" style="font-size:12px;padding:6px 14px">📁 选择文件夹</button>
+        <span id="lsFileInfo" style="font-size:11px;color:var(--text-sec)">未选择文件</span>
+      </div>
+      <div style="margin-bottom:4px"><strong>传输进度</strong></div>
+      <div id="lsProgress" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:50px;max-height:120px;overflow-y:auto;font-size:11px;background:#fafafa">
+        <div style="color:var(--text-ter);text-align:center;padding:10px 0">暂无传输</div>
+      </div>
+      <div style="margin-top:8px;margin-bottom:4px"><strong>传输记录</strong></div>
+      <div id="lsHistory" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:40px;max-height:100px;overflow-y:auto;font-size:11px;background:#fafafa">
+        <div style="color:var(--text-ter);text-align:center;padding:10px 0">暂无记录</div>
+      </div>
+    </div>`},"
+    const modal=MODALS[id]||{title:'🧰 '+id,content:'<div class="sub">功能开发中...</div>'}
   document.getElementById('modalOverlay').classList.add('show')
   document.getElementById('modalContent').innerHTML='<button class="close-btn" onclick="closeModal()">✕</button><h2>'+modal.title+'</h2>'+modal.content+'<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>'
   // 启动工具结果区域
@@ -2647,6 +2706,179 @@ function fmtMB(mb){if(!mb&&mb!==0)return '-';if(mb>=1024)return (mb/1024).toFixe
 function esc(t){if(!t)return '';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function stripAnsi(s){if(!s)return '';return s.replace(/\x1b\[[0-9;]*m/g,'')}
 
+
+// ===== Global Search =====
+var _searchIndex = null;
+var _searchSelectedIdx = -1;
+var _searchResults = [];
+
+function buildSearchIndex(){
+  var idx = [];
+  // NAV pages
+  NAV.forEach(function(n){
+    idx.push({id:n.id, name:n.label, desc:n.desc, cat:"页面", ico:"📄", action:'switchPage("'+n.id+'")'});
+  });
+  // TOOLS items
+  TOOLS.forEach(function(g){
+    g.items.forEach(function(t){
+      var need = t.need || "";
+      idx.push({id:t.id, name:t.name, desc:t.desc, cat:"高效工具", ico:"🔧", action:'showToolModal("'+t.id+'","'+need+'")'});
+    });
+  });
+  // REPAIR_SCRIPTS
+  REPAIR_SCRIPTS.forEach(function(s){
+    idx.push({id:s.id, name:s.name, desc:s.desc, cat:"故障修复", ico:"🔨", action:'execRepairDirect("'+s.id+'","'+s.name+'","'+s.desc+'")'});
+  });
+  // OPTIMIZE
+  OPTIMIZE.forEach(function(o){
+    idx.push({id:o.id, name:o.name, desc:o.desc, cat:"系统优化", ico:"⚡", action:'showOptModal("'+o.id+'")'});
+  });
+  // MONITOR_SUB items
+  MONITOR_SUB.forEach(function(g){
+    g.items.forEach(function(m){
+      idx.push({id:m.id, name:m.label, desc:g.group||"系统监控", cat:"系统监控", ico:"📊", action:'switchPage("monitor");setTimeout(function(){switchMonitorSub("'+m.id+'")},50)'});
+    });
+  });
+  // SCRIPTS items
+  if(typeof SCRIPTS !== "undefined" && SCRIPTS.categories){
+    SCRIPTS.categories.forEach(function(c){
+      if(c.items) c.items.forEach(function(s){
+        idx.push({id:s.id, name:s.name, desc:s.desc, cat:"实用脚本 ("+c.name+")", ico:"📜", action:'switchPage("scripts")'});
+      });
+    });
+  }
+  // SYSTEM_TOGGLES items
+  if(typeof SYSTEM_TOGGLES !== "undefined"){
+    SYSTEM_TOGGLES.forEach(function(t){
+      var isPage = t.type === "page";
+      var cat = isPage ? "系统配置 (高级)" : "系统配置 (开关)";
+      var ico = isPage ? "⚙️" : "🔘";
+      var act = isPage ? 'openSysPage("'+t.id+'")' : 'switchPage("sysconfig")';
+      idx.push({id:t.id, name:t.name, desc:t.desc, cat:cat, ico:ico, action:act});
+    });
+  }
+  // CPU_MODES
+  if(typeof CPU_MODES !== "undefined"){
+    CPU_MODES.forEach(function(m){
+      idx.push({id:"cpu-"+m.id, name:m.label, desc:m.desc, cat:"CPU 性能模式", ico:"🚀", action:'switchPage("sysconfig")'});
+    });
+  }
+  return idx;
+}
+
+function doSearch(query){
+  var q = query.trim().toLowerCase();
+  var dropdown = document.getElementById("searchDropdown");
+  if(!q){
+    dropdown.classList.remove("show");
+    dropdown.innerHTML = "";
+    return;
+  }
+  if(!_searchIndex) _searchIndex = buildSearchIndex();
+  
+  var results = [];
+  for(var i = 0; i < _searchIndex.length; i++){
+    var item = _searchIndex[i];
+    var name = (item.name||"").toLowerCase();
+    var desc = (item.desc||"").toLowerCase();
+    if(name.indexOf(q) >= 0 || desc.indexOf(q) >= 0){
+      results.push(item);
+      if(results.length >= 30) break;
+    }
+  }
+  
+  _searchResults = results;
+  _searchSelectedIdx = -1;
+  
+  if(results.length === 0){
+    dropdown.innerHTML = '<div class="s-empty">没有找到匹配的功能</div>';
+    dropdown.classList.add("show");
+    return;
+  }
+  
+  // Group results by category
+  var groups = {};
+  for(var i = 0; i < results.length; i++){
+    var r = results[i];
+    if(!groups[r.cat]) groups[r.cat] = [];
+    groups[r.cat].push(r);
+  }
+  
+  var html = "";
+  var keys = Object.keys(groups);
+  for(var g = 0; g < keys.length; g++){
+    var cat = keys[g];
+    var items = groups[cat];
+    html += '<div class="s-group">';
+    html += '<div class="s-group-header">' + cat + ' (' + items.length + ')</div>';
+    for(var i = 0; i < items.length; i++){
+      var item = items[i];
+      var icon = item.ico || "📄";
+      html += '<div class="s-item" data-idx="' + i + '" onclick="selectSearchResult(' + i + ')" onmouseenter="this.classList.add('active')" onmouseleave="this.classList.remove('active')"><span class="s-ico">' + icon + '</span><div class="s-info"><div class="s-name">' + esc(item.name) + '</div><div class="s-desc">' + esc(item.desc||"") + '</div></div><span class="s-cat">' + esc(cat) + '</span></div>';
+    }
+    html += '</div>';
+  }
+  dropdown.innerHTML = html;
+  dropdown.classList.add("show");
+}
+
+function selectSearchResult(idx){
+  var result = _searchResults[idx];
+  if(!result) return;
+  document.getElementById("searchDropdown").classList.remove("show");
+  document.getElementById("globalSearch").value = "";
+  _searchResults = [];
+  _searchSelectedIdx = -1;
+  try{
+    var fn = new Function(result.action);
+    fn();
+  }catch(e){ console.error("Search navigation error:", e); }
+}
+
+function searchKeydown(e){
+  var results = document.querySelectorAll("#searchDropdown .s-item");
+  if(!results.length) return;
+  if(e.key === "ArrowDown"){
+    e.preventDefault();
+    _searchSelectedIdx = Math.min(_searchSelectedIdx + 1, results.length - 1);
+  } else if(e.key === "ArrowUp"){
+    e.preventDefault();
+    _searchSelectedIdx = Math.max(_searchSelectedIdx - 1, -1);
+  } else if(e.key === "Enter" && _searchSelectedIdx >= 0){
+    e.preventDefault();
+    var activeEl = document.querySelector(".search-dropdown .s-item.active");
+    if(activeEl){
+      var idx = parseInt(activeEl.getAttribute("data-idx"), 10);
+      selectSearchResult(idx);
+    }
+  } else if(e.key === "Escape"){
+    e.preventDefault();
+    document.getElementById("searchDropdown").classList.remove("show");
+    document.getElementById("globalSearch").blur();
+  }
+  // Update active class
+  for(var i = 0; i < results.length; i++){
+    if(i === _searchSelectedIdx){
+      results[i].classList.add("active");
+      results[i].scrollIntoView({block:"nearest"});
+    } else {
+      results[i].classList.remove("active");
+    }
+  }
+}
+
+// Keyboard shortcut to focus search
+document.addEventListener("keydown", function(e){
+  if((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K" || e.key === "f" || e.key === "F")){
+    e.preventDefault();
+    var input = document.getElementById("globalSearch");
+    if(input){
+      input.focus();
+      input.select();
+    }
+  }
+});
+
 renderNav();switchPage(NAV[0].id)
 
 // 安全基线：指定编号加固
@@ -2674,6 +2906,133 @@ async function runCustomSec() {
 
 // ============ 软件包管理器 ============
 let _pkgSearchTimer = null
+
+
+async function renderLocalSend(el){
+  el.innerHTML=[
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
+      '<div class="card" style="padding:16px;text-align:center">' +
+        '<div style="font-size:32px;margin-bottom:8px">\ud83d\udce4</div>' +
+        '<h3 style="font-size:14px;margin-bottom:4px;font-weight:500">启动文件共享</h3>' +
+        '<p style="font-size:12px;color:var(--text-sec);margin-bottom:12px">在局域网内共享文件，其他设备通过浏览器访问</p>' +
+        '<button class="btn" onclick="localsendStart()" id="lsStartBtn" style="padding:8px 24px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">\ud83d\ude80 启动服务</button>' +
+        '<button class="btn" onclick="localsendStop()" id="lsStopBtn" style="padding:8px 24px;background:#ff3b30;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;display:none">\u23f9 停止服务</button>' +
+      '</div>' +
+      '<div class="card" style="padding:16px;text-align:center">' +
+        '<div style="font-size:32px;margin-bottom:8px">\ud83d\udce5</div>' +
+        '<h3 style="font-size:14px;margin-bottom:4px;font-weight:500">接收文件</h3>' +
+        '<p style="font-size:12px;color:var(--text-sec);margin-bottom:12px">启动服务后，其他人可上传文件到本机</p>' +
+        '<div id="lsStatus" style="font-size:12px;color:var(--text-sec)">服务状态: <span id="lsStatusText" style="color:#888">未启动</span></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card" style="padding:16px;margin-bottom:16px">' +
+      '<h3 style="font-size:14px;margin-bottom:8px;font-weight:500">\ud83c\udf10 局域网 IP 地址</h3>' +
+      '<div id="lsIPList" style="font-size:12px;color:var(--text-sec)">点击下方按钮获取</div>' +
+      '<button class="btn" onclick="localsendGetIP()" style="margin-top:8px;padding:6px 16px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:4px;cursor:pointer;font-size:12px">\ud83d\udd04 获取 IP</button>' +
+    '</div>' +
+    '<div class="card" style="padding:16px">' +
+      '<h3 style="font-size:14px;margin-bottom:8px;font-weight:500">\ud83d\udccb 使用说明</h3>' +
+      '<div style="font-size:12px;line-height:1.8;color:var(--text-sec)">' +
+        '<p>1. 点击「启动服务」开始共享</p>' +
+        '<p>2. 获取本机局域网 IP 地址</p>' +
+        '<p>3. 其他设备在浏览器访问: <code style="background:#f0f0f0;padding:2px 6px;border-radius:3px">http://IP:8080</code></p>' +
+        '<p>4. 在网页中可下载文件或上传文件到本机</p>' +
+        '<p>5. 使用完毕点击「停止服务」</p>' +
+      '</div>' +
+    '</div>' +
+    '<div id="lsLog" style="margin-top:12px;display:none;background:#1e1e2e;color:#cdd6f4;border-radius:8px;padding:12px;font-size:12px;font-family:monospace;max-height:200px;overflow-y:auto;line-height:1.6"></div>' +
+  ''].join('\n')
+}
+
+async function localsendGetStatus(){
+  try{
+    const r = await window.localsendAPI.getStatus();
+    const st = document.getElementById('lsStatusText');
+    const sb = document.getElementById('lsStartBtn');
+    const spb = document.getElementById('lsStopBtn');
+    if(!st) return;
+    if(r?.running){
+      st.textContent = '运行中 (端口: 8080)';
+      st.style.color = 'var(--success)';
+      if(sb) sb.style.display = 'none';
+      if(spb) spb.style.display = 'inline-block';
+    } else {
+      st.textContent = '未启动';
+      st.style.color = '#888';
+      if(sb) sb.style.display = 'inline-block';
+      if(spb) spb.style.display = 'none';
+    }
+  }catch(e){}
+}
+
+async function localsendStart(){
+  const btn = document.getElementById('lsStartBtn');
+  if(!btn) return;
+  btn.disabled = true;
+  btn.textContent = '\u23f3 启动中...';
+  const log = document.getElementById('lsLog');
+  if(log){ log.style.display = 'block'; log.innerHTML += '> 正在启动文件共享服务...\n'; }
+  try{
+    const r = await window.localsendAPI.start('', 8080);
+    if(r?.success){
+      if(log) log.innerHTML += '> \u2705 服务已启动 (端口: 8080)\n';
+      localsendGetStatus();
+    } else {
+      if(log) log.innerHTML += '> \u274c 启动失败: ' + esc(r?.error||'未知错误') + '\n';
+    }
+  }catch(e){
+    if(log) log.innerHTML += '> \u274c 启动异常: ' + esc(e.message) + '\n';
+  }
+  btn.disabled = false;
+  btn.textContent = '\ud83d\ude80 启动服务';
+}
+
+async function localsendStop(){
+  const btn = document.getElementById('lsStopBtn');
+  if(!btn) return;
+  btn.textContent = '\u23f3 停止中...';
+  const log = document.getElementById('lsLog');
+  if(log) log.innerHTML += '> 正在停止服务...\n';
+  try{
+    const r = await window.localsendAPI.stop();
+    if(r?.success){
+      if(log) log.innerHTML += '> \u2705 服务已停止\n';
+      localsendGetStatus();
+    }
+  }catch(e){
+    if(log) log.innerHTML += '> \u274c 停止异常: ' + esc(e.message) + '\n';
+  }
+  btn.textContent = '\u23f9 停止服务';
+}
+
+async function localsendGetIP(){
+  const el = document.getElementById('lsIPList');
+  if(!el) return;
+  el.innerHTML = '\u23f3 获取中...';
+  try{
+    const r = await window.localsendAPI.getIP();
+    if(r?.success && r.ips.length){
+      el.innerHTML = r.ips.map(ip =>
+        '<div style="padding:6px 0;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px">' +
+          '<span style="color:var(--primary);font-weight:500">' + esc(ip.address) + '</span>' +
+          '<span style="color:#aaa;font-size:11px">(' + esc(ip.name) + ')</span>' +
+          '<button class="btn btn-sm" onclick="copyText(\"' + ip.address + '\")" style="margin-left:auto;padding:2px 8px;font-size:10px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:3px;cursor:pointer">复制</button>' +
+        '</div>'
+      ).join('') +
+      '<div style="margin-top:8px;padding:8px;background:#f0f8ff;border-radius:6px;font-size:12px;color:#333;border-left:3px solid var(--primary)">' +
+        '\ud83d\udca1 在局域网其他设备的浏览器中访问: <code style="background:#e0e0e0;padding:2px 6px;border-radius:3px;font-weight:500">http://' + (r.ips[0]?.address||'IP') + ':8080</code>' +
+      '</div>'
+    } else {
+      el.innerHTML = '<div style="color:var(--text-sec)">未找到局域网 IP 地址</div>';
+    }
+  }catch(e){
+    el.innerHTML = '<div style="color:var(--danger)">获取失败: ' + esc(e.message) + '</div>';
+  }
+}
+
+function copyText(text){
+  navigator.clipboard.writeText(text).then(() => showToast('已复制: ' + text)).catch(function(){});
+}
 
 async function renderPkgManager(el){
   el.innerHTML = '<div style="display:flex;gap:12px;margin-bottom:16px">' +

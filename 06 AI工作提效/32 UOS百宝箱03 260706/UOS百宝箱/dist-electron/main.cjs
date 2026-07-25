@@ -1194,17 +1194,186 @@ ipcMain.handle('execute-optimization', async (_, type, action, value) => {
         return { success: true, output: '内核参数已恢复默认' }
       }
       if (action === 'startup-mgr:list') {
-        const r = execOut('systemctl list-unit-files --type=service --state=enabled 2>/dev/null | head -30')
-        return { success: true, output: r || '无法获取启动项' }
-      }
-      if (action === 'startup-mgr:speedup') {
-        const services = ['cups','bluetooth','avahi-daemon','cups-browsed']
-        let out = ''
-        for (const s of services) {
-          sudoExec('systemctl stop ' + s + ' 2>/dev/null', value)
-          out += '已禁用: ' + s + '\n'
+        try {
+          // 1. 获取 systemd --user 服务
+          const userServicesRaw = execOut('systemctl --user list-unit-files --type=service --no-pager --no-legend 2>/dev/null | head -80')
+          const systemServicesRaw = execOut('systemctl list-unit-files --type=service --no-pager --no-legend 2>/dev/null | head -80')
+          
+          // 2. 获取 autostart .desktop 文件
+          const userAutostartDir = path.join(os.homedir(), '.config/autostart')
+          const systemAutostartDir = '/etc/xdg/autostart'
+          let userAutostartFiles = []
+          let systemAutostartFiles = []
+          try {
+            if (fs.existsSync(userAutostartDir)) {
+              userAutostartFiles = fs.readdirSync(userAutostartDir).filter(f => f.endsWith('.desktop'))
+            }
+            if (fs.existsSync(systemAutostartDir)) {
+              systemAutostartFiles = fs.readdirSync(systemAutostartDir).filter(f => f.endsWith('.desktop'))
+            }
+          } catch(e) {}
+          
+          // 3. 解析 systemd 服务
+          const systemdServices = []
+          for (const raw of [userServicesRaw, systemServicesRaw]) {
+            if (!raw) continue
+            const lines = raw.trim().split('\n')
+            for (const line of lines) {
+              const parts = line.trim().split(/\s+/)
+              if (parts.length >= 2) {
+                const name = parts[0]
+                const state = parts[1]
+                if (name && !name.includes('@')) {
+                  systemdServices.push({
+                    name: name,
+                    state: state,
+                    type: 'systemd'
+                  })
+                }
+              }
+            }
+          }
+          
+          // 4. 解析 autostart desktop 文件
+          const autostartItems = []
+          for (const f of systemAutostartFiles) {
+            const fp = path.join(systemAutostartDir, f)
+            try {
+              const raw = fs.readFileSync(fp, 'utf-8')
+              const nameMatch = raw.match(/^Name=(.+)/m)
+              const execMatch = raw.match(/^Exec=(.+)/m)
+              const commentMatch = raw.match(/^Comment=(.+)/m)
+              const hiddenMatch = raw.match(/^Hidden=(.+)/m)
+              const onlyShowIn = raw.match(/^OnlyShowIn=(.+)/m)
+              autostartItems.push({
+                name: f,
+                displayName: nameMatch ? nameMatch[1] : f,
+                exec: execMatch ? execMatch[1] : '',
+                comment: commentMatch ? commentMatch[1] : '',
+                hidden: hiddenMatch ? hiddenMatch[1] === 'true' : false,
+                onlyShowIn: onlyShowIn ? onlyShowIn[1] : '',
+                source: 'system',
+                path: fp
+              })
+            } catch(e) {}
+          }
+          for (const f of userAutostartFiles) {
+            const fp = path.join(userAutostartDir, f)
+            try {
+              const raw = fs.readFileSync(fp, 'utf-8')
+              const nameMatch = raw.match(/^Name=(.+)/m)
+              const execMatch = raw.match(/^Exec=(.+)/m)
+              const commentMatch = raw.match(/^Comment=(.+)/m)
+              const hiddenMatch = raw.match(/^Hidden=(.+)/m)
+              const onlyShowIn = raw.match(/^OnlyShowIn=(.+)/m)
+              const enabled = !(hiddenMatch && hiddenMatch[1] === 'true')
+              autostartItems.push({
+                name: f,
+                displayName: nameMatch ? nameMatch[1] : f,
+                exec: execMatch ? execMatch[1] : '',
+                comment: commentMatch ? commentMatch[1] : '',
+                hidden: hiddenMatch ? hiddenMatch[1] === 'true' : false,
+                enabled: enabled,
+                source: 'user',
+                path: fp
+              })
+            } catch(e) {}
+          }
+          
+          return { success: true, data: { systemdServices, autostartItems } }
+        } catch(e) {
+          return { success: false, error: e.message || String(e) }
         }
-        return { success: true, output: out }
+      }
+      if (action.startsWith('startup-mgr:toggle-systemd:')) {
+        const serviceName = action.replace('startup-mgr:toggle-systemd:', '')
+        if (!serviceName) return { success: false, error: '未指定服务名' }
+        const currentState = execOut('systemctl --user is-enabled ' + serviceName + ' 2>/dev/null').trim()
+        if (currentState === 'enabled' || currentState === 'static') {
+          sudoExec('systemctl --user disable ' + serviceName, value)
+          return { success: true, output: '已禁用服务: ' + serviceName }
+        } else {
+          sudoExec('systemctl --user enable ' + serviceName, value)
+          return { success: true, output: '已启用服务: ' + serviceName }
+        }
+      }
+      if (action.startsWith('startup-mgr:toggle-systemd-system:')) {
+        const serviceName = action.replace('startup-mgr:toggle-systemd-system:', '')
+        if (!serviceName) return { success: false, error: '未指定服务名' }
+        const currentState = execOut('systemctl is-enabled ' + serviceName + ' 2>/dev/null').trim()
+        if (currentState === 'enabled' || currentState === 'static') {
+          sudoExec('systemctl disable ' + serviceName, value)
+          return { success: true, output: '已禁用系统服务: ' + serviceName }
+        } else {
+          sudoExec('systemctl enable ' + serviceName, value)
+          return { success: true, output: '已启用系统服务: ' + serviceName }
+        }
+      }
+      if (action.startsWith('startup-mgr:toggle-autostart:')) {
+        const fileName = action.replace('startup-mgr:toggle-autostart:', '')
+        if (!fileName) return { success: false, error: '未指定文件名' }
+        const userAutostartDir = path.join(os.homedir(), '.config/autostart')
+        const srcPath = path.join('/etc/xdg/autostart', fileName)
+        const dstPath = path.join(userAutostartDir, fileName)
+        try {
+          if (fs.existsSync(dstPath)) {
+            // 检查是否被隐藏
+            const raw = fs.readFileSync(dstPath, 'utf-8')
+            const hiddenMatch = raw.match(/^Hidden=(.+)/m)
+            if (hiddenMatch && hiddenMatch[1] === 'true') {
+              // 启用：删除 Hidden=true 或删除整个文件（从用户目录删除 = 恢复系统默认）
+              const newRaw = raw.replace(/^Hidden=true\s*/m, '')
+              fs.writeFileSync(dstPath, newRaw, 'utf-8')
+              return { success: true, output: '已启用: ' + fileName }
+            } else {
+              // 禁用：添加 Hidden=true
+              const newRaw = raw.replace(/\r?\n$/, '') + '\nHidden=true\n'
+              fs.writeFileSync(dstPath, newRaw, 'utf-8')
+              return { success: true, output: '已禁用: ' + fileName }
+            }
+          } else if (fs.existsSync(srcPath)) {
+            // 从系统目录复制并设置 Hidden=true 以禁用
+            const raw = fs.readFileSync(srcPath, 'utf-8')
+            if (!fs.existsSync(userAutostartDir)) fs.mkdirSync(userAutostartDir, { recursive: true })
+            fs.writeFileSync(dstPath, raw.replace(/\r?\n$/, '') + '\nHidden=true\n', 'utf-8')
+            return { success: true, output: '已禁用: ' + fileName }
+          } else {
+            return { success: false, error: '未找到文件: ' + fileName }
+          }
+        } catch(e) {
+          return { success: false, error: e.message }
+        }
+      }
+      if (action === 'startup-mgr:add-autostart') {
+        try {
+          const params = JSON.parse(value || '{}')
+          const { execCmd, displayName, comment } = params
+          if (!execCmd) return { success: false, error: '未指定启动命令' }
+          const safeName = (displayName || 'CustomApp').replace(/[^a-zA-Z0-9_-]/g, '_')
+          const fileName = safeName + '.desktop'
+          const userAutostartDir = path.join(os.homedir(), '.config/autostart')
+          if (!fs.existsSync(userAutostartDir)) fs.mkdirSync(userAutostartDir, { recursive: true })
+          const desktopContent = '[Desktop Entry]\nType=Application\nName=' + (displayName || 'Custom App') + '\nExec=' + execCmd + '\n' + (comment ? 'Comment=' + comment + '\n' : '') + 'X-GNOME-Autostart-enabled=true\n'
+          fs.writeFileSync(path.join(userAutostartDir, fileName), desktopContent, 'utf-8')
+          return { success: true, output: '已添加自定义启动项: ' + (displayName || execCmd) }
+        } catch(e) {
+          return { success: false, error: e.message }
+        }
+      }
+      if (action.startsWith('startup-mgr:remove-autostart:')) {
+        const fileName = action.replace('startup-mgr:remove-autostart:', '')
+        if (!fileName) return { success: false, error: '未指定文件名' }
+        const userAutostartDir = path.join(os.homedir(), '.config/autostart')
+        const fp = path.join(userAutostartDir, fileName)
+        try {
+          if (fs.existsSync(fp)) {
+            fs.unlinkSync(fp)
+            return { success: true, output: '已删除启动项: ' + fileName }
+          }
+          return { success: false, error: '文件不存在: ' + fileName }
+        } catch(e) {
+          return { success: false, error: e.message }
+        }
       }
       if (action === 'system-cleanup:analyze') {
         const r = execOut('du -sh /var/cache/apt/archives/ 2>/dev/null; du -sh /var/log/ 2>/dev/null; du -sh /tmp/ 2>/dev/null; journalctl --disk-usage 2>/dev/null')
@@ -1462,6 +1631,216 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
           return { success: false, error: stderr || e.message }
         }
       }
+      case 'localsend-discovery':
+        try {
+          const dgram = require('dgram')
+          const os = require('os')
+          
+          const PORT = 42135
+          const BROADCAST_ADDR = '255.255.255.255'
+          const hostname = os.hostname()
+          const DISCOVERY_MSG = JSON.stringify({ type: 'discovery', hostname: hostname, timestamp: Date.now() })
+          
+          return new Promise((resolve) => {
+            const devices = []
+            let timeout = null
+            const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
+            
+            socket.on('error', (err) => {
+              if (timeout) clearTimeout(timeout)
+              try { socket.close() } catch {}
+              resolve({ success: true, devices: [] })
+            })
+            
+            socket.on('message', (msg, rinfo) => {
+              try {
+                const data = JSON.parse(msg.toString())
+                if (data.type === 'discovery-response' || data.type === 'discovery') {
+                  const existing = devices.findIndex(d => d.address === rinfo.address)
+                  const device = { address: rinfo.address, hostname: data.hostname || rinfo.address, port: data.port || PORT, timestamp: Date.now() }
+                  if (existing >= 0) {
+                    devices[existing] = device
+                  } else {
+                    devices.push(device)
+                  }
+                }
+              } catch {}
+            })
+            
+            socket.bind(PORT, () => {
+              socket.setBroadcast(true)
+              for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                  try { socket.send(Buffer.from(DISCOVERY_MSG), PORT, BROADCAST_ADDR) } catch {}
+                }, i * 300)
+              }
+              timeout = setTimeout(() => {
+                try { socket.close() } catch {}
+                resolve({ success: true, devices })
+              }, 3000)
+            })
+          })
+        } catch(e) {
+          return { success: false, error: e.message }
+        }
+        
+      case 'localsend-send':
+        try {
+          const http = require('http')
+          const fs = require('fs')
+          const path = require('path')
+          
+          const { targetAddress, targetPort, files } = params
+          if (!targetAddress || !files || files.length === 0) {
+            return { success: false, error: '缺少目标地址或文件' }
+          }
+          
+          const results = []
+          const promises = files.map((file, index) => {
+            return new Promise((resolveFile) => {
+              const fileName = path.basename(file)
+              const fileStat = fs.statSync(file)
+              const fileSize = fileStat.size
+              
+              const options = {
+                hostname: targetAddress,
+                port: targetPort || 42136,
+                path: '/upload',
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/octet-stream',
+                  'X-File-Name': encodeURIComponent(fileName),
+                  'X-File-Size': String(fileSize),
+                  'X-File-Index': String(index)
+                }
+              }
+              
+              const req = http.request(options, (res) => {
+                let body = ''
+                res.on('data', chunk => { body += chunk })
+                res.on('end', () => {
+                  results.push({ file: fileName, success: res.statusCode === 200, response: body })
+                  resolveFile()
+                })
+              })
+              
+              req.on('error', (err) => {
+                results.push({ file: fileName, success: false, error: err.message })
+                resolveFile()
+              })
+              
+              req.setTimeout(120000, () => {
+                req.destroy()
+                results.push({ file: fileName, success: false, error: '传输超时' })
+                resolveFile()
+              })
+              
+              fs.createReadStream(file).pipe(req)
+            })
+          })
+          
+          return Promise.all(promises).then(() => ({ success: true, results }))
+        } catch(e) {
+          return { success: false, error: e.message }
+        }
+        
+      case 'localsend-receive':
+        try {
+          const http = require('http')
+          const fs = require('fs')
+          const path = require('path')
+          const os = require('os')
+          
+          const { saveDir } = params
+          const downloadDir = saveDir || '/tmp/localsend_received'
+          if (!fs.existsSync(downloadDir)) {
+            fs.mkdirSync(downloadDir, { recursive: true })
+          }
+          
+          if (global.__localsendServer) {
+            try { global.__localsendServer.close() } catch {}
+            global.__localsendServer = null
+          }
+          
+          const server = http.createServer((req, res) => {
+            if (req.method === 'POST' && req.url === '/upload') {
+              const fileName = decodeURIComponent(req.headers['x-file-name'] || 'unknown')
+              const fileSize = parseInt(req.headers['x-file-size'] || '0')
+              const savePath = path.join(downloadDir, fileName)
+              
+              if (savePath.indexOf(downloadDir) !== 0) {
+                res.writeHead(403)
+                res.end('Forbidden')
+                return
+              }
+              
+              const writeStream = fs.createWriteStream(savePath)
+              let receivedSize = 0
+              const startTime = Date.now()
+              
+              req.on('data', chunk => {
+                receivedSize += chunk.length
+                writeStream.write(chunk)
+              })
+              
+              req.on('end', () => {
+                writeStream.end()
+                const elapsed = (Date.now() - startTime) / 1000
+                res.writeHead(200, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify({
+                  success: true,
+                  fileName,
+                  fileSize: receivedSize,
+                  savePath,
+                  duration: elapsed,
+                  speed: elapsed > 0 ? Math.round(receivedSize / elapsed / 1024) + ' KB/s' : 'N/A'
+                }))
+              })
+              
+              req.on('error', (err) => {
+                writeStream.end()
+                res.writeHead(500)
+                res.end(JSON.stringify({ success: false, error: err.message }))
+              })
+            } else {
+              res.writeHead(200)
+              res.end(JSON.stringify({ status: 'active', hostname: os.hostname() }))
+            }
+          })
+          
+          return new Promise((resolve) => {
+            server.listen(42136, '0.0.0.0', () => {
+              global.__localsendServer = server
+              resolve({ success: true, port: 42136, saveDir: downloadDir })
+            })
+            server.on('error', (err) => {
+              resolve({ success: false, error: err.message })
+            })
+          })
+        } catch(e) {
+          return { success: false, error: e.message }
+        }
+        
+      case 'localsend-stop':
+        try {
+          if (global.__localsendServer) {
+            global.__localsendServer.close()
+            global.__localsendServer = null
+          }
+          return { success: true }
+        } catch(e) {
+          return { success: false, error: e.message }
+        }
+        
+      case 'localsend-status':
+        try {
+          const isRunning = !!global.__localsendServer
+          return { success: true, running: isRunning, port: 42136 }
+        } catch(e) {
+          return { success: false, error: e.message }
+        }
+        
+      
       default:
         return { success: false, error: '未知工具: ' + tool }
     }
