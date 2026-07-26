@@ -143,6 +143,65 @@ body{font-family:-apple-system,"Noto Sans CJK SC","PingFang SC","Microsoft YaHei
 .terminal-loading .dot:nth-child(2){animation-delay:0.2s}
 .terminal-loading .dot:nth-child(3){animation-delay:0.4s}
   #offlineToggle{width:16px;height:16px;cursor:pointer;accent-color:var(--primary)}
+
+/* 进程管理器样式 */
+.process-tree-container{font-size:12px;background:var(--card-bg);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)}
+.process-toolbar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fafafa;border-bottom:1px solid #eee;flex-wrap:wrap}
+.process-toolbar .search-box{flex:1;min-width:160px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none;transition:border-color .2s}
+.process-toolbar .search-box:focus{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-light)}
+.process-toolbar .sort-btn{padding:5px 10px;border:1px solid #ddd;background:#fff;border-radius:6px;cursor:pointer;font-size:11px;color:var(--text-sec);transition:all .15s}
+.process-toolbar .sort-btn:hover{background:#f5f5f7;border-color:#ccc}
+.process-toolbar .sort-btn.active{background:var(--primary-light);color:var(--primary);border-color:var(--primary)}
+.process-toolbar .refresh-btn{padding:5px 12px;border:none;background:var(--primary);color:#fff;border-radius:6px;cursor:pointer;font-size:11px;transition:opacity .15s}
+.process-toolbar .refresh-btn:hover{opacity:.85}
+.process-tree-list{padding:0;margin:0;list-style:none}
+.process-tree-node{display:flex;align-items:center;padding:5px 10px;border-bottom:1px solid #f5f5f5;transition:background .1s;cursor:default;gap:4px}
+.process-tree-node:hover{background:#f8f9ff}
+.process-tree-node .toggle{width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:var(--text-ter);font-size:10px;border-radius:3px;transition:all .1s}
+.process-tree-node .toggle:hover{background:#eef0f5;color:var(--text)}
+.process-tree-node .pid-badge{display:inline-flex;align-items:center;justify-content:center;min-width:48px;padding:1px 6px;background:#eef2ff;color:var(--primary);border-radius:4px;font-size:10px;font-weight:600;font-family:monospace;flex-shrink:0}
+.process-tree-node .proc-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--text);font-family:monospace}
+.process-tree-node .proc-user{font-size:10px;color:var(--text-ter);margin-left:6px;width:60px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis}
+.process-tree-node .proc-cpu{font-size:10px;color:var(--text-sec);width:45px;flex-shrink:0;text-align:right;font-family:monospace}
+.process-tree-node .proc-mem{font-size:10px;color:var(--text-sec);width:45px;flex-shrink:0;text-align:right;font-family:monospace}
+.process-tree-node .proc-stat{font-size:10px;width:28px;flex-shrink:0;text-align:center;font-family:monospace}
+.process-tree-node .proc-actions{display:flex;gap:3px;flex-shrink:0;opacity:0;transition:opacity .15s}
+.process-tree-node:hover .proc-actions{opacity:1}
+.process-tree-node .action-btn{padding:2px 7px;border:none;border-radius:4px;font-size:10px;cursor:pointer;transition:all .15s}
+.process-tree-node .action-btn.kill{background:#ffeef0;color:var(--danger)}
+.process-tree-node .action-btn.kill:hover{background:#ffd5d8}
+.process-tree-node .action-btn.renice{background:#eef2ff;color:var(--primary)}
+.process-tree-node .action-btn.renice:hover{background:#dde3ff}
+.process-tree-node .action-btn.info{background:#f5f5f7;color:var(--text-sec)}
+.process-tree-node .action-btn.info:hover{background:#eee}
+
+/* 进程统计栏 */
+.process-stats{display:flex;gap:16px;padding:8px 14px;background:#fafafa;border-bottom:1px solid #eee;flex-wrap:wrap}
+.process-stats .stat-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-sec)}
+.process-stats .stat-item .val{font-weight:600;color:var(--text);font-family:monospace}
+
+/* 确认对话框 */
+.dialog-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeIn .15s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.dialog-box{background:#fff;border-radius:12px;padding:24px;min-width:360px;max-width:440px;box-shadow:0 8px 30px rgba(0,0,0,.15);animation:slideUp .2s}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.dialog-box h3{margin:0 0 8px;font-size:15px;font-weight:600}
+.dialog-box p{margin:0 0 16px;font-size:12px;color:var(--text-sec);line-height:1.6}
+.dialog-box .dialog-actions{display:flex;gap:8px;justify-content:flex-end}
+.dialog-box .dialog-actions button{padding:7px 18px;border-radius:8px;font-size:12px;cursor:pointer;border:none;transition:all .15s}
+.dialog-box .dialog-actions .btn-cancel{background:#f5f5f7;color:var(--text)}
+.dialog-box .dialog-actions .btn-cancel:hover{background:#eee}
+.dialog-box .dialog-actions .btn-danger{background:var(--danger);color:#fff}
+.dialog-box .dialog-actions .btn-danger:hover{opacity:.85}
+.dialog-box .dialog-actions .btn-primary{background:var(--primary);color:#fff}
+.dialog-box .dialog-actions .btn-primary:hover{opacity:.85}
+
+/* 进程详情面板 */
+.proc-detail-panel{background:var(--card-bg);border-radius:8px;padding:16px;margin-top:10px;box-shadow:var(--shadow);max-height:400px;overflow-y:auto;font-size:11px;font-family:monospace;line-height:1.5;white-space:pre-wrap}
+
+/* 搜索高亮 */
+.process-tree-node.search-match{background:#fffde7}
+
 </style>
 </head>
 <body>
@@ -264,7 +323,7 @@ const NAV = [
   {id:'remote-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15"/></svg></span>`,label:'远程管理',desc:'SSH 密钥管理 · 批量命令执行 · 远程文件传输 · 系统监控'},
 ]
 const MONITOR_SUB = [
-  {group:'进程资源类',items:[{id:'top-cpu',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,label:'CPU 消耗排行'},{id:'top-mem',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,label:'内存消耗排行'},{id:'zombie',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="8" y1="9" x2="8.01" y2="9"/><line x1="16" y1="9" x2="16.01" y2="9"/><path d="M16 15a4 4 0 0 1-8 0"/></svg>`,label:'僵尸进程检测'}]},
+  {group:'进程资源类',items:[{id:'top-cpu',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,label:'CPU 消耗排行'},{id:'top-mem',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,label:'内存消耗排行'},{id:'zombie',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="8" y1="9" x2="8.01" y2="9"/><line x1="16" y1="9" x2="16.01" y2="9"/><path d="M16 15a4 4 0 0 1-8 0"/></svg>`,label:'僵尸进程检测'},{id:'process-mgr',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,label:'进程管理器'}]},
   {group:'磁盘存储类',items:[{id:'disk-block',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,label:'磁盘容量 (Block)'},{id:'disk-inode',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M9 14l2 2 4-4"/></svg>`,label:'文件数量 (Inode)'},{id:'disk-structure',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`,label:'物理硬盘结构'}]},
   {group:'网络监控类',items:[{id:'open-ports',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/><polyline points="9 12 12 15 15 12"/></svg>`,label:'开放端口监听'},{id:'active-connections',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,label:'活跃网络连接'},{id:'net-traffic',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,label:'网络流量监控'},{id:'route-table',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,label:'路由表信息'}]},
   {group:'用户与登录审计',items:[{id:'login-history',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,label:'用户登录历史'},{id:'online-users',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,label:'当前在线用户'}]},
@@ -363,6 +422,15 @@ const OPTIMIZE = [
   {id:'fix-high-cpu',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,name:'修复 CPU 高占用',desc:'终止异常高负载进程，禁止开机自启',type:'terminal',options:[{v:'kill-high',l:'一键终止高耗进程',d:'终止 imwheel/clipman/tracker'},{v:'disable-autostart',l:'禁用开机启动',d:'禁止高耗进程自启'}]},
   {id:'clean-logs',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,name:'系统日志清理',desc:'删除系统运行日志，释放磁盘存储空间',type:'terminal',options:[{v:'clean-7days',l:'清理7天前日志',d:'删除7天前系统和应用日志'},{v:'clean-buffer',l:'清空日志缓冲区',d:'清空 journald 缓冲区'}]},
   {id:'vpn-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>`,label:'VPN管理',desc:'L2TP/IPsec/OpenVPN 配置 · 连接管理 · 状态监控'},
+  // ===== Stage 2: 磁盘分析 & 日志查看 =====
+  {id:'diskanalyzer',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 12 8 8"/><circle cx="12" cy="12" r="3"/></svg></span>`,label:'磁盘分析',desc:'磁盘空间使用分析 · 大文件扫描 · 目录统计'},
+  {id:'syslogviewer',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>`,label:'系统日志',desc:'系统日志查看 · journalctl 检索 · 实时日志'},
+  {id:'benchmark',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>`,label:'性能基准',desc:'CPU · 磁盘 · 内存 · 网络全面性能测试'},
+  // ===== Stage 4: 网络诊断 + 服务管理 + 用户管理 + Cron 管理 =====
+  {id:'netdiag',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>`,label:'网络诊断',desc:'Ping/Traceroute/NSLookup/Curl 一站式诊断'},
+  {id:'svcmgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>`,label:'服务管理',desc:'查看和管理 Systemd 服务状态'},
+  {id:'usermgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>`,label:'用户管理',desc:'系统用户查看/添加/删除/密码管理'},
+  {id:'cronmgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>`,label:'定时任务',desc:'Crontab 可视化编辑与管理'},
 ]
 
 let _currentPage='overview',_currentSub=null,_monitorTimer=null,_progressHandler=null
@@ -425,13 +493,20 @@ function switchPage(id){
   else if(id==='vpn-mgr') renderVpnPage(el)
     else if(id==='printer') renderPrinterPage(el)
 else if(id==='phase2-more') renderPhase2Page(el)
+  else if(id==='diskanalyzer') renderDiskAnalyzer(el)
+  else if(id==='syslogviewer') renderSysLogViewer(el)
+  else if(id==='benchmark') renderBenchmark(el)
 
   else if(id==='docker-mgr') renderDockerPage(el)
   else if(id==='upgrade-mgr') renderUpgradePage(el)
   else if(id==='asset-mgr') renderAssetPage(el)
-  else if(id==='remote-mgr') renderRemotePage(el)}
+  else if(id==='remote-mgr') renderRemotePage(el)
+  else if(id==='netdiag') renderNetDiag(el)
+  else if(id==='svcmgr') renderSvcMgr(el)
+  else if(id==='usermgr') renderUserMgr(el)
+  else if(id==='cronmgr') renderCronMgr(el)
 
-function switchMonitorSub(id){_currentSub=id;const p=NAV.find(i=>i.id==='monitor');document.getElementById('pageTitle').innerHTML=p.ico+' '+p.label;document.getElementById('pageDesc').textContent=p.desc;renderSubNav(id);renderMonitorDetail(document.getElementById('pageContent'),id)}
+function switchMonitorSub(id){_currentSub=id;const p=NAV.find(i=>i.id==='monitor');document.getElementById('pageTitle').innerHTML=p.ico+' '+p.label;document.getElementById('pageDesc').textContent=p.desc;renderSubNav(id);const el=document.getElementById('pageContent');if(id==='process-mgr')renderProcessManager(el);else renderMonitorDetail(el,id)}
 
 // ============ 概览 ============
 async function renderSysInfo(el){
@@ -521,6 +596,261 @@ function switchInfoTab(btn,tab){
 }
 
 // ============ 监控 ============
+
+async function renderProcessManager(el){
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在获取进程列表...</div>'
+  try{
+    const r=await window.processAPI?.getProcessTree()
+    if(!r||!r.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">'+(r?.error||'获取进程数据失败')+'</div>';return}
+    const processes=r.flat||[]
+    const total=processes.length
+    const totalCpu=processes.reduce((s,p)=>s+p.cpu,0).toFixed(1)
+    const totalMem=processes.reduce((s,p)=>s+p.mem,0).toFixed(1)
+    let sortBy='cpu',sortDir=-1
+    let searchQuery=''
+    let expanded={}
+    let detailPid=null
+    let detailHtml=''
+    
+    function buildTree(procs){
+      const map={}
+      procs.forEach(p=>{map[p.pid]=p})
+      const roots=[]
+      procs.forEach(p=>{
+        if(p.ppid===0||p.ppid===p.pid||!map[p.ppid]){roots.push(p)}
+        else{if(!map[p.ppid].children)map[p.ppid].children=[];map[p.ppid].children.push(p)}
+      })
+      return roots
+    }
+    
+    function sortProcesses(list,key,dir){
+      list.sort((a,b)=>{
+        const va=(key==='cpu'||key==='mem')?a[key]:(key==='pid'?a[key]:String(a[key]||''));
+        const vb=(key==='cpu'||key==='mem')?b[key]:(key==='pid'?b[key]:String(b[key]||''));
+        if(typeof va==='number')return dir*(va-vb);
+        return dir*String(va).localeCompare(String(vb));
+      });
+      list.forEach(p=>{if(p.children){sortProcesses(p.children,key,dir)}})
+    }
+    
+    function filterProcesses(list,q){
+      if(!q)return list;
+      const lq=q.toLowerCase();
+      return list.filter(p=>{
+        const match=String(p.pid).includes(lq)||(p.command||'').toLowerCase().includes(lq)||(p.user||'').toLowerCase().includes(lq);
+        if(p.children){
+          p.children=filterProcesses(p.children,q);
+          if(p.children.length>0)return true;
+        }
+        return match;
+      })
+    }
+    
+    function getProcessCount(list){
+      let c=list.length;
+      list.forEach(p=>{if(p.children)c+=getProcessCount(p.children)});
+      return c;
+    }
+    
+    function renderProcTree(nodes,level){
+      let html='';
+      nodes.forEach(p=>{
+        const hasChild=p.children&&p.children.length>0;
+        const isExp=expanded[p.pid];
+        const cpuClr=p.cpu>50?'var(--danger)':p.cpu>20?'var(--warning)':'var(--success)';
+        const memClr=p.mem>50?'var(--danger)':p.mem>20?'var(--warning)':'var(--success)';
+        const statClr=p.stat==='Z'||p.stat==='Z+'?'var(--danger)':p.stat==='R'||p.stat==='R+'?'var(--success)':'var(--text-sec)';
+        html+='<div class="process-tree-node" style="padding-left:'+(10+level*18)+'px">';
+        html+='<span class="toggle" onclick="event.stopPropagation();_toggleProc('+p.pid+')">'+(hasChild?(isExp?'▼':'▶'):'&nbsp;&nbsp;')+'</span>';
+        html+='<span class="pid-badge">'+p.pid+'</span>';
+        const cmdShort=(p.command||'').split(/\s+/)[0];
+        html+='<span class="proc-name" title="'+escAttr(p.command||'')+'">'+esc(cmdShort)+'</span>';
+        html+='<span class="proc-user">'+esc(p.user||'')+'</span>';
+        html+='<span class="proc-cpu" style="color:'+cpuClr+'">'+p.cpu.toFixed(1)+'%</span>';
+        html+='<span class="proc-mem" style="color:'+memClr+'">'+p.mem.toFixed(1)+'%</span>';
+        html+='<span class="proc-stat" style="color:'+statClr+'">'+esc(p.stat||'')+'</span>';
+        html+='<span class="proc-actions">';
+        html+='<button class="action-btn kill" onclick="event.stopPropagation();_killProc('+p.pid+',\''+escAttr(cmdShort)+'\')">✕</button>';
+        html+='<button class="action-btn renice" onclick="event.stopPropagation();_reniceProc('+p.pid+',\''+escAttr(cmdShort)+'\')">⚙</button>';
+        html+='<button class="action-btn info" onclick="event.stopPropagation();_detailProc('+p.pid+')">ℹ</button>';
+        html+='</span></div>';
+        if(isExp&&hasChild){html+=renderProcTree(p.children,level+1)}
+      });
+      return html;
+    }
+    
+    function render(el2){
+      let procs=[...processes];
+      let tree=buildTree(procs);
+      if(searchQuery){tree=filterProcesses(tree,searchQuery)}
+      sortProcesses(tree,sortBy,sortDir);
+      
+      const sortLabel=sortBy==='cpu'?'CPU':sortBy==='mem'?'内存':sortBy==='pid'?'PID':sortBy==='user'?'用户':'名称';
+      const sortIcon=sortDir===-1?'↓':'↑';
+      const visibleCount=getProcessCount(tree);
+      
+      el2.innerHTML=`
+        <div class="process-tree-container">
+          <div class="process-stats">
+            <div class="stat-item">📊 进程总数: <span class="val">${total}</span></div>
+            <div class="stat-item">🔄 显示: <span class="val">${visibleCount}</span></div>
+            <div class="stat-item">🔲 CPU合计: <span class="val">${totalCpu}%</span></div>
+            <div class="stat-item">💾 内存合计: <span class="val">${totalMem}%</span></div>
+          </div>
+          <div class="process-toolbar">
+            <input class="search-box" id="procSearch" placeholder="🔍 搜索 PID / 进程名 / 用户..." value="${escAttr(searchQuery)}" oninput="_procSearch(this.value)">
+            <span style="font-size:11px;color:var(--text-sec)">排序:</span>
+            <button class="sort-btn${sortBy==='cpu'?' active':''}" onclick="_procSort('cpu')">CPU${sortBy==='cpu'?sortIcon:''}</button>
+            <button class="sort-btn${sortBy==='mem'?' active':''}" onclick="_procSort('mem')">内存${sortBy==='mem'?sortIcon:''}</button>
+            <button class="sort-btn${sortBy==='pid'?' active':''}" onclick="_procSort('pid')">PID${sortBy==='pid'?sortIcon:''}</button>
+            <button class="sort-btn${sortBy==='user'?' active':''}" onclick="_procSort('user')">用户${sortBy==='user'?sortIcon:''}</button>
+            <button class="sort-btn${sortBy==='command'?' active':''}" onclick="_procSort('command')">名称${sortBy==='command'?sortIcon:''}</button>
+            <button class="refresh-btn" onclick="renderProcessManager(document.getElementById('pageContent'))">🔄 刷新</button>
+          </div>
+          <div style="overflow-y:auto;max-height:calc(100vh - 280px)">
+            ${renderProcTree(tree,0)}
+          </div>
+        </div>
+        ${detailPid?('<div class="proc-detail-panel" id="procDetail">'+detailHtml+'</div>'):''}
+      `;
+    }
+    
+    window._toggleProc=function(pid){
+      expanded[pid]=!expanded[pid];
+      render(document.getElementById('pageContent'));
+    };
+    window._procSort=function(key){
+      if(sortBy===key){sortDir*=-1}else{sortBy=key;sortDir=-1}
+      render(document.getElementById('pageContent'));
+    };
+    window._procSearch=function(q){
+      searchQuery=q;
+      render(document.getElementById('pageContent'));
+    };
+    window._killProc=async function(pid,name){
+      const el2=document.getElementById('pageContent');
+      const overlay=document.createElement('div');
+      overlay.className='dialog-overlay';
+      overlay.id='killDialog';
+      overlay.innerHTML=`
+        <div class="dialog-box">
+          <h3>⚠️ 结束进程</h3>
+          <p>确定要终止进程 <strong>${name}</strong> (PID: ${pid}) 吗？<br>
+          <span style="color:var(--warning)">SIGTERM</span> 会尝试让进程优雅退出；<br>
+          <span style="color:var(--danger)">SIGKILL</span> 会强制终止进程（可能导致数据丢失）。</p>
+          <div class="dialog-actions">
+            <button class="btn-cancel" onclick="document.getElementById('killDialog').remove()">取消</button>
+            <button class="btn-primary" onclick="_doKill(${pid},'SIGTERM')">发送 SIGTERM</button>
+            <button class="btn-danger" onclick="_doKill(${pid},'SIGKILL')">强制 SIGKILL</button>
+          </div>
+        </div>`;
+      el2.appendChild(overlay);
+    };
+    window._doKill=async function(pid,signal){
+      try{
+        const r=await window.processAPI?.killProcess(pid,signal);
+        if(r&&r.success){
+          document.getElementById('killDialog')?.remove();
+          renderProcessManager(document.getElementById('pageContent'));
+        }else{
+          alert('结束进程失败: '+(r?.error||'未知错误'));
+        }
+      }catch(e){alert('结束进程失败: '+e.message)}
+    };
+    window._reniceProc=function(pid,name){
+      const el2=document.getElementById('pageContent');
+      const overlay=document.createElement('div');
+      overlay.className='dialog-overlay';
+      overlay.id='reniceDialog';
+      overlay.innerHTML=`
+        <div class="dialog-box">
+          <h3>⚙ 调整优先级</h3>
+          <p>进程: <strong>${esc(name)}</strong> (PID: ${pid})<br>
+          优先级范围: <strong>-20</strong> (最高优先级) 到 <strong>19</strong> (最低优先级)</p>
+          <div style="margin-bottom:14px">
+            <label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">新优先级:</label>
+            <input id="niceInput" type="number" min="-20" max="19" value="0" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none">
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+              <button class="sort-btn" onclick="document.getElementById('niceInput').value=-20" style="font-size:10px">最高 (-20)</button>
+              <button class="sort-btn" onclick="document.getElementById('niceInput').value=-10" style="font-size:10px">高 (-10)</button>
+              <button class="sort-btn" onclick="document.getElementById('niceInput').value=0" style="font-size:10px">普通 (0)</button>
+              <button class="sort-btn" onclick="document.getElementById('niceInput').value=10" style="font-size:10px">低 (10)</button>
+              <button class="sort-btn" onclick="document.getElementById('niceInput').value=19" style="font-size:10px">最低 (19)</button>
+            </div>
+          </div>
+          <div class="dialog-actions">
+            <button class="btn-cancel" onclick="document.getElementById('reniceDialog').remove()">取消</button>
+            <button class="btn-primary" onclick="_doRenice(${pid})">确认调整</button>
+          </div>
+        </div>`;
+      el2.appendChild(overlay);
+    };
+    window._doRenice=async function(pid){
+      const input=document.getElementById('niceInput');
+      const val=parseInt(input?.value);
+      if(isNaN(val)||val<-20||val>19){alert('请输入 -20 到 19 之间的整数');return}
+      try{
+        const r=await window.processAPI?.reniceProcess(pid,val);
+        if(r&&r.success){
+          document.getElementById('reniceDialog')?.remove();
+          renderProcessManager(document.getElementById('pageContent'));
+        }else{
+          alert('调整优先级失败: '+(r?.error||'未知错误'));
+        }
+      }catch(e){alert('调整优先级失败: '+e.message)}
+    };
+    window._detailProc=async function(pid){
+      detailPid=pid;
+      detailHtml='<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 获取进程详情...</div>';
+      render(document.getElementById('pageContent'));
+      try{
+        const r=await window.processAPI?.getProcessDetail(pid);
+        if(r&&r.success){
+          let html='<div style="font-size:13px;font-weight:600;margin-bottom:8px">📋 进程详情 (PID: '+pid+')</div>';
+          html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">';
+          if(r.status){
+            const lines=r.status.split('\n').filter(Boolean);
+            lines.forEach(line=>{
+              const parts=line.split(':');
+              if(parts.length>=2){
+                html+='<div><span style="color:var(--text-sec)">'+esc(parts[0].trim())+':</span> <span>'+esc(parts.slice(1).join(':').trim())+'</span></div>';
+              }
+            });
+          }
+          html+='</div>';
+          if(r.cwd){html+='<div style="margin-bottom:4px"><span style="color:var(--text-sec)">工作目录:</span> '+esc(r.cwd)+'</div>'}
+          if(r.cmdline){html+='<div style="margin-bottom:8px"><span style="color:var(--text-sec)">命令行:</span> '+esc(r.cmdline)+'</div>'}
+          if(r.fd){html+='<div style="margin-top:6px"><span style="font-weight:500;font-size:12px">📂 打开的文件描述符:</span><pre style="margin:4px 0;background:#f5f5f7;padding:8px;border-radius:4px;overflow-x:auto">'+esc(r.fd)+'</pre></div>'}
+          if(r.env){html+='<div style="margin-top:6px"><span style="font-weight:500;font-size:12px">🔧 环境变量 (前30项):</span><pre style="margin:4px 0;background:#f5f5f7;padding:8px;border-radius:4px;overflow-x:auto;font-size:10px">'+esc(r.env)+'</pre></div>'}
+          detailHtml=html;
+          const detailEl=document.getElementById('procDetail');
+          if(detailEl)detailEl.innerHTML=html;
+        }else{
+          detailHtml='<div style="color:var(--danger);padding:10px">获取详情失败: '+(r?.error||'未知错误')+'</div>';
+          const detailEl=document.getElementById('procDetail');
+          if(detailEl)detailEl.innerHTML=detailHtml;
+        }
+      }catch(e){
+        detailHtml='<div style="color:var(--danger);padding:10px">获取详情失败: '+e.message+'</div>';
+        const detailEl=document.getElementById('procDetail');
+        if(detailEl)detailEl.innerHTML=detailHtml;
+      }
+    };
+    
+    window._getProcSort=()=>sortBy;
+    window._getProcDir=()=>sortDir;
+    window._getSearchQuery=()=>searchQuery;
+    window._getExpanded=()=>expanded;
+    window._getDetailPid=()=>detailPid;
+    window._getDetailHtml=()=>detailHtml;
+    window._setProcState=(s,d,q,ex,dp,dh)=>{sortBy=s;sortDir=d;searchQuery=q;expanded=ex;detailPid=dp;detailHtml=dh};
+    
+    render(el)
+  }catch(e){
+    el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 进程管理器加载失败: '+esc(e.message)+'</div>'
+  }
+}
+
 function renderMonitorSummary(el){
   el.innerHTML=`<div class="monitor-row"><div class="monitor-item"><div class="label">CPU 使用率</div><div class="val" id="cpuVal" style="color:var(--success)">0%</div><div class="monitor-bar"><div class="fill low" id="cpuBar" style="width:0%"></div></div></div><div class="monitor-item"><div class="label">内存使用率</div><div class="val" id="memVal" style="color:var(--success)">0%</div><div class="monitor-bar"><div class="fill low" id="memBar" style="width:0%"></div></div></div></div><div class="card-grid" style="margin-top:8px">${MONITOR_SUB.flatMap(g=>g.items.map(i=>`<div class="card" onclick="switchMonitorSub('${i.id}')"><div class="ico">${i.ico}</div><h3>${i.label}</h3><p>${g.group}</p></div>`)).join('')}</div>`
   startMonitor()
@@ -776,7 +1106,7 @@ async function renderMonitorDetail(el,type){
         return '<tr>'+vals.map((v,i)=>{
           const f=info.fields?info.fields[i]:''
           let txt=esc(String(v))
-          if(f==='command'||f==='COMMAND'){const parts=txt.split(/[/\\]/);txt=parts[parts.length-1];if(txt.length>50) txt=txt.substring(0,47)+'...'}
+          if(f==='command'||f==='COMMAND'){const parts=txt.split(/[\/]/);txt=parts[parts.length-1];if(txt.length>50) txt=txt.substring(0,47)+'...'}
           else if(txt.length>60) txt=txt.substring(0,57)+'...'
           const isNum = f==='size'||f==='used'||f==='iused'||f==='ifree'||f==='inodes'
           return '<td title="'+esc(String(v)).replace(/"/g,'&quot;')+'"'+(isNum?' style="text-align:right;font-family:monospace"':'')+'>'+txt+'</td>'
@@ -816,7 +1146,8 @@ function monitorMeta(type){
     'net-traffic':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,label:'网络流量监控',sub:'实时查看各连接流量排行 Top 10，折线图展示',headers:['目标地址:端口','服务','发送(B)','接收(B)','连接数'],fields:['remote','service','bytes_sent','bytes_received','connections']},
     'login-history':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,label:'用户登录历史',sub:'记录近期系统登录用户日志',headers:['用户','终端','来源IP','登录时间','状态'],fields:['user','tty','from','time','status']},
     'online-users':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,label:'当前在线用户',sub:'实时查看正在登录的在线终端用户',headers:['用户','终端','登录时间','来源'],fields:['user','tty','time','from']},
-    'kernel-modules':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="2" y1="9" x2="6" y2="9"/><line x1="2" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="22" y2="9"/><line x1="18" y1="15" x2="22" y2="15"/></svg>`,label:'内核模块',sub:'查看系统当前已加载的 Kernel 内核模块',headers:['模块名','大小','被引用','被谁引用'],fields:['module','size','used','by']}
+    'kernel-modules':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="2" y1="9" x2="6" y2="9"/><line x1="2" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="22" y2="9"/><line x1="18" y1="15" x2="22" y2="15"/></svg>`,label:'内核模块',sub:'查看系统当前已加载的 Kernel 内核模块',headers:['模块名','大小','被引用','被谁引用'],fields:['module','size','used','by']},
+    'process-mgr':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="17"/></svg>`,label:'进程管理器',sub:'查看进程树、结束进程、调整优先级',headers:['PID','用户','CPU%','内存%','状态','命令'],fields:['pid','user','cpu','mem','stat','command']}
   }
   return MAP[type]||{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>`,label:type,sub:'',headers:[],fields:[]}
 }
@@ -1632,6 +1963,9 @@ const TOOLS = [
     {id:'game-snake',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,name:'贪吃蛇',desc:'经典贪吃蛇小游戏'},
     {id:'game-mine',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,name:'扫雷',desc:'经典扫雷小游戏'},
     {id:'game-tetris',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`,name:'俄罗斯方块',desc:'经典俄罗斯方块'}
+  ]},
+  {cat:'💾',name:'磁盘管理',items:[
+    {id:'disk-analyzer',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`,name:'磁盘分析器',desc:'磁盘空间可视化分析，查看分区占用、目录分析和超大文件'}
   ]}
 ]
 
@@ -1669,7 +2003,7 @@ function showToolModal(id,need){
     'exam':{title:'📝 挑战题库',content:'<div class="sub">题库练习（已加载题库，共 <span id="examTotal">0</span> 题）</div><div class="actions" id="examActions"><button class="btn" onclick="startExam(\'order\')">📋 顺序模式</button><button class="btn" onclick="startExam(\'random\')">🎲 随机模式</button><button class="btn" onclick="startExam(\'reverse\')">🔄 倒序模式</button></div><div class="modal-output" id="examResult" style="display:none"></div><div id="examArea" style="display:none;margin-top:8px"><div style="font-size:14px;font-weight:500;margin-bottom:8px" id="examQuestion"></div><div id="examOptions" style="margin-bottom:8px"></div><div style="display:flex;gap:6px"><button class="btn btn-primary" onclick="nextExamQuestion()">下一题 →</button><button class="btn btn-outline" onclick="showExamResult()">📊 查看成绩</button></div></div>'},
     'gongwen':{title:'📋 公文排版',content:'<div class="sub">GB/T 9704 党政机关公文排版工具</div><div class="actions"><button class="btn" onclick="openGongwen()">📝 打开公文编辑器</button></div>'},
     'file-search':{title:'🔍 文件搜索',content:'<div class="sub">快速搜索文件，支持按文件名、类型、大小、日期过滤</div><div class="sub" style="margin-top:8px">' +
-      '<div style="display:flex;gap:8px;margin-bottom:10px"><input type="text" id="searchKeyword" placeholder="输入文件名关键词..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px" onkeydown="if(event.key===\\"Enter\\") startFileSearch()" />' +
+      '<div style="display:flex;gap:8px;margin-bottom:10px"><input type="text" id="searchKeyword" placeholder="输入文件名关键词..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px" onkeydown="if(event.key===\"Enter\") startFileSearch()" />' +
       '<button class="btn btn-primary" onclick="startFileSearch()" style="padding:8px 16px;font-size:12px">🔍 搜索</button></div>' +
       '<div style="margin-bottom:8px"><label style="font-size:12px"><input type="checkbox" id="showAdvanced" onchange="toggleFilterOptions()"> 显示高级过滤 (类型/大小/日期)</label></div>' +
       '<div id="filterOptions" style="display:none;margin-bottom:10px;padding:10px;background:#f8f9fa;border-radius:6px">' +
@@ -1754,7 +2088,16 @@ function showToolModal(id,need){
       <div id="lsHistory" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:40px;max-height:100px;overflow-y:auto;font-size:11px;background:#fafafa">
         <div style="color:var(--text-ter);text-align:center;padding:10px 0">暂无记录</div>
       </div>
-    </div>`}
+    </div>`},
+    'disk-analyzer':{title:'💾 磁盘分析器',content:`<div class="sub" style="margin-bottom:12px">磁盘空间可视化分析，支持分区概览、目录分析和超大文件查找</div>
+<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+  <button class="btn" onclick="diskOverview()">📊 分区概览</button>
+  <button class="btn" onclick="diskAnalyzeDir()">📁 目录分析</button>
+  <button class="btn" onclick="diskLargeFiles()">🔍 超大文件查找</button>
+  <button class="btn" onclick="diskSelectDir()" id="diskSelectDirBtn">📂 选择目录</button>
+</div>
+<div id="diskCurrentDir" style="font-size:11px;color:var(--text-sec);margin-bottom:8px;padding:4px 8px;background:var(--border-light);border-radius:4px">当前目录: /</div>
+<div id="diskResult" style="font-size:11px;line-height:1.6;white-space:pre-wrap;max-height:400px;overflow-y:auto;background:#f8f9fa;border-radius:6px;padding:8px;border:1px solid var(--border)"><div style="color:var(--text-ter);text-align:center;padding:20px 0">点击上方按钮开始分析</div></div>`},
   }
   const modal=MODALS[id]||{title:'🧰 '+id,content:'<div class="sub">功能开发中...</div>'}
   document.getElementById('modalOverlay').classList.add('show')
@@ -1776,6 +2119,145 @@ function showToolModal(id,need){
   if(id==='sys-detail') loadSysDetail()
   if(id==='exam') loadExamQuestions()
   if(id==='gongwen') openGongwen()
+  if(id==='disk-analyzer') initDiskAnalyzer()
+}
+
+// ============ 磁盘分析器 ============
+let _diskCurrentDir = '/'
+let _diskAnalysisData = null
+
+function initDiskAnalyzer(){
+  _diskCurrentDir = '/'
+  document.getElementById('diskCurrentDir').textContent = '当前目录: /'
+}
+
+function formatSize(bytes){
+  if(!bytes && bytes !== 0) return ''
+  const units = ['B','KB','MB','GB','TB']
+  let size = parseInt(bytes)
+  let u = 0
+  while(size >= 1024 && u < units.length-1){ size /= 1024; u++ }
+  return size.toFixed(u===0?0:1) + ' ' + units[u]
+}
+
+function diskOverview(){
+  const el = document.getElementById('diskResult')
+  el.innerHTML = '<div style="color:var(--text-sec);padding:10px 0">⏳ 正在获取磁盘信息...</div>'
+  window.terminalAPI.exec('df -h --total | tail -n +2').then(r => {
+    if(!r || r.code !== 0){ el.innerHTML = '<div class="l error">❌ 获取磁盘信息失败</div>'; return }
+    const lines = r.output.trim().split('\n')
+    let html = '<div style="margin-bottom:10px"><strong style="font-size:13px">📊 磁盘分区概览</strong></div>'
+    html += '<table style="width:100%;border-collapse:collapse;font-size:11px"><tr style="background:#eef2ff;font-weight:600"><td style="padding:4px 6px;border:1px solid #e0e0e0">文件系统</td><td style="padding:4px 6px;border:1px solid #e0e0e0">容量</td><td style="padding:4px 6px;border:1px solid #e0e0e0">已用</td><td style="padding:4px 6px;border:1px solid #e0e0e0">可用</td><td style="padding:4px 6px;border:1px solid #e0e0e0">使用率</td><td style="padding:4px 6px;border:1px solid #e0e0e0">挂载点</td></tr>'
+    lines.forEach(line => {
+      const cols = line.split(/\s+/)
+      if(cols.length < 6) return
+      const pct = parseInt(cols[4])
+      let color = '#34c759'
+      if(pct >= 90) color = '#ff3b30'
+      else if(pct >= 75) color = '#ff9500'
+      const isTotal = cols[0] === 'total'
+      html += '<tr'+(isTotal?' style="background:#f0f0f0;font-weight:600"':'')+'><td style="padding:3px 6px;border:1px solid #e0e0e0">'+cols[0]+'</td><td style="padding:3px 6px;border:1px solid #e0e0e0">'+cols[1]+'</td><td style="padding:3px 6px;border:1px solid #e0e0e0">'+cols[2]+'</td><td style="padding:3px 6px;border:1px solid #e0e0e0">'+cols[3]+'</td><td style="padding:3px 6px;border:1px solid #e0e0e0;color:'+color+'">'+cols[4]+'</td><td style="padding:3px 6px;border:1px solid #e0e0e0">'+(cols[5]||'')+'</td></tr>'
+    })
+    html += '</table>'
+    // Add visual bars
+    html += '<div style="margin-top:12px"><strong style="font-size:13px">📈 使用率可视化</strong></div>'
+    lines.forEach(line => {
+      const cols = line.split(/\s+/)
+      if(cols.length < 6 || cols[0] === 'total') return
+      const pct = parseInt(cols[4])
+      let color = '#34c759'
+      if(pct >= 90) color = '#ff3b30'
+      else if(pct >= 75) color = '#ff9500'
+      html += '<div style="margin:6px 0;font-size:11px"><div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>'+cols[5]+'</span><span>'+cols[4]+' ('+cols[2]+'/'+cols[1]+')</span></div><div style="height:14px;background:#eee;border-radius:7px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:7px;transition:width 0.3s"></div></div></div>'
+    })
+    el.innerHTML = html
+  }).catch(e => {
+    el.innerHTML = '<div class="l error">❌ 获取磁盘信息失败: '+esc(e.message)+'</div>'
+  })
+}
+
+function diskAnalyzeDir(){
+  const el = document.getElementById('diskResult')
+  el.innerHTML = '<div style="color:var(--text-sec);padding:10px 0">⏳ 正在分析目录 <strong>'+esc(_diskCurrentDir)+'</strong> 空间占用...</div>'
+  const dir = _diskCurrentDir
+  window.terminalAPI.exec('du -h --max-depth=2 "' + dir.replace(/"/g,'\"') + '" 2>/dev/null | sort -rh | head -30').then(r => {
+    if(!r || r.code !== 0){ el.innerHTML = '<div class="l error">❌ 分析目录失败</div>'; return }
+    const lines = r.output.trim().split('\n')
+    let html = '<div style="margin-bottom:8px"><strong style="font-size:13px">📁 目录空间占用 TOP 30</strong><span style="font-size:11px;color:var(--text-sec);margin-left:8px">('+esc(dir)+')</span></div>'
+    html += '<div style="font-size:11px;line-height:1.8">'
+    // Find max size for bar
+    let maxVal = 0
+    lines.forEach(line => {
+      const m = line.match(/^([\d.]+[KMGTP]?)\s+/)
+      if(m) maxVal = Math.max(maxVal, parseSize(m[1]))
+    })
+    lines.forEach(line => {
+      const m = line.match(/^([\d.]+[BKMGT]?)\s+(.+)$/)
+      if(!m) return
+      const sizeStr = m[1], pathStr = m[2]
+      const sizeVal = parseSize(sizeStr)
+      const pct = maxVal > 0 ? (sizeVal / maxVal * 100) : 0
+      let color = '#4A6CF7'
+      if(pct > 80) color = '#ff3b30'
+      else if(pct > 50) color = '#ff9500'
+      html += '<div style="margin:3px 0"><div style="display:flex;justify-content:space-between"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+esc(pathStr)+'</span><span style="font-weight:500;color:'+color+'">'+sizeStr+'</span></div><div style="height:6px;background:#eee;border-radius:3px;overflow:hidden;margin-top:1px"><div style="height:100%;width:'+pct.toFixed(0)+'%;background:'+color+';border-radius:3px"></div></div></div>'
+    })
+    html += '</div>'
+    el.innerHTML = html
+  }).catch(e => {
+    el.innerHTML = '<div class="l error">❌ 分析目录失败: '+esc(e.message)+'</div>'
+  })
+}
+
+function parseSize(s){
+  const units = {'B':1,'K':1024,'M':1024*1024,'G':1024*1024*1024,'T':1024*1024*1024*1024}
+  const m = s.match(/^([\d.]+)([BKMGT])?$/)
+  if(!m) return parseFloat(s) || 0
+  const val = parseFloat(m[1])
+  const unit = m[2] || 'B'
+  return val * (units[unit] || 1)
+}
+
+function diskLargeFiles(){
+  const el = document.getElementById('diskResult')
+  el.innerHTML = '<div style="color:var(--text-sec);padding:10px 0">⏳ 正在查找超过 100MB 的文件（这可能需要一些时间）...</div>'
+  const dir = _diskCurrentDir
+  window.terminalAPI.exec('find "' + dir.replace(/"/g,'\"') + '" -type f -size +100M -exec ls -lh {} \; 2>/dev/null | sort -k5 -rh | head -30').then(r => {
+    if(!r || r.code !== 0){ el.innerHTML = '<div class="l error">❌ 查找超大文件失败</div>'; return }
+    const lines = r.output.trim().split('\n').filter(l => l.trim())
+    if(lines.length === 0){
+      el.innerHTML = '<div class="l info">✅ 未找到超过 100MB 的文件</div>'
+      return
+    }
+    let html = '<div style="margin-bottom:8px"><strong style="font-size:13px">🔍 超大文件 (>100MB)</strong><span style="font-size:11px;color:var(--text-sec);margin-left:8px">共 '+lines.length+' 个</span></div>'
+    html += '<div style="font-size:11px;line-height:1.8">'
+    lines.forEach(line => {
+      const m = line.match(/^(-[rwx-]{9}\s+\S+\s+\S+\s+\S+\s+)([\d.]+[KMGTP]?)\s+(.+)$/)
+      if(!m){
+        html += '<div>'+esc(line)+'</div>'
+        return
+      }
+      const sizeStr = m[2], filePath = m[3]
+      let color = '#ff9500'
+      const sizeVal = parseSize(sizeStr)
+      if(sizeVal >= parseSize('1G')) color = '#ff3b30'
+      else if(sizeVal >= parseSize('500M')) color = '#ff9500'
+      html += '<div style="padding:2px 0;display:flex;justify-content:space-between;border-bottom:1px solid #f0f0f0"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%">'+esc(filePath)+'</span><span style="font-weight:500;color:'+color+'">'+sizeStr+'</span></div>'
+    })
+    html += '</div>'
+    el.innerHTML = html
+  }).catch(e => {
+    el.innerHTML = '<div class="l error">❌ 查找超大文件失败: '+esc(e.message)+'</div>'
+  })
+}
+
+function diskSelectDir(){
+  window.fileAPI.selectDirectory().then(dir => {
+    if(dir && dir.length > 0){
+      _diskCurrentDir = dir[0] || dir
+      document.getElementById('diskCurrentDir').textContent = '当前目录: ' + _diskCurrentDir
+    }
+  }).catch(() => {})
 }
 
 // ============ 公文排版 ============
@@ -2794,7 +3276,140 @@ function renderAbout(el){
         <div>🌤️ 天气浮窗</div><div>💻 命令终端</div>
       </div>
     </div>
+    <!-- 错误日志查看器 -->
+    <div style="margin-top:14px">
+      <div class="tab-bar" style="margin-bottom:8px">
+        <button class="tab-btn active" id="aboutErrorTab" onclick="switchErrorTab('main')" style="font-size:12px">📋 关于</button>
+        <button class="tab-btn" id="aboutErrorTab2" onclick="switchErrorTab('error')" style="font-size:12px">⚠️ 错误日志 <span id="errorCountBadge" style="color:var(--danger);font-weight:600"></span></button>
+      </div>
+      <div id="aboutErrorContent"></div>
+    </div>
   </div>`
+}
+
+// ============ 错误日志查看器 ============
+function switchErrorTab(tab) {
+  _errorTab = tab || 'main'
+  var tabs = document.querySelectorAll('#aboutErrorTab, #aboutErrorTab2')
+  tabs.forEach(function(t){ t.classList.remove('active') })
+  if (tab === 'error') {
+    document.getElementById('aboutErrorTab2').classList.add('active')
+    renderErrorLogs(document.getElementById('aboutErrorContent'))
+  } else {
+    document.getElementById('aboutErrorTab').classList.add('active')
+    document.getElementById('aboutErrorContent').innerHTML = ''
+  }
+}
+
+function renderErrorLogs(el) {
+  if (!el) return
+  var mainLogs = []
+  if (window.errorAPI && window.errorAPI.getLogs) {
+    window.errorAPI.getLogs().then(function(res) {
+      if (res && res.success) {
+        mainLogs = res.logs || []
+        renderErrorLogsWithMain(el, mainLogs)
+      }
+    }).catch(function() {})
+  }
+  renderErrorLogsWithMain(el, mainLogs)
+}
+
+function renderErrorLogsWithMain(el, mainLogs) {
+  if (!el) return
+  var logs = getErrorLogs()
+  var totalCount = logs.length + mainLogs.length
+  var html = '<div style="background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow)">'
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+  html += '<h3 style="font-size:14px;font-weight:500;margin:0">⚠️ 错误日志 (' + totalCount + ' 条)</h3>'
+  html += '<div style="display:flex;gap:6px">'
+  html += '<button class="btn btn-sm btn-outline" onclick="clearAllErrorLogs()" style="padding:4px 10px;font-size:11px">\u{1F5D1}\uFE0F 清空</button>'
+  html += '<button class="btn btn-sm btn-outline" onclick="exportErrorLogs()" style="padding:4px 10px;font-size:11px">📥 导出</button>'
+  html += '</div></div>'
+  
+  if (totalCount === 0) {
+    html += '<p style="color:var(--text-ter);text-align:center;padding:24px 0;font-size:13px">✅ 暂无错误日志</p>'
+  } else {
+    html += '<div style="max-height:400px;overflow-y:auto;font-size:11px;font-family:monospace">'
+    
+    if (mainLogs.length > 0) {
+      html += '<div style="padding:4px 8px;background:#f0f4ff;font-size:11px;font-weight:500;color:var(--primary);border-bottom:1px solid #e0e8ff">⚙️ 主进程错误 (' + mainLogs.length + ')</div>'
+      for (var mi = mainLogs.length - 1; mi >= 0; mi--) {
+        var me = mainLogs[mi]
+        var micon = me.level === 'FATAL' ? '💥' : '🔴'
+        var mtime = me.time ? new Date(me.time).toLocaleString('zh-CN') : '未知时间'
+        html += '<div style="padding:6px 8px;border-bottom:1px solid #f0f0f0;line-height:1.5">'
+        html += '<div style="color:#888;font-size:10px">' + mtime + ' <span style="color:var(--danger)">' + micon + ' ' + (me.level || 'ERROR') + ' [' + escHtml(me.source || 'main') + ']</span></div>'
+        html += '<div style="color:var(--danger);word-break:break-all">' + escHtml(me.message || '') + '</div>'
+        if (me.stack) html += '<details style="margin-top:2px"><summary style="color:#999;font-size:10px;cursor:pointer">查看堆栈</summary><pre style="margin:4px 0 0 0;padding:8px;background:#f8f9fa;border-radius:4px;font-size:10px;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto">' + escHtml(me.stack.substring(0,500)) + '</pre></details>'
+        html += '</div>'
+      }
+    }
+    
+    html += '<div style="padding:4px 8px;background:#fff0f0;font-size:11px;font-weight:500;color:var(--danger);border-bottom:1px solid #ffe0e0">🖥️ 前端错误 (' + logs.length + ')</div>'
+    for (var i = logs.length - 1; i >= 0; i--) {
+      var e = logs[i]
+      var icon = e.type === 'promise' ? '🔶' : '🔴'
+      var time = e.time ? new Date(e.time).toLocaleString('zh-CN') : '未知时间'
+      html += '<div style="padding:6px 8px;border-bottom:1px solid #f0f0f0;line-height:1.5">'
+      html += '<div style="color:#888;font-size:10px">' + time + ' <span style="color:var(--danger)">' + icon + ' ' + (e.type || '未知') + '</span></div>'
+      html += '<div style="color:var(--danger);word-break:break-all">' + escHtml(e.message || '') + '</div>'
+      if (e.source) html += '<div style="color:#999;word-break:break-all;font-size:10px">' + escHtml(e.source) + ':' + e.lineno + ':' + e.colno + '</div>'
+      if (e.stack) html += '<details style="margin-top:2px"><summary style="color:#999;font-size:10px;cursor:pointer">查看堆栈</summary><pre style="margin:4px 0 0 0;padding:8px;background:#f8f9fa;border-radius:4px;font-size:10px;white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto">' + escHtml(e.stack.substring(0,500)) + '</pre></details>'
+      html += '</div>'
+    }
+    html += '</div>'
+  }
+  html += '</div>'
+  el.innerHTML = html
+}
+
+
+function clearAllErrorLogs() {
+  if (!confirm('确定清空所有错误日志？')) return
+  clearErrorLogs()
+  if (window.errorAPI && window.errorAPI.clearLogs) window.errorAPI.clearLogs()
+  renderErrorLogs(document.getElementById('aboutErrorContent'))
+  var b = document.querySelector('.nav-item[data-page="about"] .badge')
+  if (b) b.style.display = 'none'
+}
+function exportErrorLogs() {
+  var logs = getErrorLogs()
+  if (logs.length === 0) { alert('暂无错误日志可导出'); return }
+  var text = '# UOS运维工具箱 错误日志\n# 导出时间: ' + new Date().toLocaleString('zh-CN') + '\n# 共 ' + logs.length + ' 条\n\n'
+  for (var i = 0; i < logs.length; i++) {
+    var e = logs[i]
+    text += '--- [' + (i+1) + '] ' + (e.time || '') + ' ---\n'
+    text += '类型: ' + (e.type || '未知') + '\n'
+    text += '消息: ' + (e.message || '') + '\n'
+    if (e.source) text += '来源: ' + e.source + ':' + e.lineno + ':' + e.colno + '\n'
+    if (e.stack) text += '堆栈: ' + e.stack.substring(0,300) + '\n'
+    text += '\n'
+  }
+  
+  if (window.fileAPI && window.fileAPI.saveFileDialog) {
+    window.fileAPI.saveFileDialog('uos-errors-' + new Date().toISOString().slice(0,10) + '.log', [{name:'日志文件', extensions:['log','txt']}]).then(function(path) {
+      if (path && window.fileAPI && window.fileAPI.writeFile) {
+        window.fileAPI.writeFile(path, text).then(function(r) {
+          if (r && r.success) alert('✅ 日志已导出到: ' + path)
+          else alert('❌ 导出失败')
+        })
+      } else {
+        downloadTextFile(text, 'uos-errors.log')
+      }
+    })
+  } else {
+    downloadTextFile(text, 'uos-errors.log')
+  }
+}
+
+function downloadTextFile(text, filename) {
+  var blob = new Blob([text], {type: 'text/plain;charset=utf-8'})
+  var url = URL.createObjectURL(blob)
+  var a = document.createElement('a')
+  a.href = url; a.download = filename; a.style.display = 'none'
+  document.body.appendChild(a); a.click()
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url) }, 1000)
 }
 
 async function installTesseract(){
@@ -2832,6 +3447,8 @@ function toggleLicenseKey(){
 
 function fmtMB(mb){if(!mb&&mb!==0)return '-';if(mb>=1024)return (mb/1024).toFixed(1)+' GB';return mb+' MB'}
 function esc(t){if(!t)return '';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\x27/g,'&#39;')}
+function escAttr(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
 function stripAnsi(s){if(!s)return '';return s.replace(/\x1b\[[0-9;]*m/g,'')}
 
 function renderSystemApps(el){
@@ -3264,7 +3881,7 @@ async function generateComplianceReport(){
         '<div style="font-size:40px;margin-bottom:10px">📋</div>' +
         '<div style="font-weight:500">合规报告已生成</div>' +
         '<div style="color:var(--text-sec);margin:6px 0">' + esc(r.file) + '</div>' +
-        '<button class="btn btn-primary" onclick="window.fileAPI.openPath(\'' + esc(r.file).replace(/\x27/g,"\\" + String.fromCharCode(39)) + '\')">📂 打开文件位置</button>' +
+        '<button class="btn btn-primary" onclick="window.fileAPI.openPath(\'' + esc(r.file).replace(/\x27/g,"\x27") + '\')">📂 打开文件位置</button>' +
         '<button class="btn btn-sec" style="margin-left:8px" onclick="runComplianceCheck()">🔄 返回</button>' +
       '</div>'
     } else {
@@ -4039,7 +4656,7 @@ async function searchRollbackPkg(){
           if(v.isCurrent){
             html += '<span style="color:var(--success);font-size:11px;font-weight:500">✓ 当前版本</span>'
           } else {
-            html += '<button class="btn btn-sm btn-warning" onclick="executeRollback(\x27" + escHtml(pkgName) + "\x27,\x27" + escHtml(v.version).replace(/\x27/g,"\\" + String.fromCharCode(39)) + "\x27)" style="padding:3px 10px;font-size:11px">↩ 回滚到此版本</button>'
+            html += '<button class="btn btn-sm btn-warning" onclick="executeRollback(\x27" + escHtml(pkgName) + "\x27,\x27" + escHtml(v.version).replace(/\x27/g,"\x27") + "\x27)" style="padding:3px 10px;font-size:11px">↩ 回滚到此版本</button>'
           }
           html += '</div>'
         }
@@ -4518,7 +5135,7 @@ async function startFileSearch() {
         html += '<div style="flex:1;min-width:0"><div style="font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.name + '</div>'
         html += '<div style="font-size:10px;color:var(--text-ter);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.path + '</div>'
         html += '<div style="font-size:10px;color:var(--text-ter);margin-top:1px">' + typeLabel + ' · ' + (f.sizeStr || '') + ' · ' + (f.dateStr || '') + '</div></div>'
-        html += '<button class="btn" style="font-size:10px;padding:3px 8px;flex-shrink:0" onclick="openFileLocation(\'' + f.path.replace(/\\/g,'\\\\').replace(/\x27/g,"\\" + String.fromCharCode(39)) + '\')">📂 打开位置</button>'
+        html += '<button class="btn" style="font-size:10px;padding:3px 8px;flex-shrink:0" onclick="openFileLocation(\'' + f.path.replace(/\//g,'\\\\').replace(/\x27/g,"\x27") + '\')">📂 打开位置</button>'
         html += '</div>'
       }
       html += '</div>'
@@ -4746,6 +5363,71 @@ async function printerRestartCups() {
   } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
 }
 
+
+// ============ 驱动管理 ============
+async function renderDriverPage(el){
+  var html = '<div style="max-width:900px;margin:0 auto">'
+  html += '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">'
+  html += '<button class="btn" onclick="driverRefresh(\'list\')" style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">\U0001f504 已安装驱动</button>'
+  html += '<button class="btn" onclick="driverRefresh(\'detect\')" style="padding:8px 18px;background:var(--warning);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">\U0001f50d 检测缺失驱动</button>'
+  html += '<button class="btn btn-outline" onclick="showDriverInstall()" style="padding:8px 18px;border-radius:6px;cursor:pointer;font-size:12px">\u2795 安装驱动</button>'
+  html += '</div>'
+  html += '<div id="driverResult" style="background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow);font-size:12px;line-height:1.6">'
+  html += '<div style="font-size:14px;font-weight:600;margin-bottom:10px">\U0001f5a5\ufe0f 驱动信息</div>'
+  html += '<div id="driverContent" style="white-space:pre-wrap;font-family:monospace;background:#f5f5f5;padding:12px;border-radius:6px;min-height:100px;max-height:400px;overflow-y:auto">点击上方按钮以查看驱动信息</div>'
+  html += '</div>'
+  html += '</div>'
+  el.innerHTML = html
+}
+
+async function driverRefresh(action){
+  var contentEl = document.getElementById('driverContent') || document.getElementById('driverResult')
+  if(!contentEl) return
+  contentEl.innerHTML = '\u23f3 正在获取...'
+  try{
+    var r = await window.phase2API.driver(action)
+    if(r && r.success){
+      contentEl.innerHTML = esc(r.output).replace(/\n/g,'<br>')
+    }else{
+      contentEl.innerHTML = '<span style="color:var(--danger)">\u274c ' + (r&&r.error?esc(r.error):'\u83b7\u53d6\u5931\u8d25') + '</span>'
+    }
+  }catch(e){
+    contentEl.innerHTML = '<span style="color:var(--danger)">\u274c \u5f02\u5e38: ' + esc(e.message) + '</span>'
+  }
+}
+
+function showDriverInstall(){
+  var contentEl = document.getElementById('driverContent')
+  if(!contentEl) return
+  contentEl.innerHTML = '<div style="padding:10px"><div style="font-weight:600;margin-bottom:10px">\u2795 安装/卸载驱动</div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">驱动模块名称: </label><br>' +
+    '<input id="driverNameInput" placeholder="例如: nvidia" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>' +
+    '<div style="display:flex;gap:8px;margin-top:8px">' +
+    '<button class="btn" onclick="doDriverAction(\'install\')" style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">\u23ec 安装</button>' +
+    '<button class="btn" onclick="doDriverAction(\'uninstall\')" style="padding:8px 18px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">\u23ec 卸载</button>' +
+    '</div>' +
+    '<div id="driverActionResult" style="margin-top:10px;font-size:12px;white-space:pre-wrap;font-family:monospace"></div></div>'
+}
+
+async function doDriverAction(action){
+  var nameInput = document.getElementById('driverNameInput')
+  var resultEl = document.getElementById('driverActionResult')
+  if(!nameInput||!resultEl) return
+  var name = nameInput.value.trim()
+  if(!name){resultEl.innerHTML = '<span style="color:var(--danger)">\u274c \u8bf7\u8f93\u5165\u9a71\u52a8\u6a21\u5757\u540d\u79f0</span>'; return}
+  resultEl.innerHTML = '\u23f3 \u6b63\u5728' + (action==='install'?'\u5b89\u88c5':'\u5378\u8f7d') + ': ' + esc(name) + '...'
+  try{
+    var r = await window.phase2API.driver(action, {driverName: name})
+    if(r && r.success){
+      resultEl.innerHTML = '<span style="color:var(--success)">\u2705 \u64cd\u4f5c\u5b8c\u6210</span><br><br>' + esc(r.output).replace(/\n/g,'<br>')
+    }else{
+      resultEl.innerHTML = '<span style="color:var(--danger)">\u274c ' + (r&&r.error?esc(r.error):'\u64cd\u4f5c\u5931\u8d25') + '</span>'
+    }
+  }catch(e){
+    resultEl.innerHTML = '<span style="color:var(--danger)">\u274c \u5f02\u5e38: ' + esc(e.message) + '</span>'
+  }
+}
+
 async function renderPhase2Page(el){
   el.innerHTML = '<p style="margin-bottom:16px;color:var(--text-sec);font-size:13px">\U0001f6e0\ufe0f 更多实用功能 · 点击工具卡片使用</p>' +
     '<div class="card-grid">' +
@@ -4907,42 +5589,13 @@ async function loadPhase2Tool(id){
 
   // === 7. 驱动管理 ===
   if(id === 'driver-mgr'){
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 正在获取驱动信息...</div>'
-    try{
-      var r4 = await window.phase2API.driver('list')
-      if(r4 && r4.success){
-        el.innerHTML = '<div style="background:var(--card-bg);padding:16px;border-radius:8px;box-shadow:var(--shadow);font-size:12px;line-height:1.6;white-space:pre-wrap;font-family:monospace;max-height:400px;overflow-y:auto">' + esc(r4.output) + '</div>'
-      } else {
-        el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c 获取失败: ' + (r4 && r4.error ? r4.error : '') + '</div>'
-      }
-    } catch(e){
-      el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c 异常: ' + esc(e.message) + '</div>'
-    }
+    renderDriverPage(el)
     return
   }
 
   // === 8. 远程桌面 ===
   if(id === 'remote-desktop'){
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 正在检查远程桌面工具...</div>'
-    try{
-      var r5 = await window.phase2API.remote('check')
-      var html5 = '<div style="background:var(--card-bg);padding:16px;border-radius:8px;box-shadow:var(--shadow)">'
-      html5 += '<div style="font-size:13px;font-weight:500;margin-bottom:12px">\U0001f5a5\ufe0f 远程桌面连接</div>'
-      if(r5 && r5.success){
-        html5 += '<div style="font-size:12px;line-height:1.6;white-space:pre-wrap;font-family:monospace;margin-bottom:12px;background:#f5f5f5;padding:10px;border-radius:6px">' + esc(r5.output) + '</div>'
-      }
-      html5 += '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">地址: </label><br>'
-      html5 += '<input id="rdHost" placeholder="192.168.1.100" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>'
-      html5 += '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">端口: </label><br>'
-      html5 += '<input id="rdPort" placeholder="5900" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>'
-      html5 += '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      html5 += '<button class="btn" onclick="doRemoteConnect(\'vnc\')" style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">\U0001f50c VNC连接</button>'
-      html5 += '<button class="btn" onclick="doRemoteConnect(\'rdp\')" style="padding:8px 18px;background:#fff;color:#333;border:1px solid #ddd;border-radius:6px;cursor:pointer">\U0001f50c RDP连接</button></div>'
-      html5 += '<div id="remoteResult" style="margin-top:10px;font-size:12px"></div></div>'
-      el.innerHTML = html5
-    } catch(e){
-      el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c ' + esc(e.message) + '</div>'
-    }
+    renderRemoteDesktopPage(el)
     return
   }
 }
@@ -5008,7 +5661,7 @@ async function doFileSearch(){
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid #f0f0f0">'
         html += '<div style="flex:1;min-width:0"><div style="font-size:12px">' + esc(f.name) + '</div><div style="font-size:10px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(f.path) + '</div></div>'
         html += '<div style="flex-shrink:0;display:flex;gap:6px;align-items:center"><span style="font-size:10px;color:#999">' + esc(f.size || '') + '</span>'
-        html += '<button class="btn btn-sm" onclick="window.shell.openPath(\'' + esc(f.path).replace(/\x27/g,'\\\'') + '\')" style="padding:2px 8px;font-size:10px">\U0001f4c2 打开</button></div></div>'
+        html += '<button class="btn btn-sm" onclick="window.shell.openPath(\'' + esc(f.path).replace(/\x27/g,'\\'') + '\')" style="padding:2px 8px;font-size:10px">\U0001f4c2 打开</button></div></div>'
       }
       if(r.files.length > 100){
         html += '<div style="text-align:center;padding:8px;color:var(--text-sec);font-size:11px">... 仅显示前 100 个结果</div>'
@@ -5085,13 +5738,13 @@ async function doBackup(action){
     var params = {}
     if(action === 'export'){
       var savePath = await window.fileAPI.selectDirectory()
-      if(!savePath || savePath.canceled) return
-      params.path = savePath.filePaths[0]
+      if(!savePath) return
+      params.path = savePath
     }
     if(action === 'import'){
       var file = await window.fileAPI.selectFile([{name:'备份文件',extensions:['tar.gz','tgz']}])
-      if(!file || file.canceled || !file.filePaths[0]) return
-      params.file = file.filePaths[0]
+      if(!file) return
+      params.file = file
     }
     var r = await window.phase2API.backup(action, params)
     if(r && r.success){
@@ -5107,23 +5760,187 @@ async function doBackup(action){
 async function doRemoteConnect(type){
   var host = document.getElementById('rdHost') ? document.getElementById('rdHost').value.trim() : ''
   var port = document.getElementById('rdPort') ? document.getElementById('rdPort').value.trim() : ''
+  var password = document.getElementById('rdPassword') ? document.getElementById('rdPassword').value.trim() : ''
+  var username = document.getElementById('rdUsername') ? document.getElementById('rdUsername').value.trim() : ''
   var resultEl = document.getElementById('remoteResult')
   if(!host){
-    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">请输入远程地址</span>'
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">\u8bf7\u8f93\u5165\u8fdc\u7a0b\u5730\u5740</span>'
     return
   }
-  if(resultEl) resultEl.innerHTML = '<span style="color:var(--warning)">\u23f3 正在连接 ' + host + ':' + (port || '默认端口') + '...</span>'
+  if(resultEl) resultEl.innerHTML = '<span style="color:var(--warning)">\u23f3 \u6b63\u5728\u8fde\u63a5 ' + host + ':' + (port || '\u9ed8\u8ba4\u7aef\u53e3') + '...</span>'
   try{
-    var r = await window.phase2API.remote('connect', { type: type||'vnc', host: host, port: port||'' })
-    if(r && r.success){
-      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">\u2705 连接命令已执行</span><br><pre style="margin-top:8px">' + esc(r.output||'') + '</pre>'
+    var r
+    if(window.remoteDesktopAPI){
+      r = await window.remoteDesktopAPI.connect({ type: type, host: host, port: port, password: password, username: username })
     } else {
-      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">\u274c 连接失败: ' + (r && r.error ? r.error : '') + '</span>'
+      r = await window.phase2API.remote('connect', { type: type, host: host, port: port, password: password, username: username })
+    }
+    if(r && r.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">\u2705 ' + esc(r.output||'\u8fde\u63a5\u547d\u4ee4\u5df2\u6267\u884c') + '</span><br><pre style="margin-top:8px">' + esc(r.output||'') + '</pre>'
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">\u274c \u8fde\u63a5\u5931\u8d25: ' + esc(r?.error||'') + '</span>'
     }
   } catch(e){
-    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">\u274c 异常: ' + esc(e.message) + '</span>'
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">\u274c \u5f02\u5e38: ' + esc(e.message) + '</span>'
   }
+}
 
+// ============ 远程桌面页面 ============
+async function renderRemoteDesktopPage(el){
+  el.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:8px 0">' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">' +
+      '<button class="btn btn-primary" onclick="showAddRemoteConnection()" style="padding:8px 18px">\u2795 \u65b0\u589e\u8fde\u63a5</button>' +
+      '<button class="btn btn-outline" onclick="renderRemoteDesktopPage(document.getElementById(\'pageContent\'))" style="padding:8px 18px">\ud83d\udd04 \u5237\u65b0</button>' +
+    '</div>' +
+    '<div id="remoteContentArea" style="background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow)">' +
+      '<div style="font-size:13px;font-weight:500;margin-bottom:12px">\ud83d\udda5\ufe0f \u4fdd\u5b58\u7684\u8fde\u63a5</div>' +
+      '<div id="savedConnectionsList"><p style="text-align:center;padding:20px;color:var(--text-ter)">\u23f3 \u6b63\u5728\u52a0\u8f7d...</p></div>' +
+    '</div>' +
+    '<div style="margin-top:16px;background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow)">' +
+      '<div style="font-size:13px;font-weight:500;margin-bottom:12px">\ud83d\udd0c \u5feb\u901f\u8fde\u63a5</div>' +
+      '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">\u5730\u5740: </label><br>' +
+      '<input id="rdHost" placeholder="192.168.1.100" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>' +
+      '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">\u7aef\u53e3: </label><br>' +
+      '<input id="rdPort" placeholder="5900 (VNC) / 3389 (RDP)" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>' +
+      '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">\u7528\u6237\u540d (\u53ef\u9009): </label><br>' +
+      '<input id="rdUsername" placeholder="" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>' +
+      '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">\u5bc6\u7801 (\u53ef\u9009): </label><br>' +
+      '<input id="rdPassword" type="password" placeholder="" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
+      '<button class="btn" onclick="doRemoteConnect(\'vnc\')" style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">\ud83d\udd0c VNC\u8fde\u63a5</button>' +
+      '<button class="btn" onclick="doRemoteConnect(\'rdp\')" style="padding:8px 18px;background:#fff;color:#333;border:1px solid var(--border);border-radius:6px;cursor:pointer">\ud83d\udd0c RDP\u8fde\u63a5</button></div>' +
+      '<div id="remoteResult" style="margin-top:10px;font-size:12px"></div>' +
+    '</div>' +
+  '</div>'
+  loadSavedConnections()
+}
+
+async function loadSavedConnections(){
+  var listEl = document.getElementById('savedConnectionsList')
+  if(!listEl) return
+  try{
+    var r
+    if(window.remoteDesktopAPI){
+      r = await window.remoteDesktopAPI.listConnections()
+    } else {
+      r = await window.phase2API.remote('list-connections')
+    }
+    if(r && r.success && r.connections && r.connections.length > 0){
+      var html = ''
+      for(var i = 0; i < r.connections.length; i++){
+        var c = r.connections[i]
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border-light);cursor:pointer" onclick="quickConnect(\'' + c.name + '\')">'
+        html += '<div><strong>' + esc(c.name) + '</strong> <span style="color:var(--text-ter);font-size:11px">(' + (c.type||'vnc').toUpperCase() + ') ' + esc(c.host) + ':' + (c.port||'') + '</span></div>'
+        html += '<div style="display:flex;gap:6px">'
+        html += '<button class="btn btn-sm" onclick="event.stopPropagation();if(confirm(\'\u786e\u8ba4\u5220\u9664?\'))deleteConnection(\'' + esc(c.name).replace(/'/g,"\'") + '\')" style="background:var(--danger);color:#fff;border:none;padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer">\ud83d\uddd1\ufe0f</button>'
+        html += '</div></div>'
+      }
+      listEl.innerHTML = html
+    } else {
+      listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-ter);font-size:13px">\u6682\u65e0\u4fdd\u5b58\u7684\u8fde\u63a5\uff0c\u70b9\u51fb\u201c\u65b0\u589e\u8fde\u63a5\u201d\u6dfb\u52a0</div>'
+    }
+  } catch(e){
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--danger)">\u274c \u52a0\u8f7d\u5931\u8d25: ' + esc(e.message) + '</div>'
+  }
+}
+
+function showAddRemoteConnection(){
+  showModal(
+    '<button class="close-btn" onclick="closeModal()">\u2715</button>' +
+    '<h2>\u2795 \u65b0\u589e\u8fde\u63a5</h2>' +
+    '<div class="sub">\u4fdd\u5b58\u8fde\u63a5\u914d\u7f6e\uff0c\u65b9\u4fbf\u4e0b\u6b21\u5feb\u901f\u8fde\u63a5</div>' +
+    '<div style="margin-top:16px">' +
+    '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">\u8fde\u63a5\u540d\u79f0: </label><br>' +
+    '<input id="newConnName" placeholder="\u4f8b\u5982\uff1a\u5de5\u4f5c\u7535\u8111" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;box-sizing:border-box"></div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">\u5730\u5740: </label><br>' +
+    '<input id="newConnHost" placeholder="192.168.1.100" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;box-sizing:border-box"></div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">\u7aef\u53e3: </label><br>' +
+    '<input id="newConnPort" placeholder="5900 (VNC) / 3389 (RDP)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;box-sizing:border-box"></div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">\u534f\u8bae: </label><br>' +
+    '<select id="newConnType" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff;box-sizing:border-box">' +
+    '<option value="vnc">VNC</option>' +
+    '<option value="rdp">RDP</option></select></div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">\u7528\u6237\u540d (\u53ef\u9009): </label><br>' +
+    '<input id="newConnUser" placeholder="" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;box-sizing:border-box"></div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">\u5bc6\u7801 (\u53ef\u9009): </label><br>' +
+    '<input id="newConnPassword" type="password" placeholder="" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;box-sizing:border-box"></div>' +
+    '</div>' +
+    '<div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">' +
+    '<button class="btn btn-sec" onclick="closeModal()">\u53d6\u6d88</button>' +
+    '<button class="btn btn-primary" onclick="doSaveNewConnection()">\u4fdd\u5b58</button></div>'
+  )
+}
+
+async function doSaveNewConnection(){
+  var name = document.getElementById('newConnName')?.value || ''
+  var host = document.getElementById('newConnHost')?.value || ''
+  var port = document.getElementById('newConnPort')?.value || ''
+  var type = document.getElementById('newConnType')?.value || 'vnc'
+  var username = document.getElementById('newConnUser')?.value || ''
+  var password = document.getElementById('newConnPassword')?.value || ''
+  if(!name || !host){
+    alert('\u8bf7\u586b\u5199\u8fde\u63a5\u540d\u79f0\u548c\u5730\u5740')
+    return
+  }
+  closeModal()
+  try{
+    var r
+    if(window.remoteDesktopAPI){
+      r = await window.remoteDesktopAPI.saveConnection({ name: name, host: host, port: port, type: type, username: username, password: password })
+    } else {
+      r = await window.phase2API.remote('save-connection', { name: name, host: host, port: port, type: type, username: username, password: password })
+    }
+    if(r && r.success){
+      renderRemoteDesktopPage(document.getElementById('pageContent'))
+    } else {
+      alert('\u4fdd\u5b58\u5931\u8d25: ' + (r?.error || '\u672a\u77e5\u9519\u8bef'))
+    }
+  } catch(e){
+    alert('\u4fdd\u5b58\u5931\u8d25: ' + e.message)
+  }
+}
+
+async function quickConnect(name){
+  try{
+    var r
+    if(window.remoteDesktopAPI){
+      r = await window.remoteDesktopAPI.listConnections()
+    } else {
+      r = await window.phase2API.remote('list-connections')
+    }
+    if(r && r.success && r.connections){
+      var conn = r.connections.find(function(c){ return c.name === name })
+      if(conn){
+        document.getElementById('rdHost').value = conn.host
+        document.getElementById('rdPort').value = conn.port || ''
+        document.getElementById('rdUsername').value = conn.username || ''
+        document.getElementById('rdPassword').value = conn.password || ''
+        doRemoteConnect(conn.type || 'vnc')
+      }
+    }
+  } catch(e){
+    alert('\u8fde\u63a5\u5931\u8d25: ' + e.message)
+  }
+}
+
+async function deleteConnection(name){
+  if(!confirm('\u786e\u8ba4\u5220\u9664\u8fde\u63a5 "' + name + '"?')) return
+  try{
+    var r
+    if(window.remoteDesktopAPI){
+      r = await window.remoteDesktopAPI.deleteConnection(name)
+    } else {
+      r = await window.phase2API.remote('delete-connection', { name: name })
+    }
+    if(r && r.success){
+      loadSavedConnections()
+    } else {
+      alert('\u5220\u9664\u5931\u8d25: ' + (r?.error || '\u672a\u77e5\u9519\u8bef'))
+    }
+  } catch(e){
+    alert('\u5220\u9664\u5931\u8d25: ' + e.message)
+  }
+}
 async function renderShortcutMgr(el){
   el.innerHTML = '<div style="max-width:1000px;margin:0 auto">' +
     '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">' +
@@ -5194,10 +6011,10 @@ function renderShortcutTable(shortcuts){
     const keyVal = s.value || ''
     let displayVal = keyVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')
     if(displayVal === "['']" || displayVal === "disabled" || displayVal === "@as []") displayVal = '<span style="color:var(--text-ter)">未设置</span>'
-    return '<tr style="cursor:pointer" onclick="editShortcut(\'' + escHtml(keyName) + '\',\'' + escHtml(keyVal).replace(/'/g,"\\'") + '\')">' +
+    return '<tr style="cursor:pointer" onclick="editShortcut(\'' + escHtml(keyName) + '\',\'' + escHtml(keyVal).replace(/'/g,"\'") + '\')">' +
       '<td style="font-weight:500">' + escHtml(keyName.replace(/_/g,' ').replace(/-/g,' ').replace(/^./,c=>c.toUpperCase())) + '</td>' +
       '<td><code style="background:var(--primary-light);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--primary)">' + displayVal + '</code></td>' +
-      '<td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editShortcut(\'' + escHtml(keyName).replace(/'/g,"\\'") + '\',\'' + escHtml(keyVal).replace(/'/g,"\\'") + '\')">✏️ 编辑</button></td>' +
+      '<td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editShortcut(\'' + escHtml(keyName).replace(/'/g,"\'") + '\',\'' + escHtml(keyVal).replace(/'/g,"\'") + '\')">✏️ 编辑</button></td>' +
     '</tr>'
   }).join('')
   const countEl = document.getElementById('shortcutCount')
@@ -5272,7 +6089,7 @@ function editShortcut(key, val){
     '</div>' +
     '<div id="editShortcutResult" style="margin-top:8px;font-size:12px;display:none"></div>' +
     '<div class="modal-footer" style="margin-top:16px">' +
-      '<button class="btn btn-primary" onclick="doEditShortcut(\'' + escHtml(key).replace(/'/g,"\\'") + '\')">✅ 保存</button>' +
+      '<button class="btn btn-primary" onclick="doEditShortcut(\'' + escHtml(key).replace(/'/g,"\'") + '\')">✅ 保存</button>' +
       '<button class="btn btn-outline" onclick="closeModal()" style="margin-left:8px">取消</button>' +
     '</div>'
 }
@@ -6172,6 +6989,600 @@ async function installVpnTools() {
     if (el) el.innerHTML = '<p style="text-align:center;color:var(--danger)">❌ 安装失败: ' + escHtml(res?.error || '未知错误') + '</p>'
   }
 }
+
+// ============ 磁盘分析器 (Stage 2) ============
+async function renderDiskAnalyzer(el){
+  el.innerHTML=`<div style="max-width:900px;margin:0 auto">
+    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="diskAnalyzerScan()">📊 扫描磁盘使用</button>
+      <button class="btn btn-outline" onclick="diskAnalyzerBigFiles()">📁 扫描大文件</button>
+      <button class="btn btn-outline" onclick="diskAnalyzerRefresh()">🔄 刷新</button>
+    </div>
+    <div id="diskAnalyzerResult">
+      <div style="text-align:center;padding:40px;color:var(--text-sec)">点击「扫描磁盘使用」开始分析磁盘空间</div>
+    </div>
+  </div>`
+}
+
+async function diskAnalyzerScan(){
+  var el=document.getElementById('diskAnalyzerResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在扫描磁盘使用情况...</div>'
+  try{
+    var res=await window.diskAPI?.getDiskUsage()
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 获取磁盘信息失败</div>';return}
+    var html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">'
+    ;(res.mounts||[]).forEach(function(m){
+      var pct=parseFloat(m.usePercent)||0
+      var color=pct>85?'var(--danger)':pct>60?'var(--warning)':'var(--success)'
+      var total=window.fileAPI?.formatSize?window.fileAPI.formatSize(m.total):(m.total||'-')
+      var used=window.fileAPI?.formatSize?window.fileAPI.formatSize(m.used):(m.used||'-')
+      var free=window.fileAPI?.formatSize?window.fileAPI.formatSize(m.free):(m.free||'-')
+      html+='<div style="background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow)">'
+      html+='<div style="font-size:14px;font-weight:600;margin-bottom:6px">💾 '+escHtml(m.mount||'')+'</div>'
+      html+='<div style="font-size:11px;color:var(--text-sec);margin-bottom:8px">'+escHtml(m.fs||'')+' · 总容量: '+total+'</div>'
+      html+='<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>已用: '+used+'</span><span style="font-weight:600;color:'+color+'">'+pct+'%</span></div>'
+      html+='<div style="height:8px;background:#f0f0f0;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;border-radius:4px;background:'+color+';transition:width 0.5s"></div></div>'
+      html+='<div style="font-size:11px;color:var(--text-sec);margin-top:4px">可用: '+free+'</div>'
+      html+='</div>'
+    })
+    html+='</div>'
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 扫描失败: '+esc(e.message)+'</div>'}
+}
+
+async function diskAnalyzerBigFiles(){
+  var el=document.getElementById('diskAnalyzerResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在扫描大文件（可能较慢）...</div>'
+  try{
+    var res=await window.diskAPI?.getBigFiles()
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 扫描大文件失败</div>';return}
+    var files=res.files||[]
+    if(files.length===0){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">未找到超过100MB的大文件</div>';return}
+    var html='<div style="margin-bottom:8px;font-size:13px;font-weight:600">📁 找到 '+files.length+' 个大文件</div>'
+    html+='<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#f8f9fa">'
+    html+='<th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">大小</th>'
+    html+='<th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">路径</th></tr></thead><tbody>'
+    files.forEach(function(f){
+      var sz=window.fileAPI?.formatSize?window.fileAPI.formatSize(f.size):(f.size||'')
+      html+='<tr><td style="padding:6px 10px;border-bottom:1px solid #f5f5f5;white-space:nowrap;font-weight:500;color:'+(f.size>1073741824?'var(--danger)':'var(--warning)')+'">'+sz+'</td>'
+      html+='<td style="padding:6px 10px;border-bottom:1px solid #f5f5f5;word-break:break-all;font-family:monospace;font-size:11px">'+escHtml(f.path||'')+'</td></tr>'
+    })
+    html+='</tbody></table>'
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 扫描失败: '+esc(e.message)+'</div>'}
+}
+
+async function diskAnalyzerRefresh(){
+  await diskAnalyzerScan()
+}
+
+// ============ 系统日志查看器 (Stage 2) ============
+async function renderSysLogViewer(el){
+  el.innerHTML=`<div style="max-width:900px;margin:0 auto">
+    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="logSearchInput" type="text" placeholder="搜索关键词..." style="flex:1;min-width:150px;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')sysLogSearch()">
+      <select id="logPrioritySelect" style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none">
+        <option value="">全部级别</option>
+        <option value="emerg">紧急 (emerg)</option>
+        <option value="alert">警报 (alert)</option>
+        <option value="crit">严重 (crit)</option>
+        <option value="err">错误 (err)</option>
+        <option value="warning">警告 (warning)</option>
+        <option value="notice">通知 (notice)</option>
+        <option value="info">信息 (info)</option>
+        <option value="debug">调试 (debug)</option>
+      </select>
+      <select id="logBootSelect" style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none">
+        <option value="-1">本次启动</option>
+        <option value="">所有日志</option>
+      </select>
+      <button class="btn btn-primary" onclick="sysLogSearch()">🔍 搜索</button>
+      <button class="btn btn-outline" onclick="sysLogTail()">📋 实时日志</button>
+      <button class="btn btn-outline" onclick="sysLogClear()">🗑️ 清空</button>
+    </div>
+    <div id="sysLogResult">
+      <div style="text-align:center;padding:40px;color:var(--text-sec)">输入关键词并点击「搜索」查看系统日志</div>
+    </div>
+  </div>`
+}
+
+async function sysLogSearch(){
+  var el=document.getElementById('sysLogResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在搜索日志...</div>'
+  var keyword=document.getElementById('logSearchInput')?.value||''
+  var priority=document.getElementById('logPrioritySelect')?.value||''
+  var boot=document.getElementById('logBootSelect')?.value||''
+  try{
+    var res=await window.logAPI?.search({keyword:keyword,priority:priority,boot:boot})
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 获取日志失败'+(res?': '+escHtml(res.error):'')+'</div>';return}
+    var lines=res.lines||[]
+    if(lines.length===0){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">未找到匹配的日志条目</div>';return}
+    var html='<div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">'
+    html+='<span style="font-size:13px;font-weight:600">📋 共 '+lines.length+' 条日志</span>'
+    html+='<span style="font-size:11px;color:var(--text-sec)">来源: journalctl</span></div>'
+    html+='<div class="modal-output" style="max-height:500px;font-size:12px;line-height:1.6">'
+    lines.forEach(function(l){
+      var cls='l out'
+      if(l.indexOf('error')>=0||l.indexOf('Error')>=0||l.indexOf('ERROR')>=0) cls='l error'
+      else if(l.indexOf('warn')>=0||l.indexOf('Warn')>=0) cls='l info'
+      html+='<div class="'+cls+'">'+escHtml(l)+'</div>'
+    })
+    html+='</div>'
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 搜索失败: '+esc(e.message)+'</div>'}
+}
+
+async function sysLogTail(){
+  var el=document.getElementById('sysLogResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在获取最近日志（最近50条）...</div>'
+  try{
+    var res=await window.logAPI?.tail()
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 获取日志失败'+(res?': '+escHtml(res.error):'')+'</div>';return}
+    var lines=res.lines||[]
+    if(lines.length===0){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">暂无日志</div>';return}
+    var html='<div style="margin-bottom:8px"><span style="font-size:13px;font-weight:600">📋 最近 '+lines.length+' 条日志</span></div>'
+    html+='<div class="modal-output" style="max-height:500px;font-size:12px;line-height:1.6">'
+    lines.forEach(function(l){
+      var cls='l out'
+      if(l.indexOf('error')>=0||l.indexOf('Error')>=0||l.indexOf('ERROR')>=0) cls='l error'
+      else if(l.indexOf('warn')>=0||l.indexOf('Warn')>=0) cls='l info'
+      html+='<div class="'+cls+'">'+escHtml(l)+'</div>'
+    })
+    html+='</div>'
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 获取日志失败: '+esc(e.message)+'</div>'}
+}
+
+async function sysLogClear(){
+  document.getElementById('logSearchInput').value=''
+  document.getElementById('logPrioritySelect').value=''
+  document.getElementById('logBootSelect').value='-1'
+  document.getElementById('sysLogResult').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">已清空，重新搜索</div>'}
+
+// ============ 性能基准测试 (Stage 3) ============
+async function renderBenchmark(el){
+  el.innerHTML=`<div style="max-width:950px;margin:0 auto">
+    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="benchmarkRunCPU()">🖥️ CPU 测试</button>
+      <button class="btn btn-outline" onclick="benchmarkRunDisk()">💾 磁盘测试</button>
+      <button class="btn btn-outline" onclick="benchmarkRunMemory()">🧠 内存测试</button>
+      <button class="btn btn-outline" onclick="benchmarkRunNetwork()">🌐 网络测试</button>
+      <button class="btn btn-outline" onclick="benchmarkRunAll()">⚡ 全部测试</button>
+      <button class="btn btn-outline" onclick="benchmarkClear()">🗑️ 清空</button>
+    </div>
+    <div id="benchmarkResult">
+      <div style="text-align:center;padding:40px;color:var(--text-sec)">
+        <div style="font-size:48px;margin-bottom:16px">⚡</div>
+        <div style="font-size:16px;margin-bottom:6px">系统性能基准测试</div>
+        <div style="font-size:13px;color:var(--text-ter)">点击上方按钮选择要执行的测试类型<br>CPU: 素数计算 / 磁盘: dd 读写 / 内存: 带宽测试 / 网络: 下载测速</div>
+      </div>
+    </div>
+  </div>`
+}
+
+function benchmarkShowCard(title, status, detail){
+  var el=document.getElementById('benchmarkResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在执行 '+title+' 测试...</div>'
+}
+
+async function benchmarkRunCPU(){
+  var el=document.getElementById('benchmarkResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在执行 CPU 性能测试（约10秒）...</div>'
+  try{
+    var res=await window.benchmarkAPI?.run('cpu')
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ CPU 测试失败'+(res?': '+escHtml(res.error):'')+'</div>';return}
+    var html='<div class="card" style="margin-bottom:14px;border-left:4px solid var(--primary)">'
+    html+='<div style="font-size:16px;font-weight:600;margin-bottom:10px">🖥️ CPU 性能测试结果</div>'
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">'
+    html+='<div style="padding:10px;background:#f8f9fa;border-radius:6px"><span style="color:var(--text-sec)">测试方法</span><br><strong>'+escHtml(res.method||'')+'</strong></div>'
+    if(res.events!==undefined){
+      html+='<div style="padding:10px;background:#f8f9fa;border-radius:6px"><span style="color:var(--text-sec)">总事件数</span><br><strong>'+res.events+'</strong></div>'
+      html+='<div style="padding:10px;background:#f8f9fa;border-radius:6px"><span style="color:var(--text-sec)">总耗时</span><br><strong>'+escHtml(res.totalTime||'')+'</strong></div>'
+      html+='<div style="padding:10px;background:#f8f9fa;border-radius:6px"><span style="color:var(--text-sec)">平均延迟</span><br><strong>'+escHtml(res.avgLat||'')+' ms</strong></div>'
+    }else if(res.elapsed){
+      html+='<div style="padding:10px;background:#f8f9fa;border-radius:6px"><span style="color:var(--text-sec)">计算耗时</span><br><strong>'+escHtml(res.elapsed||'')+'</strong></div>'
+      html+='<div style="padding:10px;background:#f8f9fa;border-radius:6px;grid-column:span 2"><span style="color:var(--text-sec)">结果（前100位）</span><br><strong style="word-break:break-all;font-size:11px;font-family:monospace">'+escHtml(res.result||'')+'</strong></div>'
+    }
+    html+='</div></div>'
+    if(res.raw){
+      html+='<details style="margin-bottom:14px"><summary style="cursor:pointer;padding:8px 12px;background:#f8f9fa;border-radius:6px;font-size:12px;color:var(--text-sec)">📄 查看原始输出</summary>'
+      html+='<pre style="background:#f5f5f5;padding:12px;border-radius:6px;margin-top:6px;overflow-x:auto;font-size:11px;line-height:1.5;max-height:300px">'+escHtml(res.raw)+'</pre></details>'
+    }
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ CPU 测试异常: '+esc(e.message)+'</div>'}
+}
+
+async function benchmarkRunDisk(){
+  var el=document.getElementById('benchmarkResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在执行磁盘读写测试（约15秒）...</div>'
+  try{
+    var res=await window.benchmarkAPI?.run('disk')
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 磁盘测试失败'+(res?': '+escHtml(res.error):'')+'</div>';return}
+    var html='<div class="card" style="margin-bottom:14px;border-left:4px solid #34c759">'
+    html+='<div style="font-size:16px;font-weight:600;margin-bottom:10px">💾 磁盘读写性能测试</div>'
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">'
+    html+='<div style="padding:14px;background:#f0fff4;border-radius:6px;text-align:center"><div style="color:var(--text-sec);font-size:11px">顺序写入</div><div style="font-size:20px;font-weight:700;color:#2e7d32">'+escHtml(res.writeSpeed||'')+'</div></div>'
+    html+='<div style="padding:14px;background:#e3f2fd;border-radius:6px;text-align:center"><div style="color:var(--text-sec);font-size:11px">顺序读取</div><div style="font-size:20px;font-weight:700;color:#1565c0">'+escHtml(res.readSpeed||'')+'</div></div>'
+    html+='<div style="padding:14px;background:#fff3e0;border-radius:6px;text-align:center;grid-column:span 2"><div style="color:var(--text-sec);font-size:11px">随机写入 (4K)</div><div style="font-size:20px;font-weight:700;color:#e65100">'+escHtml(res.randWriteSpeed||'')+'</div></div>'
+    html+='</div>'
+    html+='<div style="font-size:11px;color:var(--text-sec);margin-top:6px">测试块大小: '+escHtml(res.blockSize||'')+', 块数: '+(res.count||'')+'</div>'
+    html+='</div>'
+    if(res.writeRaw){
+      html+='<details style="margin-bottom:14px"><summary style="cursor:pointer;padding:8px 12px;background:#f8f9fa;border-radius:6px;font-size:12px;color:var(--text-sec)">📄 查看原始输出</summary>'
+      html+='<pre style="background:#f5f5f5;padding:12px;border-radius:6px;margin-top:6px;overflow-x:auto;font-size:11px;line-height:1.5;max-height:300px">写入: '+escHtml(res.writeRaw||'')+'\n\n读取: '+escHtml(res.readRaw||'')+'</pre></details>'
+    }
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 磁盘测试异常: '+esc(e.message)+'</div>'}
+}
+
+async function benchmarkRunMemory(){
+  var el=document.getElementById('benchmarkResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在执行内存带宽测试（约15秒）...</div>'
+  try{
+    var res=await window.benchmarkAPI?.run('memory')
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 内存测试失败'+(res?': '+escHtml(res.error):'')+'</div>';return}
+    var html='<div class="card" style="margin-bottom:14px;border-left:4px solid #ff9500">'
+    html+='<div style="font-size:16px;font-weight:600;margin-bottom:10px">🧠 内存带宽测试结果</div>'
+    html+='<div style="font-size:12px;color:var(--text-sec);margin-bottom:10px">测试方法: '+escHtml(res.method||'')+'</div>'
+    if(res.throughput){
+      html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">'
+      html+='<div style="padding:14px;background:#f0fff4;border-radius:6px;text-align:center"><div style="color:var(--text-sec);font-size:11px">吞吐量</div><div style="font-size:20px;font-weight:700;color:#2e7d32">'+escHtml(res.throughput||'')+'</div></div>'
+      html+='<div style="padding:14px;background:#f8f9fa;border-radius:6px;text-align:center"><div style="color:var(--text-sec);font-size:11px">平均延迟</div><div style="font-size:20px;font-weight:700">'+escHtml(res.avgLatency||'')+'</div></div>'
+      if(res.totalData) html+='<div style="padding:10px;background:#f8f9fa;border-radius:6px"><span style="color:var(--text-sec)">总数据量</span><br><strong>'+escHtml(res.totalData||'')+'</strong></div>'
+      if(res.totalOps) html+='<div style="padding:10px;background:#f8f9fa;border-radius:6px"><span style="color:var(--text-sec)">总操作数</span><br><strong>'+res.totalOps+'</strong></div>'
+      html+='</div>'
+    }else{
+      html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">'
+      html+='<div style="padding:14px;background:#f0fff4;border-radius:6px;text-align:center"><div style="color:var(--text-sec);font-size:11px">写入速度</div><div style="font-size:20px;font-weight:700;color:#2e7d32">'+escHtml(res.writeSpeed||'')+'</div></div>'
+      html+='<div style="padding:14px;background:#e3f2fd;border-radius:6px;text-align:center"><div style="color:var(--text-sec);font-size:11px">读取速度</div><div style="font-size:20px;font-weight:700;color:#1565c0">'+escHtml(res.readSpeed||'')+'</div></div>'
+      if(res.writeTime) html+='<div style="padding:10px;background:#f8f9fa;border-radius:6px"><span style="color:var(--text-sec)">写入耗时</span><br><strong>'+escHtml(res.writeTime||'')+'</strong></div>'
+      if(res.readTime) html+='<div style="padding:10px;background:#f8f9fa;border-radius:6px"><span style="color:var(--text-sec)">读取耗时</span><br><strong>'+escHtml(res.readTime||'')+'</strong></div>'
+      html+='</div>'
+    }
+    html+='</div>'
+    if(res.raw){
+      html+='<details style="margin-bottom:14px"><summary style="cursor:pointer;padding:8px 12px;background:#f8f9fa;border-radius:6px;font-size:12px;color:var(--text-sec)">📄 查看原始输出</summary>'
+      html+='<pre style="background:#f5f5f5;padding:12px;border-radius:6px;margin-top:6px;overflow-x:auto;font-size:11px;line-height:1.5;max-height:300px">'+escHtml(res.raw)+'</pre></details>'
+    }
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 内存测试异常: '+esc(e.message)+'</div>'}
+}
+
+async function benchmarkRunNetwork(){
+  var el=document.getElementById('benchmarkResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在执行网络速度测试（约15秒）...</div>'
+  try{
+    var res=await window.benchmarkAPI?.run('network')
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 网络测试失败'+(res?': '+escHtml(res.error):'')+'</div>';return}
+    var html='<div class="card" style="margin-bottom:14px;border-left:4px solid #4A6CF7">'
+    html+='<div style="font-size:16px;font-weight:600;margin-bottom:10px">🌐 网络速度测试结果</div>'
+    if(res.results&&res.results.length>0){
+      html+='<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px">'
+      html+='<thead><tr style="background:#f8f9fa"><th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">测试源</th>'
+      html+='<th style="padding:8px 10px;text-align:right;border-bottom:1px solid #eee">下载速度</th>'
+      html+='<th style="padding:8px 10px;text-align:right;border-bottom:1px solid #eee">速率 (Mbps)</th>'
+      html+='<th style="padding:8px 10px;text-align:right;border-bottom:1px solid #eee">耗时</th></tr></thead><tbody>'
+      res.results.forEach(function(r){
+        html+='<tr><td style="padding:6px 10px;border-bottom:1px solid #f5f5f5">'+escHtml(r.source||'')+'</td>'
+        if(r.error){
+          html+='<td colspan="3" style="padding:6px 10px;border-bottom:1px solid #f5f5f5;color:var(--danger)">❌ '+escHtml(r.error)+'</td></tr>'
+        }else{
+          html+='<td style="padding:6px 10px;border-bottom:1px solid #f5f5f5;text-align:right;font-weight:600">'+escHtml(r.speed||'')+'</td>'
+          html+='<td style="padding:6px 10px;border-bottom:1px solid #f5f5f5;text-align:right">'+escHtml(r.speedMbps||'')+'</td>'
+          html+='<td style="padding:6px 10px;border-bottom:1px solid #f5f5f5;text-align:right">'+escHtml(r.time||'')+'</td></tr>'
+        }
+      })
+      html+='</tbody></table>'
+    }else{
+      html+='<div style="padding:20px;text-align:center;color:var(--danger)">❌ 未获取到网络测速结果</div>'
+    }
+    if(res.iperfNote){
+      html+='<div style="padding:10px;background:#fff8e1;border-radius:6px;font-size:12px;color:#795548">'
+      html+='<strong>🔌 iperf3:</strong> '+(res.iperfAvailable?'✅ ':'❌ ')+escHtml(res.iperfNote)
+      html+='</div>'
+    }
+    html+='</div>'
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 网络测试异常: '+esc(e.message)+'</div>'}
+}
+
+async function benchmarkRunAll(){
+  var el=document.getElementById('benchmarkResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在执行全部测试（这可能需要一段时间）...</div>'
+  await benchmarkRunCPU()
+  await benchmarkRunDisk()
+  await benchmarkRunMemory()
+  await benchmarkRunNetwork()
+  // Append summary
+  var el2=document.getElementById('benchmarkResult')
+  if(el2){
+    var summaryHtml='<div style="margin-top:14px;padding:14px;background:var(--primary-light);border-radius:10px;text-align:center;font-size:14px;font-weight:600;color:var(--primary)">✅ 全部测试已完成</div>'
+    el2.innerHTML+=summaryHtml
+  }
+}
+
+function benchmarkClear(){
+  var el=document.getElementById('benchmarkResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)"><div style="font-size:48px;margin-bottom:16px">⚡</div><div style="font-size:16px;margin-bottom:6px">系统性能基准测试</div><div style="font-size:13px;color:var(--text-ter)">点击上方按钮选择要执行的测试类型<br>CPU: 素数计算 / 磁盘: dd 读写 / 内存: 带宽测试 / 网络: 下载测速</div></div>'
+}
+
+
+// ============ 4.1 网络诊断工具 ============
+async function renderNetDiag(el){
+  el.innerHTML='<div style="max-width:900px;margin:0 auto"><div style="background:var(--card-bg);border-radius:10px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px"><h3 style="font-size:14px;margin-bottom:10px">🌐 网络诊断工具</h3><div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><label style="font-size:12px;color:var(--text-sec);margin-bottom:4px;display:block">目标地址</label><input id="netDiagTarget" type="text" placeholder="域名或IP (如 baidu.com)" value="" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none" onkeydown="if(event.key===\'Enter\')startNetDiag()"></div><div style="display:flex;align-items:flex-end;gap:6px"><button class="btn btn-primary" onclick="startNetDiag()">🔍 执行诊断</button><button class="btn btn-outline" onclick="document.getElementById(\'netDiagResult\').innerHTML=\'\'">🗑 清空</button></div></div><div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-sec)"><label><input type="checkbox" id="diagPing" checked> Ping</label><label><input type="checkbox" id="diagTraceroute" checked> Traceroute</label><label><input type="checkbox" id="diagNslookup" checked> NSLookup</label><label><input type="checkbox" id="diagCurl" checked> Curl (HTTP)</label></div></div><div id="netDiagResult"></div></div>'
+}
+
+async function startNetDiag(){
+  var target=document.getElementById('netDiagTarget')?.value?.trim()
+  if(!target){alert('请输入目标地址');return}
+  var resultEl=document.getElementById('netDiagResult')
+  if(!resultEl)return
+  resultEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在执行诊断...</div>'
+  var checks=[]
+  if(document.getElementById('diagPing')?.checked) checks.push('ping')
+  if(document.getElementById('diagTraceroute')?.checked) checks.push('traceroute')
+  if(document.getElementById('diagNslookup')?.checked) checks.push('nslookup')
+  if(document.getElementById('diagCurl')?.checked) checks.push('curl')
+  try{
+    var res=await window.netDiagAPI?.run({target:target,checks:checks})
+    if(!res||!res.success){
+      resultEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 诊断失败'+(res?': '+escHtml(res.error):'无法连接到主进程')+'</div>'
+      return
+    }
+    var results=res.results||{}
+    var html=''
+    for(var k of checks){
+      var r=results[k]
+      if(!r) continue
+      html+='<div style="background:var(--card-bg);border-radius:8px;box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden">'
+      html+='<div style="padding:10px 16px;background:#f8f9fa;font-size:13px;font-weight:500;border-bottom:1px solid var(--border)">'
+      html+='<span style="color:'+(r.success?'var(--success)':'var(--danger)')+'">'+(r.success?'✅':'❌')+'</span> '
+      html+=k.toUpperCase()+' — '+target+'</div>'
+      if(r.output) html+='<div class="terminal-body" style="margin:0;padding:10px 16px;font-size:12px;line-height:1.6">'+escHtml(r.output)+'</div>'
+      if(r.error) html+='<div style="padding:8px 16px;color:var(--danger);font-size:12px">❌ '+escHtml(r.error)+'</div>'
+      html+='</div>'
+    }
+    resultEl.innerHTML=html
+  }catch(e){
+    resultEl.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 诊断异常: '+escHtml(e.message)+'</div>'
+  }
+}
+
+// ============ 4.2 服务管理 ============
+async function renderSvcMgr(el){
+  el.innerHTML='<div style="max-width:900px;margin:0 auto"><div style="background:var(--card-bg);border-radius:10px;padding:16px 20px;box-shadow:var(--shadow);margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="font-size:14px;font-weight:600;margin:0">📋 系统服务管理</h3><input id="svcSearchInput" type="text" placeholder="搜索服务名称..." style="flex:1;min-width:160px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none" onkeydown="if(event.key===\'Enter\')refreshSvcList()"><select id="svcStateFilter" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none"><option value="all">全部状态</option><option value="active">运行中</option><option value="inactive">已停止</option><option value="failed">失败</option></select><button class="btn btn-primary" onclick="refreshSvcList()">🔄 刷新</button></div></div><div id="svcListResult"><div style="text-align:center;padding:40px;color:var(--text-sec)">点击「刷新」查看服务列表</div></div></div>'
+}
+
+async function refreshSvcList(){
+  var el=document.getElementById('svcListResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在获取服务列表...</div>'
+  var keyword=document.getElementById('svcSearchInput')?.value?.trim()||''
+  var stateFilter=document.getElementById('svcStateFilter')?.value||'all'
+  try{
+    var res=await window.svcAPI?.list({keyword:keyword,state:stateFilter})
+    if(!res||!res.success){
+      el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 获取服务列表失败'+(res?': '+escHtml(res.error):'')+'</div>';return
+    }
+    var services=res.services||[]
+    if(services.length===0){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">未找到匹配的服务</div>';return}
+    var html='<div style="background:var(--card-bg);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)"><div style="overflow-x:auto"><table class="monitor-table" style="font-size:12px;width:100%">'
+    html+='<thead><tr><th style="width:30px"></th><th>服务名称</th><th>状态</th><th style="width:70px">子状态</th><th style="width:70px">开机自启</th><th style="width:120px">操作</th></tr></thead><tbody>'
+    for(var i=0;i<services.length;i++){
+      var sv=services[i];var isActive=sv.active||sv.state==='active';var isEnabled=sv.enabled||sv.subState==='enabled'
+      html+='<tr><td style="text-align:center;font-size:14px">'+(isActive?'✅':'⏹')+'</td>'
+      html+='<td style="font-family:monospace;font-size:11px;word-break:break-all;max-width:250px" title="'+escHtml(sv.description||'')+'">'+escHtml(sv.name||sv.unit||'')+'</td>'
+      html+='<td>'+(isActive?'<span style="color:var(--success)">● 运行中</span>':'<span style="color:var(--text-sec)">○ 已停止</span>')+'</td>'
+      html+='<td style="text-align:center">'+escHtml(sv.subState||'-')+'</td>'
+      html+='<td style="text-align:center">'+(isEnabled?'<span style="color:var(--success)">已启用</span>':'<span style="color:var(--text-sec)">已禁用</span>')+'</td>'
+      html+='<td style="white-space:nowrap">'
+      if(isActive) html+='<button class="btn btn-sm" onclick="svcAction(\''+escHtml(sv.name)+'\',\'stop\')" style="font-size:10px;padding:2px 8px;color:var(--danger);border-color:var(--danger)">停止</button> '
+      else html+='<button class="btn btn-sm" onclick="svcAction(\''+escHtml(sv.name)+'\',\'start\')" style="font-size:10px;padding:2px 8px;color:var(--success);border-color:var(--success)">启动</button> '
+      html+='<button class="btn btn-sm" onclick="svcAction(\''+escHtml(sv.name)+'\',\'restart\')" style="font-size:10px;padding:2px 8px">重启</button>'
+      html+='</td></tr>'
+    }
+    html+='</tbody></table></div><div style="padding:8px 16px;font-size:11px;color:var(--text-sec);border-top:1px solid var(--border)">共 '+services.length+' 个服务</div></div>'
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 获取失败: '+escHtml(e.message)+'</div>'}
+}
+
+async function svcAction(name,action){
+  var pwd=prompt('请输入管理员密码以'+(action==='start'?'启动':action==='stop'?'停止':'重启')+'服务「'+name+'」:')
+  if(!pwd)return
+  var el=document.getElementById('svcListResult')
+  if(el)el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在'+(action==='start'?'启动':action==='stop'?'停止':'重启')+'服务...</div>'
+  try{
+    var res=await window.svcAPI?.action({name:name,action:action,password:pwd})
+    if(res&&res.success){setTimeout(refreshSvcList,500)}
+    else{if(el)el.innerHTML='<div style="text-align:center;padding:20px;color:var(--danger)">❌ '+(res&&res.error||'操作失败')+'</div>'}
+  }catch(e){if(el)el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ '+escHtml(e.message)+'</div>'}
+}
+
+// ============ 4.3 用户管理 ============
+async function renderUserMgr(el){
+  el.innerHTML='<div style="max-width:900px;margin:0 auto"><div style="background:var(--card-bg);border-radius:10px;padding:16px 20px;box-shadow:var(--shadow);margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="font-size:14px;font-weight:600;margin:0">👤 系统用户管理</h3><button class="btn btn-primary" onclick="refreshUserList()">🔄 刷新</button><button class="btn" onclick="showAddUser()">➕ 添加用户</button><button class="btn btn-outline" onclick="showLoginHistory()">📋 登录历史</button></div></div><div id="userListResult"><div style="text-align:center;padding:40px;color:var(--text-sec)">点击「刷新」查看用户列表</div></div></div>'
+}
+
+async function refreshUserList(){
+  var el=document.getElementById('userListResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在获取用户列表...</div>'
+  try{
+    var res=await window.userAPI?.list()
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 获取用户列表失败'+(res?': '+escHtml(res.error):'无法连接到主进程')+'</div>';return}
+    var users=res.users||[]
+    var html='<div style="background:var(--card-bg);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)"><div style="overflow-x:auto"><table class="monitor-table" style="font-size:12px;width:100%">'
+    html+='<thead><tr><th>用户名</th><th>UID</th><th>GID</th><th>全名</th><th>家目录</th><th>Shell</th><th>操作</th></tr></thead><tbody>'
+    for(var i=0;i<users.length;i++){
+      var u=users[i];var isSelf=u.name===u.currentUser
+      html+='<tr'+(isSelf?' style="background:#e8f5e9"':'')+'>'
+      html+='<td style="font-weight:500">'+escHtml(u.name||'-')+(isSelf?' <span style="font-size:10px;color:var(--success)">(当前)</span>':'')+'</td>'
+      html+='<td>'+escHtml(String(u.uid||'-'))+'</td><td>'+escHtml(String(u.gid||'-'))+'</td>'
+      html+='<td>'+escHtml(u.gecos||'-')+'</td>'
+      html+='<td style="font-family:monospace;font-size:11px">'+escHtml(u.dir||'-')+'</td>'
+      html+='<td style="font-family:monospace;font-size:11px">'+escHtml(u.shell||'-')+'</td>'
+      html+='<td style="white-space:nowrap">'
+      if(!isSelf&&u.uid>=1000) html+='<button class="btn btn-sm" onclick="showUserActions(\''+escHtml(u.name)+'\')" style="font-size:10px;padding:2px 8px">管理</button>'
+      else if(!isSelf) html+='<span style="font-size:10px;color:var(--text-ter)">系统用户</span>'
+      else html+='<span style="font-size:10px;color:var(--text-sec)">-</span>'
+      html+='</td></tr>'
+    }
+    html+='</tbody></table></div><div style="padding:8px 16px;font-size:11px;color:var(--text-sec);border-top:1px solid var(--border)">共 '+users.length+' 个用户 | 绿色标识当前登录用户</div></div>'
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 获取失败: '+escHtml(e.message)+'</div>'}
+}
+
+function showAddUser(){
+  openModal()
+  document.getElementById('modalContent').innerHTML='<button class="close-btn" onclick="closeModal()">X</button><h2>👤 添加用户</h2><div style="margin:16px 0"><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">用户名</label><input id="newUsername" type="text" placeholder="输入用户名" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none"></div><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">全名</label><input id="newUserFullname" type="text" placeholder="可选" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none"></div><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">密码</label><input id="newUserPwd" type="password" placeholder="输入密码" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none"></div><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">确认密码</label><input id="newUserPwd2" type="password" placeholder="再次输入密码" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none"></div><div style="margin-bottom:10px"><label><input type="checkbox" id="newUserSudo" checked> 赋予 sudo 权限</label></div></div><div class="modal-output" id="addUserResult" style="display:none"></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="doAddUser()">创建用户</button></div>'
+}
+
+async function doAddUser(){
+  var username=document.getElementById('newUsername')?.value?.trim();var fullname=document.getElementById('newUserFullname')?.value?.trim()
+  var pwd=document.getElementById('newUserPwd')?.value;var pwd2=document.getElementById('newUserPwd2')?.value
+  var sudo=document.getElementById('newUserSudo')?.checked;var resultEl=document.getElementById('addUserResult')
+  if(!username)return alert('请输入用户名');if(!pwd)return alert('请输入密码');if(pwd!==pwd2)return alert('两次输入的密码不一致')
+  resultEl.style.display='block';resultEl.innerHTML='<div class="l info">⏳ 正在创建用户...</div>'
+  try{
+    var res=await window.userAPI?.add({username:username,fullname:fullname,password:pwd,sudo:sudo})
+    if(res&&res.success){resultEl.innerHTML='<div class="l success">✅ 用户创建成功</div>';setTimeout(function(){closeModal();refreshUserList()},1000)}
+    else{resultEl.innerHTML='<div class="l error">❌ '+(res&&res.error||'创建失败')+'</div>'}
+  }catch(e){resultEl.innerHTML='<div class="l error">❌ '+escHtml(e.message)+'</div>'}
+}
+
+function showUserActions(username){
+  openModal()
+  document.getElementById('modalContent').innerHTML='<button class="close-btn" onclick="closeModal()">X</button><h2>👤 用户管理 — '+escHtml(username)+'</h2><div style="margin:16px 0;display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="closeModal();doChangePwd(\''+escHtml(username)+'\')">🔑 修改密码</button><button class="btn" style="color:var(--danger);border-color:var(--danger)" onclick="if(confirm(\'确定要删除用户「'+escHtml(username)+'」吗？\')){closeModal();doDelUser(\''+escHtml(username)+'\')}">🗑 删除用户</button></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>'
+}
+
+function doChangePwd(username){
+  openModal()
+  document.getElementById('modalContent').innerHTML='<button class="close-btn" onclick="closeModal()">X</button><h2>🔑 修改密码 — '+escHtml(username)+'</h2><div style="margin:16px 0"><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">管理员密码</label><input id="chpwdAdminPwd" type="password" placeholder="当前管理员密码" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none"></div><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">新密码</label><input id="chpwdNewPwd" type="password" placeholder="新密码" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none"></div><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">确认新密码</label><input id="chpwdNewPwd2" type="password" placeholder="再次输入新密码" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none"></div></div><div class="modal-output" id="chpwdResult" style="display:none"></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="doChpwd(\''+escHtml(username)+'\')">确认修改</button></div>'
+}
+
+async function doChpwd(username){
+  var adminPwd=document.getElementById('chpwdAdminPwd')?.value;var newPwd=document.getElementById('chpwdNewPwd')?.value
+  var newPwd2=document.getElementById('chpwdNewPwd2')?.value;var resultEl=document.getElementById('chpwdResult')
+  if(!adminPwd)return alert('请输入管理员密码');if(!newPwd)return alert('请输入新密码');if(newPwd!==newPwd2)return alert('两次输入的新密码不一致')
+  resultEl.style.display='block';resultEl.innerHTML='<div class="l info">⏳ 正在修改密码...</div>'
+  try{
+    var res=await window.userAPI?.changePwd({username:username, newPassword:newPwd, password:adminPwd})
+    if(res&&res.success){resultEl.innerHTML='<div class="l success">✅ 密码修改成功</div>';setTimeout(closeModal,1000)}
+    else{resultEl.innerHTML='<div class="l error">❌ '+(res&&res.error||'修改失败')+'</div>'}
+  }catch(e){resultEl.innerHTML='<div class="l error">❌ '+escHtml(e.message)+'</div>'}
+}
+
+async function doDelUser(username){
+  var pwd=prompt('请输入管理员密码以删除用户「'+username+'」:')
+  if(!pwd)return
+  var el=document.getElementById('userListResult')
+  if(el)el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在删除用户...</div>'
+  try{
+    var res=await window.userAPI?.remove({username:username,password:pwd})
+    if(res&&res.success){refreshUserList()}
+    else{if(el)el.innerHTML='<div style="text-align:center;padding:20px;color:var(--danger)">❌ '+(res&&res.error||'删除失败')+'</div>'}
+  }catch(e){if(el)el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ '+escHtml(e.message)+'</div>'}
+}
+
+function showLoginHistory(){
+  openModal()
+  document.getElementById('modalContent').innerHTML='<button class="close-btn" onclick="closeModal()">X</button><h2>📋 用户登录历史</h2><div style="margin:10px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select id="loginHistoryOpt" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none"><option value="last">最近登录</option><option value="all">全部记录</option><option value="failed">失败尝试</option></select><button class="btn btn-primary" onclick="loadLoginHistory()">🔍 查询</button></div><div class="modal-output" id="loginHistoryResult" style="display:block;max-height:450px"><div style="text-align:center;padding:30px;color:var(--text-sec)">选择查询条件后点击「查询」</div></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>'
+}
+
+async function loadLoginHistory(){
+  var el=document.getElementById('loginHistoryResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在查询...</div>'
+  var opt=document.getElementById('loginHistoryOpt')?.value||'last'
+  try{
+    var res=await window.userAPI?.loginHistory({option:opt})
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--danger)">❌ 查询失败'+(res?': '+escHtml(res.error):'无法连接到主进程')+'</div>';return}
+    var lines=res.lines||[]
+    if(lines.length===0){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-sec)">暂无记录</div>';return}
+    var html=''
+    for(var i=0;i<lines.length;i++) html+='<div class="l out">'+escHtml(lines[i])+'</div>'
+    el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 查询异常: '+escHtml(e.message)+'</div>'}
+}
+
+// ============ 4.4 定时任务 (Cron) 管理 ============
+async function renderCronMgr(el){
+  el.innerHTML='<div style="max-width:900px;margin:0 auto"><div style="background:var(--card-bg);border-radius:10px;padding:16px 20px;box-shadow:var(--shadow);margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="font-size:14px;font-weight:600;margin:0">⏰ 定时任务 (Crontab) 管理</h3><button class="btn btn-primary" onclick="refreshCronList()">🔄 刷新</button><button class="btn" onclick="showAddCron()">➕ 添加任务</button></div></div><div id="cronListResult"><div style="text-align:center;padding:40px;color:var(--text-sec)">点击「刷新」查看定时任务</div></div></div>'
+}
+
+async function refreshCronList(){
+  var el=document.getElementById('cronListResult')
+  if(!el)return
+  el.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-sec)">⏳ 正在获取定时任务...</div>'
+  try{
+    var res=await window.cronAPI?.list()
+    if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 获取失败'+(res?': '+escHtml(res.error):'无法连接到主进程')+'</div>';return}
+    var lines=res.lines||[]
+    var html='<div style="background:var(--card-bg);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)">'
+    if(lines.length===0){html+='<div style="text-align:center;padding:30px;color:var(--text-sec)">当前用户没有定时任务</div>'}
+    else{
+      html+='<div style="overflow-x:auto"><table class="monitor-table" style="font-size:12px;width:100%">'
+      html+='<thead><tr><th style="width:70px">行号</th><th>定时任务</th><th style="width:80px">操作</th></tr></thead><tbody>'
+      for(var i=0;i<lines.length;i++){
+        var l=lines[i];var isComment=l.trim().startsWith('#')
+        html+='<tr'+(isComment?' style="color:var(--text-ter);background:#f9f9f9"':'')+'>'
+        html+='<td style="text-align:center">'+(i+1)+'</td>'
+        html+='<td style="font-family:monospace;font-size:11px;word-break:break-all">'+escHtml(l)+'</td>'
+        html+='<td style="text-align:center">'
+        if(!isComment&&l.trim()) html+='<button class="btn btn-sm" onclick="removeCronLine('+(i+1)+')" style="font-size:10px;padding:2px 8px;color:var(--danger);border-color:var(--danger)">删除</button>'
+        else html+='<span style="font-size:10px;color:var(--text-ter)">注释</span>'
+        html+='</td></tr>'
+      }
+      html+='</tbody></table></div>'
+    }
+    html+='</div>';el.innerHTML=html
+  }catch(e){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 获取失败: '+escHtml(e.message)+'</div>'}
+}
+
+function showAddCron(){
+  openModal()
+  document.getElementById('modalContent').innerHTML='<button class="close-btn" onclick="closeModal()">X</button><h2>⏰ 添加定时任务</h2><div style="margin:16px 0"><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">Cron 表达式</label><div style="display:flex;gap:4px;flex-wrap:wrap"><input id="cronMin" placeholder="分" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronHour" placeholder="时" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronDay" placeholder="日" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronMonth" placeholder="月" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronWeek" placeholder="周" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"></div></div><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">执行命令</label><input id="cronCommand" type="text" placeholder="/usr/bin/command" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none"></div><div style="background:#f0f7ff;border-radius:6px;padding:10px;font-size:11px;line-height:1.6;color:#4A6CF7"><strong>💡 Cron 格式说明：</strong>分 时 日 月 周<br>每个字段可以输入数字、*（任意）、逗号分隔列表（如 1,3,5）或 */N 每 N 单位</div></div><div class="modal-output" id="addCronResult" style="display:none"></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="doAddCron()">添加任务</button></div>'
+}
+
+async function doAddCron(){
+  var min=document.getElementById('cronMin')?.value?.trim()||'*';var hour=document.getElementById('cronHour')?.value?.trim()||'*'
+  var day=document.getElementById('cronDay')?.value?.trim()||'*';var month=document.getElementById('cronMonth')?.value?.trim()||'*'
+  var week=document.getElementById('cronWeek')?.value?.trim()||'*';var cmd=document.getElementById('cronCommand')?.value?.trim()
+  var resultEl=document.getElementById('addCronResult')
+  if(!cmd)return alert('请输入要执行的命令')
+  resultEl.style.display='block';resultEl.innerHTML='<div class="l info">⏳ 正在添加定时任务...</div>'
+  try{
+    var cronLine=min+' '+hour+' '+day+' '+month+' '+week+' '+cmd
+    var res=await window.cronAPI?.add({line:cronLine})
+    if(res&&res.success){resultEl.innerHTML='<div class="l success">✅ 任务添加成功</div>';setTimeout(function(){closeModal();refreshCronList()},1000)}
+    else{resultEl.innerHTML='<div class="l error">❌ '+(res&&res.error||'添加失败')+'</div>'}
+  }catch(e){resultEl.innerHTML='<div class="l error">❌ '+escHtml(e.message)+'</div>'}
+}
+
+async function removeCronLine(lineNum){
+  if(!confirm('确定要删除第 '+lineNum+' 行吗？'))return
+  var pwd=prompt('请输入管理员密码以删除定时任务:')
+  if(!pwd)return
+  var el=document.getElementById('cronListResult')
+  if(el)el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在删除...</div>'
+  try{
+    var res=await window.cronAPI?.remove({line:lineNum,password:pwd})
+    if(res&&res.success){refreshCronList()}
+    else{if(el)el.innerHTML='<div style="text-align:center;padding:20px;color:var(--danger)">❌ '+(res&&res.error||'删除失败')+'</div>'}
+  }catch(e){if(el)el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ '+escHtml(e.message)+'</div>'}
+}
+
 </script>
 </body>
 </html>

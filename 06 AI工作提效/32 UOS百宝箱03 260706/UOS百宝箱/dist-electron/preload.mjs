@@ -42,6 +42,17 @@ contextBridge.exposeInMainWorld('scriptAPI', {
 
 // 文件操作 API
 contextBridge.exposeInMainWorld('fileAPI', {
+  formatSize: (bytes) => {
+    if (!bytes && bytes !== 0) return '-'
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+    let size = bytes
+    let unitIdx = 0
+    while (size >= 1024 && unitIdx < units.length - 1) {
+      size /= 1024
+      unitIdx++
+    }
+    return size.toFixed(unitIdx > 0 ? 1 : 0) + ' ' + units[unitIdx]
+  },
   selectDirectory: () => ipcRenderer.invoke('select-directory'),
   selectFile: (filters) => ipcRenderer.invoke('select-file', filters),
   saveFileDialog: (name, filters) => ipcRenderer.invoke('save-file-dialog', name, filters),
@@ -340,4 +351,86 @@ contextBridge.exposeInMainWorld('systemApp', {
   callCli: (command) => ipcRenderer.invoke('systemapp-cli', command)
 })
 
+// ========== 错误监控 API ==========
+contextBridge.exposeInMainWorld('errorAPI', {
+  getLogs: () => ipcRenderer.invoke('get-error-logs'),
+  clearLogs: () => ipcRenderer.invoke('clear-error-logs')
+})
+// 磁盘分析器 API (Stage 2)
+contextBridge.exposeInMainWorld('diskAPI', {
+  getDiskUsage: () => ipcRenderer.invoke('disk-analyzer', 'usage'),
+  getBigFiles: () => ipcRenderer.invoke('disk-analyzer', 'big-files')
+})
+
+// 日志查看器 API (Stage 2)
+contextBridge.exposeInMainWorld('logAPI', {
+  search: (opts) => ipcRenderer.invoke('syslog-viewer', 'search', opts),
+  tail: () => ipcRenderer.invoke('syslog-viewer', 'tail')
+})
+
+
+// 远程桌面 API (Stage 4)
+contextBridge.exposeInMainWorld('remoteDesktopAPI', {
+  check: () => ipcRenderer.invoke('remote-desktop', 'check'),
+  connect: (params) => ipcRenderer.invoke('remote-desktop', 'connect', params),
+  listConnections: () => ipcRenderer.invoke('remote-desktop', 'list-connections'),
+  saveConnection: (params) => ipcRenderer.invoke('remote-desktop', 'save-connection', params),
+  deleteConnection: (name) => ipcRenderer.invoke('remote-desktop', 'delete-connection', { name: name }),
+})
+
+
+// 进程管理器 API
+contextBridge.exposeInMainWorld('processAPI', {
+  getProcessTree: () => ipcRenderer.invoke('process-tree'),
+  searchProcess: (query) => ipcRenderer.invoke('process-search', query),
+  killProcess: (pid, signal) => ipcRenderer.invoke('kill-process', pid, signal),
+  reniceProcess: (pid, priority) => ipcRenderer.invoke('renice-process', pid, priority),
+  getProcessDetail: (pid) => ipcRenderer.invoke('process-detail', pid)
+})
+
+
 // VPNa 管理 API
+
+// 性能基准测试 API (Stage 3)
+contextBridge.exposeInMainWorld('benchmarkAPI', {
+  run: (action, options) => ipcRenderer.invoke('benchmark', action, options)
+})
+
+// 系统备份与还原 API (Stage 3)
+contextBridge.exposeInMainWorld('phase2API', {
+  backup: (action, params) => ipcRenderer.invoke('system-backup', action, params),
+  startup: (action, params) => ipcRenderer.invoke('system-backup', action, params),
+  health: () => ipcRenderer.invoke('system-backup', 'backup', {}),
+  usb: (action, params) => ipcRenderer.invoke('system-backup', action, params),
+  driver: (action, params) => ipcRenderer.invoke('phase2-driver', action, params),
+  remote: (action, params) => ipcRenderer.invoke('remote-desktop', action, params || {}),
+  search: (params) => ipcRenderer.invoke('system-backup', 'backup', params),
+  benchmark: (type) => ipcRenderer.invoke('system-backup', 'backup', {})
+})
+
+// 网络诊断 API (Stage 4)
+contextBridge.exposeInMainWorld('netDiagAPI', {
+  run: (params) => ipcRenderer.invoke('net-diag', params)
+})
+
+// 服务管理 API (Stage 4)
+contextBridge.exposeInMainWorld('svcAPI', {
+  list: (opts) => ipcRenderer.invoke('svc-mgr', 'list', opts),
+  action: (opts) => ipcRenderer.invoke('svc-mgr', 'action', opts)
+})
+
+// 用户管理 API (Stage 4)
+contextBridge.exposeInMainWorld('userAPI', {
+  list: () => ipcRenderer.invoke('user-mgr', 'list'),
+  add: (opts) => ipcRenderer.invoke('user-mgr', 'add', opts),
+  remove: (opts) => ipcRenderer.invoke('user-mgr', 'remove', opts),
+  changePwd: (opts) => ipcRenderer.invoke('user-mgr', 'change-pwd', opts),
+  loginHistory: (opts) => ipcRenderer.invoke('user-mgr', 'login-history', opts)
+})
+
+// Cron 管理 API (Stage 4)
+contextBridge.exposeInMainWorld('cronAPI', {
+  list: () => ipcRenderer.invoke('cron-mgr', 'list'),
+  add: (opts) => ipcRenderer.invoke('cron-mgr', 'add', opts),
+  remove: (opts) => ipcRenderer.invoke('cron-mgr', 'remove', opts)
+})
