@@ -2436,88 +2436,403 @@ ipcMain.handle('perf-generate-report', async () => {
 
 
 // ========== Phase 3: 系统崩溃分析 ==========
+const crashScriptPath = path.join(__dirname, '../resources/scripts/Phase3/crash_analyze.sh')
+
 ipcMain.handle('crash-list-coredumps', async () => {
   const { execSync } = require('child_process')
   try {
-    const raw = execSync("coredumpctl list 2>/dev/null || ls -la /var/lib/systemd/coredump/ 2>/dev/null || echo 'No coredumpctl available'", { timeout: 10000, encoding: 'utf-8' }).toString()
-    const lines = raw.split('\n').filter(l => l.trim())
-    return { success: true, items: lines.map(l => ({ raw: l })) }
-  } catch(e) { return { success: false, error: e.message } }
+    const raw = execSync('bash "' + crashScriptPath + '" list', { timeout: 15000, encoding: 'utf-8' }).toString()
+    return JSON.parse(raw)
+  } catch(e) {
+    try {
+      const raw = execSync("coredumpctl list 2>/dev/null || ls -la /var/lib/systemd/coredump/ 2>/dev/null || echo 'No coredumpctl available'", { timeout: 10000, encoding: 'utf-8' }).toString()
+      const lines = raw.split('\n').filter(l => l.trim())
+      return { success: true, coredumps: lines.slice(1).map(function(l) {
+        var parts = l.trim().split(/\s+/)
+        return { pid: parts[3]||'0', signal: parts[6]||'?', time: (parts[0]||'')+' '+(parts[1]||'')+' '+(parts[2]||''), exe: parts.slice(8).join(' ')||'', package: parts.slice(8).join(' ')||'unknown' }
+      }) }
+    } catch(e2) { return { success: false, error: e.message } }
+  }
 })
+
 ipcMain.handle('crash-analyze', async (_, id) => {
   const { execSync } = require('child_process')
   try {
-    const raw = execSync(`coredumpctl info ${parseInt(id)||''} 2>/dev/null || echo 'Cannot analyze'`, { timeout: 30000, encoding: 'utf-8' }).toString()
-    return { success: true, info: raw }
-  } catch(e) { return { success: false, error: e.message } }
+    var argId = (parseInt(id) >= 0) ? id : ''
+    var raw = execSync('bash "' + crashScriptPath + '" analyze ' + argId, { timeout: 30000, encoding: 'utf-8' }).toString()
+    return JSON.parse(raw)
+  } catch(e) {
+    try {
+      var argId2 = (parseInt(id) >= 0) ? id : ''
+      var raw2 = execSync('coredumpctl info ' + argId2 + ' 2>/dev/null || echo Cannot analyze', { timeout: 30000, encoding: 'utf-8' }).toString()
+      return { success: true, info: raw2, backtrace: '' }
+    } catch(e2) { return { success: false, error: e.message } }
+  }
 })
+
 ipcMain.handle('crash-get-logs', async () => {
   const { execSync } = require('child_process')
   try {
-    const raw = execSync("journalctl -p err -b 2>/dev/null | tail -100", { timeout: 15000, encoding: 'utf-8' }).toString()
-    const lines = raw.split('\n').filter(l => l.trim())
-    return { success: true, logs: lines.map(l => ({ raw: l })) }
+    var raw = execSync('bash "' + crashScriptPath + '" logs', { timeout: 15000, encoding: 'utf-8' }).toString()
+    return JSON.parse(raw)
+  } catch(e) {
+    try {
+      var raw2 = execSync("journalctl -p err -b 2>/dev/null | tail -50", { timeout: 15000, encoding: 'utf-8' }).toString()
+      var lines2 = raw2.split('\n').filter(function(l) { return l.trim() })
+      return { success: true, logs: lines2.map(function(l) { return { raw: l, severity: l.toLowerCase().includes('segfault')?'fatal':'err' } }) }
+    } catch(e2) { return { success: false, error: e.message } }
+  }
+})
+
+ipcMain.handle('crash-get-suggestions', async (_, signal, pkg, exe) => {
+  const { execSync } = require('child_process')
+  try {
+    var sugs = (signal||'') + ' \'' + (pkg||'').replace(/'/g,'') + '\' \'' + (exe||'').replace(/'/g,'') + '\''
+    var raw = execSync('bash "' + crashScriptPath + '" suggest ' + sugs, { timeout: 10000, encoding: 'utf-8' }).toString()
+    return JSON.parse(raw)
   } catch(e) { return { success: false, error: e.message } }
 })
 
 // ========== Phase 3: 等保合规检查 ==========
-ipcMain.handle('compliance-run-check', async () => {
-  const { execSync } = require('child_process')
+
+/** Execute a shell command safely, return trimmed output or empty string */
+function execOut(cmd, timeoutMs) {
+  if (timeoutMs === undefined) timeoutMs = 5000;
   try {
-    const checks = []
-    // 密码策略
-    try { const pw = execSync("cat /etc/pam.d/common-password 2>/dev/null | grep password | head -5", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'pw-policy', name:'密码策略', status: pw.includes('pam_unix.so')?'pass':'fail', detail: pw.trim()||'未配置' }) } catch { checks.push({ id:'pw-policy', name:'密码策略', status:'unknown', detail:'无法检测' }) }
-    // 登录失败锁定
-    try { const faillock = execSync("cat /etc/pam.d/common-auth 2>/dev/null | grep -i faillock", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'faillock', name:'登录失败锁定', status: faillock?'pass':'fail', detail: faillock.trim()||'未配置登录锁定' }) } catch { checks.push({ id:'faillock', name:'登录失败锁定', status:'unknown', detail:'无法检测' }) }
-    // 审计日志
-    try { const audit = execSync("service auditd status 2>/dev/null | head -5", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'auditd', name:'审计服务(auditd)', status: audit.includes('active')||audit.includes('running')?'pass':'fail', detail: audit.trim() }) } catch { checks.push({ id:'auditd', name:'审计服务(auditd)', status:'fail' }) }
-    // SSH 配置
-    try { const ssh = execSync("cat /etc/ssh/sshd_config 2>/dev/null | grep -E 'PermitRootLogin|PasswordAuthentication'", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'ssh-config', name:'SSH 安全配置', status: ssh.includes('no')?'pass':'warn', detail: ssh.trim()||'默认配置' }) } catch { checks.push({ id:'ssh-config', name:'SSH 安全配置', status:'unknown' }) }
-    // 防火墙
-    try { const fw = execSync("sudo iptables -L 2>/dev/null | head -10", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'firewall', name:'防火墙规则', status: fw.includes('ACCEPT')||fw.includes('DROP')?'pass':'warn', detail: fw.trim()||'无规则' }) } catch { checks.push({ id:'firewall', name:'防火墙规则', status:'warn' }) }
-    // SELinux/AppArmor
-    try { const aa = execSync("aa-status 2>/dev/null || echo 'not found'", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'apparmor', name:'AppArmor', status: aa.includes('enforce')?'pass':aa.includes('not found')?'fail':'warn', detail: aa.trim() }) } catch { checks.push({ id:'apparmor', name:'AppArmor', status:'unknown' }) }
-    // 磁盘加密
-    try { const crypt = execSync("lsblk -o NAME,TYPE,MOUNTPOINT 2>/dev/null | grep -i crypt", { timeout: 5000, encoding: 'utf-8' }).toString(); checks.push({ id:'encrypt', name:'磁盘加密', status: crypt?'pass':'warn', detail: crypt.trim()||'未检测到磁盘加密' }) } catch { checks.push({ id:'encrypt', name:'磁盘加密', status:'unknown' }) }
-    // 系统更新
-    try { const up = execSync("apt list --upgradable 2>/dev/null | wc -l", { timeout: 10000, encoding: 'utf-8' }).toString(); checks.push({ id:'updates', name:'系统更新', status: parseInt(up)<=2?'pass':'warn', detail: `${parseInt(up)} 个可更新包` }) } catch { checks.push({ id:'updates', name:'系统更新', status:'unknown' }) }
-    const passed = checks.filter(c => c.status === 'pass').length
-    return { success: true, checks, total: checks.length, passed }
-  } catch(e) { return { success: false, error: e.message } }
-})
-ipcMain.handle('compliance-get-results', async () => {
-  const fs = require('fs'); const path = require('path')
+    const { execSync } = require('child_process');
+    return execSync(cmd, { timeout: timeoutMs, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] })
+      .toString().trim();
+  } catch(e) { return ''; }
+}
+
+/** Run a single compliance check */
+function runCheck(id, name, category, checkCmd, passFn, desc, suggestion) {
   try {
-    const f = path.join(require('electron').app.getPath('userData'), 'compliance_results.json')
-    if (!fs.existsSync(f)) return { success: true, results: [] }
-    return { success: true, results: JSON.parse(fs.readFileSync(f,'utf-8')) }
-  } catch(e) { return { success: true, results: [] } }
-})
-ipcMain.handle('compliance-fix-item', async (_, id, password) => {
-  const { execSync } = require('child_process'); const { sudoExec } = global
+    const out = execOut(checkCmd, 8000);
+    const status = passFn(out) ? 'pass' : 'fail';
+    return { id: id, name: name, category: category, status: status,
+      detail: out || '未检测到配置',
+      description: desc || '',
+      suggestion: suggestion || '' };
+  } catch(e) {
+    return { id: id, name: name, category: category, status: 'fail',
+      detail: '检测失败: ' + e.message,
+      description: desc || '',
+      suggestion: suggestion || '' };
+  }
+}
+
+/** Run all 20 compliance checks and return structured results */
+function runAllChecks() {
+  var items = [];
+
+  // === 1. 身份鉴别 ===
+  items.push(runCheck('pw-policy', '密码复杂度策略', '身份鉴别',
+    "cat /etc/pam.d/common-password 2>/dev/null | grep -v '^#' | grep -v '^$' | head -5",
+    function(o) { return o.indexOf('pam_unix.so') >= 0 && (o.indexOf('minlen=8') >= 0 || o.indexOf('sha512') >= 0 || o.indexOf('obscure') >= 0); },
+    '检查密码最小长度是否≥8位，是否使用SHA512加密',
+    '在 /etc/pam.d/common-password 中配置 password requisite pam_unix.so sha512 minlen=8 obscure'));
+
+  items.push(runCheck('faillock', '登录失败锁定策略', '身份鉴别',
+    "cat /etc/pam.d/common-auth 2>/dev/null | grep -i faillock; cat /etc/security/faillock.conf 2>/dev/null | grep -v '^#' | grep -v '^$' | head -5",
+    function(o) { return o.indexOf('faillock') >= 0; },
+    '检查是否配置登录失败锁定（防暴力破解）',
+    '安装 libpam-modules，在 common-auth 中添加: auth required pam_faillock.so preauth deny=5 unlock_time=900'));
+
+  items.push(runCheck('pw-expire', '密码过期策略', '身份鉴别',
+    "cat /etc/login.defs 2>/dev/null | grep -E '^PASS_MAX_DAYS|^PASS_MIN_DAYS|^PASS_WARN_AGE'",
+    function(o) {
+      var m = o.match(/PASS_MAX_DAYS\s+(\d+)/);
+      return m && parseInt(m[1], 10) <= 90;
+    },
+    '检查密码最长使用期限是否≤90天',
+    '在 /etc/login.defs 中设置 PASS_MAX_DAYS 90, PASS_MIN_DAYS 1, PASS_WARN_AGE 7'));
+
+  // === 2. 访问控制 ===
+  items.push(runCheck('ssh-config', 'SSH 安全配置', '访问控制',
+    "cat /etc/ssh/sshd_config 2>/dev/null | grep -v '^#' | grep -v '^$' | grep -E 'PermitRootLogin|PasswordAuthentication'",
+    function(o) { return o.indexOf('PermitRootLogin no') >= 0 || o.indexOf('PasswordAuthentication no') >= 0; },
+    '检查SSH是否禁止root直接登录，是否禁用密码认证',
+    '在 sshd_config 中设置 PermitRootLogin no, PasswordAuthentication no'));
+
+  items.push(runCheck('firewall', '防火墙规则', '访问控制',
+    "sudo iptables -L -n 2>/dev/null | head -10; echo '---'; sudo ufw status 2>/dev/null | head -5",
+    function(o) { return o.indexOf('ACCEPT') >= 0 || o.indexOf('DROP') >= 0 || o.indexOf('active') >= 0; },
+    '检查防火墙是否启用并有合理规则',
+    '使用 iptables 或 ufw 配置防火墙规则，开放必要端口'));
+
+  items.push(runCheck('sudoers', 'sudo 权限审计', '访问控制',
+    "cat /etc/sudoers 2>/dev/null | grep -v '^#' | grep -v '^$' | head -10",
+    function(o) { return o.indexOf('NOPASSWD') < 0; },
+    '检查sudo权限配置是否合理',
+    '限制sudo用户，避免配置 NOPASSWD 权限'));
+
+  items.push(runCheck('default-accts', '默认账户安全', '访问控制',
+    "cat /etc/shadow 2>/dev/null | awk -F: '($2==\"\"||$2==\"!\"){print $1}' | head -5",
+    function(o) { return !o || o.length < 3; },
+    '检查是否存在空密码账户或默认测试账户',
+    '禁用不必要的系统账户: passwd -l <username>'));
+
+  // === 3. 安全审计 ===
+  items.push(runCheck('auditd', '审计服务 (auditd)', '安全审计',
+    "systemctl is-active auditd 2>/dev/null; echo '---'; systemctl is-enabled auditd 2>/dev/null",
+    function(o) { return o.indexOf('active') >= 0 && o.indexOf('enabled') >= 0; },
+    '检查审计服务auditd是否运行并启用',
+    'systemctl enable auditd && systemctl start auditd'));
+
+  items.push(runCheck('audit-rules', '审计规则配置', '安全审计',
+    "auditctl -l 2>/dev/null | head -10",
+    function(o) { return o.length > 20; },
+    '检查是否配置了详细的审计规则',
+    '配置 audit.rules 监控关键文件与系统调用'));
+
+  items.push(runCheck('log-audit', '系统日志审计', '安全审计',
+    "systemctl is-active rsyslog 2>/dev/null",
+    function(o) { return o.indexOf('active') >= 0; },
+    '检查系统日志服务是否运行',
+    'systemctl enable rsyslog && systemctl start rsyslog'));
+
+  items.push(runCheck('log-protect', '日志文件保护', '安全审计',
+    "stat -c '%a' /var/log/auth.log 2>/dev/null; echo '---'; stat -c '%a' /var/log 2>/dev/null",
+    function(o) { return o.indexOf('777') < 0 && o.length > 0; },
+    '检查系统日志文件权限是否受限',
+    'chmod 640 /var/log/auth.log; chmod 755 /var/log'));
+
+  // === 4. 入侵防范 ===
+  items.push(runCheck('apparmor', '强制访问控制 (AppArmor)', '入侵防范',
+    "aa-status 2>/dev/null | head -5; echo '---'; getenforce 2>/dev/null",
+    function(o) { return o.indexOf('enforce') >= 0; },
+    '检查AppArmor或SELinux是否启用并处于强制模式',
+    '安装 apparmor-utils: systemctl enable apparmor && systemctl start apparmor'));
+
+  items.push(runCheck('sys-integrity', '系统文件完整性', '入侵防范',
+    "which debsums 2>/dev/null && echo 'installed' || echo 'not installed'",
+    function(o) { return o.indexOf('installed') >= 0; },
+    '检查系统关键文件完整性检查工具是否安装',
+    '安装 debsums: apt install debsums -y'));
+
+  items.push(runCheck('kernel-hard', '内核安全参数', '入侵防范',
+    "sysctl net.ipv4.conf.all.rp_filter 2>/dev/null; sysctl net.ipv4.conf.all.accept_source_route 2>/dev/null; sysctl net.ipv4.tcp_syncookies 2>/dev/null",
+    function(o) { return o.indexOf('= 1') >= 0 && o.indexOf('= 0') < 0; },
+    '检查内核安全参数（反向路径过滤、禁止源路由、SYN Cookie）',
+    '在 sysctl.conf 中设置 rp_filter=1, accept_source_route=0, tcp_syncookies=1'));
+
+  // === 5. 数据安全 ===
+  items.push(runCheck('encrypt', '磁盘加密', '数据安全',
+    "lsblk -o NAME,TYPE,FSTYPE,MOUNTPOINT 2>/dev/null | grep -i 'crypt\\|luks'; echo '---'; cat /etc/crypttab 2>/dev/null | grep -v '^#' | head -5",
+    function(o) { return o.indexOf('crypt') >= 0 || o.indexOf('luks') >= 0 || o.indexOf('LUKS') >= 0; },
+    '检查磁盘是否加密（LUKS/dm-crypt）',
+    '使用 cryptsetup 对敏感分区进行 LUKS 加密'));
+
+  items.push(runCheck('backup-conf', '关键配置备份', '数据安全',
+    "ls /var/backups/ 2>/dev/null | head -5; echo '---'; crontab -l 2>/dev/null | grep -i backup | head -3",
+    function(o) { return o.length > 10; },
+    '检查关键系统配置是否有自动备份机制',
+    '配置 cron 定时备份 /etc 目录'));
+
+  items.push(runCheck('file-perm', '敏感文件权限', '数据安全',
+    "stat -c '%a' /etc/shadow 2>/dev/null; echo '---'; stat -c '%a' /etc/passwd 2>/dev/null",
+    function(o) { return o.indexOf('640') >= 0 || o.indexOf('600') >= 0; },
+    '检查敏感文件的权限是否合规',
+    'chmod 640 /etc/shadow; chmod 644 /etc/passwd'));
+
+  // === 6. 系统维护 ===
+  items.push(runCheck('updates', '系统补丁更新', '系统维护',
+    "apt list --upgradable 2>/dev/null | wc -l",
+    function(o) { return parseInt(o, 10) <= 3; },
+    '检查系统是否有可用安全更新',
+    'apt update && apt upgrade -y'));
+
+  items.push(runCheck('disk-space', '磁盘空间检查', '系统维护',
+    "df -h / 2>/dev/null | tail -1 | awk '{print $5}'",
+    function(o) { return parseInt(o.replace('%', ''), 10) < 85; },
+    '检查根分区磁盘使用率是否<85%',
+    '清理日志和缓存: journalctl --vacuum-size=500M; apt clean'));
+
+  items.push(runCheck('time-sync', '系统时间同步', '系统维护',
+    "timedatectl 2>/dev/null | grep -E 'NTP|synchronized'",
+    function(o) { return o.indexOf('active') >= 0 || o.indexOf('yes') >= 0; },
+    '检查系统时间是否通过NTP自动同步',
+    'timedatectl set-ntp true'));
+
+  items.push(runCheck('open-services', '系统开放服务', '系统维护',
+    "ss -tlnp 2>/dev/null | head -30 || netstat -tlnp 2>/dev/null | head -30",
+    function(o) { return o.split('\n').length <= 25; },
+    '检查监听端口和开放服务是否过多',
+    '关闭不必要的服务: systemctl disable --now <service-name>'));
+
+  // Calculate score
+  var total = items.length;
+  var passed = 0, warnings = 0, failed = 0;
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].status === 'pass') passed++;
+    else if (items[i].status === 'warn') warnings++;
+    else failed++;
+  }
+  var score = Math.round((passed / total) * 100);
+
+  return { success: true, items: items, score: score, total: total,
+    passed: passed, warnings: warnings, failed: failed,
+    summary: '\u7B49\u4FDD 2.0 \u4E09\u7EA7\u5408\u89C4\u68C0\u67E5\u5B8C\u6210\uFF1A\u901A\u8FC7 ' + passed + '/' + total + ' \u9879' };
+}
+
+ipcMain.handle('compliance-run-check', async function() {
+  var result = runAllChecks();
+  // Cache to file
   try {
-    let result = ''
-    if (id === 'faillock') result = sudoExec("echo 'auth required pam_faillock.so' >> /etc/pam.d/common-auth 2>&1", password)
-    else if (id === 'apparmor') result = sudoExec("systemctl enable apparmor && systemctl start apparmor 2>&1", password)
-    else if (id === 'auditd') result = sudoExec("systemctl enable auditd && systemctl start auditd 2>&1", password)
-    else result = sudoExec(`echo 'Manual fix needed for ${id}'`, password)
-    return { success: true, output: result }
-  } catch(e) { return { success: false, error: e.message } }
-})
-ipcMain.handle('compliance-generate-report', async () => {
-  const fs = require('fs'); const path = require('path'); const { execSync } = require('child_process')
+    var fs = require('fs');
+    var p = require('path');
+    var f = p.join(require('electron').app.getPath('userData'), 'compliance_results.json');
+    fs.writeFileSync(f, JSON.stringify(result), 'utf-8');
+  } catch(e) {}
+  return result;
+});
+
+ipcMain.handle('compliance-get-results', async function() {
+  var fs = require('fs');
+  var path = require('path');
   try {
-    const outDir = require('electron').app.getPath('desktop')
-    const file = path.join(outDir, `security_compliance_report_${Date.now()}.md`)
-    let md = '# 等保合规检查报告\n\n'
-    md += `生成时间: ${new Date().toLocaleString('zh-CN')}\n\n`
-    const res = await ipcMain.emit('compliance-run-check') || { checks: [{ id:'sample', name:'检查项', status:'pending', detail:'请先运行检查' }] }
-    md += '## 检查结果\n\n| 检查项 | 结果 | 详情 |\n|--------|------|------|\n'
-    for (const c of res.checks||[]) md += `| ${c.name} | ${c.status} | ${c.detail} |\n`
-    fs.writeFileSync(file, md, 'utf-8')
-    return { success: true, file }
-  } catch(e) { return { success: false, error: e.message } }
-})
+    var f = path.join(require('electron').app.getPath('userData'), 'compliance_results.json');
+    if (!fs.existsSync(f)) return { success: true, results: [] };
+    return { success: true, results: JSON.parse(fs.readFileSync(f, 'utf-8')) };
+  } catch(e) { return { success: true, results: [] }; }
+});
+
+ipcMain.handle('compliance-fix-item', async function(_, id, password) {
+  if (!password) return { success: false, error: '\u9700\u8981\u7BA1\u7406\u5458\u5BC6\u7801' };
+  try {
+    var result = '';
+    var se = function(cmd) { return sudoExec(cmd, password); };
+
+    switch(id) {
+      case 'pw-policy':
+        result = se("grep -q 'pam_unix.so' /etc/pam.d/common-password && sed -i 's/pam_unix.so.*/pam_unix.so sha512 minlen=8 obscure/g' /etc/pam.d/common-password || echo 'password requisite pam_unix.so sha512 minlen=8 obscure' >> /etc/pam.d/common-password");
+        break;
+      case 'faillock':
+        result = se("apt-get install -y libpam-modules 2>/dev/null; grep -q pam_faillock.so /etc/pam.d/common-auth || echo 'auth required pam_faillock.so preauth audit deny=5 unlock_time=900' >> /etc/pam.d/common-auth");
+        break;
+      case 'pw-expire':
+        result = se("sed -i 's/^PASS_MAX_DAYS.*/PASS_MAX_DAYS 90/' /etc/login.defs; sed -i 's/^PASS_MIN_DAYS.*/PASS_MIN_DAYS 1/' /etc/login.defs; sed -i 's/^PASS_WARN_AGE.*/PASS_WARN_AGE 7/' /etc/login.defs");
+        break;
+      case 'ssh-config':
+        result = se("sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config; sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config; systemctl restart sshd");
+        break;
+      case 'firewall':
+        result = se("ufw --force enable 2>/dev/null || (iptables -P INPUT DROP; iptables -P FORWARD DROP; iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT; iptables -A INPUT -i lo -j ACCEPT; iptables -A INPUT -p tcp --dport 22 -j ACCEPT)");
+        break;
+      case 'sudoers':
+        result = se("sed -i 's/^%sudo.*ALL=(ALL:ALL) NOPASSWD:ALL/%sudo ALL=(ALL:ALL) ALL/' /etc/sudoers 2>/dev/null; echo '\u5df2\u9650\u5236sudo\u6743\u9650'");
+        break;
+      case 'default-accts':
+        result = se("for u in guest test demo; do id $u 2>/dev/null && passwd -l $u; done 2>/dev/null; echo '\u9ed8\u8ba4\u8d26\u6237\u5df2\u9501\u5b9a'");
+        break;
+      case 'auditd':
+        result = se("systemctl enable auditd && systemctl start auditd");
+        break;
+      case 'audit-rules':
+        result = se("apt-get install -y auditd 2>/dev/null; auditctl -w /etc/passwd -p wa -k passwd_changes; auditctl -w /etc/shadow -p wa -k shadow_changes; echo '\u5ba1\u8ba1\u89c4\u5219\u5df2\u6dfb\u52a0'");
+        break;
+      case 'log-audit':
+        result = se("systemctl enable rsyslog && systemctl start rsyslog");
+        break;
+      case 'log-protect':
+        result = se("chmod 640 /var/log/auth.log 2>/dev/null; chmod 640 /var/log/syslog 2>/dev/null; echo '\u65e5\u5fd7\u6743\u9650\u5df2\u4fee\u590d'");
+        break;
+      case 'apparmor':
+        result = se("apt-get install -y apparmor apparmor-utils 2>/dev/null; systemctl enable apparmor; systemctl start apparmor");
+        break;
+      case 'sys-integrity':
+        result = se("apt-get install -y debsums 2>/dev/null; echo '\u5b8c\u6574\u6027\u68c0\u67e5\u5de5\u5177\u5df2\u5b89\u88c5'");
+        break;
+      case 'kernel-hard':
+        result = se("sysctl -w net.ipv4.conf.all.rp_filter=1; sysctl -w net.ipv4.conf.all.accept_source_route=0; sysctl -w net.ipv4.tcp_syncookies=1; echo 'net.ipv4.conf.all.rp_filter=1' >> /etc/sysctl.d/99-security.conf; echo 'net.ipv4.conf.all.accept_source_route=0' >> /etc/sysctl.d/99-security.conf; echo 'net.ipv4.tcp_syncookies=1' >> /etc/sysctl.d/99-security.conf");
+        break;
+      case 'encrypt':
+        result = '\u78c1\u76d8\u52a0\u5bc6\u9700\u8981\u624b\u52a8\u64cd\u4f5c: cryptsetup luksFormat <device>';
+        break;
+      case 'backup-conf':
+        result = se("mkdir -p /var/backups; echo '0 3 * * * root tar czf /var/backups/etc_$(date +%Y%m%d).tar.gz /etc' > /etc/cron.d/backup-etc; systemctl restart cron 2>/dev/null; echo '\u5907\u4efd\u914d\u7f6e\u5df2\u6dfb\u52a0'");
+        break;
+      case 'file-perm':
+        result = se("chmod 640 /etc/shadow; chmod 644 /etc/passwd; chmod 640 /etc/gshadow; echo '\u6587\u4ef6\u6743\u9650\u5df2\u4fee\u590d'");
+        break;
+      case 'updates':
+        result = se("apt-get update && apt-get upgrade -y");
+        break;
+      case 'disk-space':
+        result = se("journalctl --vacuum-size=500M 2>/dev/null; apt-get clean 2>/dev/null; echo '\u78c1\u76d8\u7a7a\u95f4\u5df2\u6e05\u7406'");
+        break;
+      case 'time-sync':
+        result = se("timedatectl set-ntp true");
+        break;
+      case 'open-services':
+        result = se("systemctl disable --now cups-browsed 2>/dev/null || true; systemctl disable --now avahi-daemon 2>/dev/null || true; echo '\u975e\u5fc5\u8981\u670d\u52a1\u5df2\u7981\u7528'");
+        break;
+      default:
+        result = '\u8be5\u68c0\u67e5\u9879\u65e0\u6cd5\u81ea\u52a8\u4fee\u590d: ' + id;
+    }
+    return { success: true, output: result };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('compliance-generate-report', async function() {
+  var fs = require('fs');
+  var path = require('path');
+  var os = require('os');
+  try {
+    var result = runAllChecks();
+    var items = result.items || [];
+    var score = result.score || 0;
+    var total = result.total || 0;
+    var passed = result.passed || 0;
+
+    var desktopDir = execOut("xdg-user-dir DESKTOP 2>/dev/null") || os.homedir();
+    var filePath = path.join(desktopDir, '\u7B49\u4FDD\u5408\u89C4\u68C0\u67E5\u62A5\u544A_' + new Date().toISOString().slice(0,10) + '.md');
+
+    var md = '# \u7B49\u4FDD\u5408\u89C4\u68C0\u67E5\u62A5\u544A\n\n';
+    md += '\u751F\u6210\u65F6\u95F4: ' + new Date().toLocaleString('zh-CN') + '\n\n';
+    md += '\u751F\u6210\u5DE5\u5177: UOS\u8FD0\u7EF4\u5DE5\u5177\u7BB1\n\n';
+    md += '## \u603B\u4F53\u8BC4\u5206\n\n';
+    md += '\u5408\u89C4\u8BC4\u5206: **' + score + '/100** (\u901A\u8FC7 ' + passed + '/' + total + ' \u9879)\n\n';
+    md += '---\n\n';
+
+    // Group by category
+    var categories = {};
+    for (var i = 0; i < items.length; i++) {
+      var c = items[i];
+      var cat = c.category || '\u5176\u4ED6';
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push(c);
+    }
+
+    var catKeys = Object.keys(categories);
+    for (var ci = 0; ci < catKeys.length; ci++) {
+      var catName = catKeys[ci];
+      var catItems = categories[catName];
+      md += '## ' + catName + '\n\n';
+      md += '| \u68C0\u67E5\u9879 | \u72B6\u6001 | \u8BE6\u60C5 | \u4FEE\u590D\u5EFA\u8BAE |\n';
+      md += '|--------|------|------|----------|\n';
+      for (var j = 0; j < catItems.length; j++) {
+        var item = catItems[j];
+        var stMap = { pass: '\u2705 \u901A\u8FC7', fail: '\u274C \u672A\u901A\u8FC7', warn: '\u26A0\uFE0F \u8B66\u544A', unknown: '\u2753 \u672A\u77E5' };
+        md += '| ' + (item.name || '') + ' | ' + (stMap[item.status] || item.status) + ' | ';
+        md += ((item.detail || '').replace(/\n/g, ' ') || '') + ' | ';
+        md += ((item.suggestion || '\u65E0').replace(/\n/g, ' ')) + ' |\n';
+      }
+      md += '\n';
+    }
+
+    md += '---\n\n';
+    md += '*\u62A5\u544A\u7531 UOS\u8FD0\u7EF4\u5DE5\u5177\u7BB1 \u81EA\u52A8\u751F\u6210\u4E8E ' + new Date().toLocaleString('zh-CN') + '*\n';
+
+    fs.writeFileSync(filePath, md, 'utf-8');
+    return { success: true, file: filePath };
+  } catch(e) {
+    return { success: false, error: e.message };
+  }
+});
 
 // ========== Phase 3: NTP 时间同步 ==========
 ipcMain.handle('ntp-get-status', async () => {
@@ -2677,9 +2992,9 @@ ipcMain.handle('proxy-set-system', async (_, { config, password }) => {
   const { sudoExec } = global
   try {
     if (!config.enabled) {
-      // 禁用系统代理
-      sudoExec('gsettings set org.gnome.system.proxy mode none 2>&1', password)
-      // 清理环境变量文件
+      // 禁用系统代理（以当前用户身份运行）
+      try { require('child_process').execSync("gsettings set org.gnome.system.proxy mode none", { timeout: 5000 }) } catch(e) {}
+      // 清理环境变量文件（需要 sudo）
       sudoExec('rm -f /etc/profile.d/proxy.sh 2>/dev/null', password)
       return { success: true }
     }
@@ -2701,21 +3016,29 @@ ipcMain.handle('proxy-set-system', async (_, { config, password }) => {
     } else {
       ftpHost = httpHost; ftpPort = httpPort
     }
-    // 设置系统代理 via gsettings
-    const cmds = [
-      "gsettings set org.gnome.system.proxy mode manual",
-      "gsettings set org.gnome.system.proxy.http host '" + httpHost.replace(/'/g, "'\\''") + "'",
-      "gsettings set org.gnome.system.proxy.http port " + httpPort,
-      "gsettings set org.gnome.system.proxy.https host '" + httpsHost.replace(/'/g, "'\\''") + "'",
-      "gsettings set org.gnome.system.proxy.https port " + httpsPort,
-      "gsettings set org.gnome.system.proxy.ftp host '" + ftpHost.replace(/'/g, "'\\''") + "'",
-      "gsettings set org.gnome.system.proxy.ftp port " + ftpPort
-    ]
+    // 设置系统代理 via gsettings (以当前用户身份运行，非 root)
+    const { execSync: exec } = require('child_process')
+    try { exec("gsettings set org.gnome.system.proxy mode manual", { timeout: 10000 }) } catch(e) {}
+    try { exec("gsettings set org.gnome.system.proxy.http host '" + httpHost.replace(/'/g, "'\\''") + "'", { timeout: 5000 }) } catch(e) {}
+    try { exec("gsettings set org.gnome.system.proxy.http port " + httpPort, { timeout: 5000 }) } catch(e) {}
+    try { exec("gsettings set org.gnome.system.proxy.https host '" + httpsHost.replace(/'/g, "'\\''") + "'", { timeout: 5000 }) } catch(e) {}
+    try { exec("gsettings set org.gnome.system.proxy.https port " + httpsPort, { timeout: 5000 }) } catch(e) {}
+    try { exec("gsettings set org.gnome.system.proxy.ftp host '" + ftpHost.replace(/'/g, "'\\''") + "'", { timeout: 5000 }) } catch(e) {}
+    try { exec("gsettings set org.gnome.system.proxy.ftp port " + ftpPort, { timeout: 5000 }) } catch(e) {}
     if (config.no_proxy) {
       var noProxyList = "[" + config.no_proxy.split(',').map(function(s) { return "'" + s.trim().replace(/'/g, "'\\''") + "'"; }).join(', ') + "]"
-      cmds.push("gsettings set org.gnome.system.proxy ignore-hosts " + noProxyList)
+      try { exec("gsettings set org.gnome.system.proxy ignore-hosts " + noProxyList, { timeout: 5000 }) } catch(e) {}
     }
-    sudoExec(cmds.join(' && '), password)
+    // 写入系统环境变量文件 /etc/profile.d/proxy.sh（需要 sudo）
+    try {
+      var envLines = []
+      if (config.http) { envLines.push('http_proxy="' + config.http.replace(/"/g, '\\"') + '"'); envLines.push('HTTP_PROXY="' + config.http.replace(/"/g, '\\"') + '"') }
+      if (config.https) { envLines.push('https_proxy="' + config.https.replace(/"/g, '\\"') + '"'); envLines.push('HTTPS_PROXY="' + config.https.replace(/"/g, '\\"') + '"') }
+      if (config.ftp) { envLines.push('ftp_proxy="' + config.ftp.replace(/"/g, '\\"') + '"'); envLines.push('FTP_PROXY="' + config.ftp.replace(/"/g, '\\"') + '"') }
+      if (config.no_proxy) { envLines.push('no_proxy="' + config.no_proxy.replace(/"/g, '\\"') + '"'); envLines.push('NO_PROXY="' + config.no_proxy.replace(/"/g, '\\"') + '"') }
+      var envContent = envLines.join('\n')
+      sudoExec('cat > /etc/profile.d/proxy.sh << \'PROXYEOF\'\n' + envContent + '\nPROXYEOF\nchmod +x /etc/profile.d/proxy.sh', password)
+    } catch(e) { /* env file write is best-effort */ }
     return { success: true }
   } catch(e) { return { success: false, error: e.message } }
 })

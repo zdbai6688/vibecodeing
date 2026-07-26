@@ -78,8 +78,8 @@ body{font-family:-apple-system,"Noto Sans CJK SC","PingFang SC","Microsoft YaHei
 .tab-btn{padding:6px 16px;border:none;background:transparent;border-radius:6px;cursor:pointer;font-size:12px;transition:all .15s;color:var(--text-sec)}
 .tab-btn.active{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.06);font-weight:500;color:var(--text);}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:12px;transition:all .15s;font-weight:500}
-.btn-primary{background:var(--primary);color:#fff}
-.btn-primary:hover{background:#3a5de5}
+.btn-primary{background:var(--primary);color:#fff;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary:hover{background:#3a5de5;box-shadow:0 2px 8px rgba(74,108,247,0.3)}
 .btn-success{background:var(--success);color:#fff}
 .btn-success:hover{background:#2ea84c}
 .btn-danger{background:var(--danger);color:#fff}
@@ -179,18 +179,21 @@ const NAV = [
   {id:'security',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>`,label:'安全补丁',desc:'系统安全更新与漏洞修复'},
   {id:'scripts',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>`,label:'实用脚本',desc:'微信多开/文件导出等'},
   {id:'tools',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>`,label:'高效工具',desc:'文档、图片、音视频处理工具箱'},
+    {id:'apthistory',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>`,label:'更新历史',desc:'APT 更新历史查看与版本回滚'},
   {id:'pkgmanager',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="2" y1="9" x2="6" y2="9"/><line x1="2" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="22" y2="9"/><line x1="18" y1="15" x2="22" y2="15"/></svg></span>`,label:'软件管理',desc:'deb 软件包搜索、安装与卸载'},
   // ===== 其他 ===== 
     {id:'localsend',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>`,label:'局域网传输',desc:'基于 Python 的局域网文件共享传输'},
 {id:'changelog',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>`,label:'更新日志',desc:'版本更新记录与变更说明'},
   {id:'feedback',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>`,label:'反馈建议',desc:'问题反馈与功能建议'},
   {id:'settings',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>`,label:'应用设置',desc:'应用偏好与行为配置'},
-  {id:'about',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>`,label:'关于',desc:'版本信息'}
+  {id:'about',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>`,label:'关于',desc:'版本信息'},
+  // ===== 系统应用集成 =====
+  {id:'systemapps',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#e8f5e9;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:#2e7d32;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>`,label:'系统应用',desc:'系统能力调用与集成'}
 ]
 const MONITOR_SUB = [
   {group:'进程资源类',items:[{id:'top-cpu',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,label:'CPU 消耗排行'},{id:'top-mem',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,label:'内存消耗排行'},{id:'zombie',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="8" y1="9" x2="8.01" y2="9"/><line x1="16" y1="9" x2="16.01" y2="9"/><path d="M16 15a4 4 0 0 1-8 0"/></svg>`,label:'僵尸进程检测'}]},
   {group:'磁盘存储类',items:[{id:'disk-block',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,label:'磁盘容量 (Block)'},{id:'disk-inode',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M9 14l2 2 4-4"/></svg>`,label:'文件数量 (Inode)'},{id:'disk-structure',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`,label:'物理硬盘结构'}]},
-  {group:'网络监控类',items:[{id:'open-ports',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/><polyline points="9 12 12 15 15 12"/></svg>`,label:'开放端口监听'},{id:'active-connections',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,label:'活跃网络连接'},{id:'route-table',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,label:'路由表信息'}]},
+  {group:'网络监控类',items:[{id:'open-ports',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/><polyline points="9 12 12 15 15 12"/></svg>`,label:'开放端口监听'},{id:'active-connections',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,label:'活跃网络连接'},{id:'net-traffic',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,label:'网络流量监控'},{id:'route-table',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,label:'路由表信息'}]},
   {group:'用户与登录审计',items:[{id:'login-history',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,label:'用户登录历史'},{id:'online-users',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,label:'当前在线用户'}]},
   {group:'内核底层类',items:[{id:'kernel-modules',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="2" y1="9" x2="6" y2="9"/><line x1="2" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="22" y2="9"/><line x1="18" y1="15" x2="22" y2="15"/></svg>`,label:'内核模块'}]}
 ]
@@ -334,12 +337,14 @@ function switchPage(id){
   else if(id==='scripts') renderScriptsPage(el)
   else if(id==='tools') renderToolsPage(el)
     else if(id==='localsend') renderLocalSend(el)
+  else if(id==='apthistory') renderAptHistory(el)
   else if(id==='pkgmanager') renderPkgManager(el)
   else if(id==='changelog') renderChangelog(el)
   else if(id==='feedback') renderFeedback(el)
   else if(id==='settings') renderSettings(el)
   else if(id==='security') renderSecurity(el)
   else if(id==='about') renderAbout(el)
+  else if(id==='systemapps') renderSystemApps(el)
 }
 
 function switchMonitorSub(id){_currentSub=id;const p=NAV.find(i=>i.id==='monitor');document.getElementById('pageTitle').innerHTML=p.ico+' '+p.label;document.getElementById('pageDesc').textContent=p.desc;renderSubNav(id);renderMonitorDetail(document.getElementById('pageContent'),id)}
@@ -529,6 +534,38 @@ async function renderMonitorDetail(el,type){
         }).join('')}</tbody></table></div></div>`
       return
     }
+    // ── 网络流量监控 ──
+    if(type==='net-traffic' && r.connections){
+      const conns = r.connections || []
+      const total = r.total || {bytes_sent:0, bytes_received:0, connections:0}
+      const top10 = conns.slice(0, 10)
+      function fmtBytes(b){
+        if(!b||b===0) return '0 B'
+        const u = ['B','KB','MB','GB','TB']
+        let i=0, v=b
+        while(v>=1024&&i<u.length-1){v/=1024;i++}
+        return v.toFixed(i===0?0:1)+' '+u[i]
+      }
+      const rows = top10.map((c,i)=>{
+        const sent=c.bytes_sent||0, recv=c.bytes_received||0, tb=sent+recv
+        const maxV=Math.max(...top10.map(x=>(x.bytes_sent||0)+(x.bytes_received||0)),1)
+        const pct=(tb/maxV*100).toFixed(1), bc=i<3?'#4A6CF7':i<6?'#34c759':'#ff9500'
+        const rb=['#1','#2','#3','4','5','6','7','8','9','10'][i]
+        const sv=c.service||'', rm=c.remote||''
+        return '<tr><td style="text-align:center;font-weight:600;font-size:12px">'+rb+'</td><td style="font-family:monospace;font-size:11px;word-break:break-all;max-width:200px" title="'+esc(rm)+'">'+esc(rm)+'</td><td><span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:#e8f5e9;color:#2e7d32">'+esc(sv)+'</span></td><td style="text-align:right;font-family:monospace;font-size:11px;color:#4A6CF7">'+fmtBytes(sent)+'</td><td style="text-align:right;font-family:monospace;font-size:11px;color:#34c759">'+fmtBytes(recv)+'</td><td style="text-align:right;font-family:monospace;font-size:11px;color:var(--text)">'+fmtBytes(tb)+'</td><td><div style="width:80px;height:6px;background:#eee;border-radius:3px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+bc+';border-radius:3px;transition:width .5s"></div></div></td><td style="text-align:center;font-size:11px;color:var(--text-sec)">'+(c.connections||1)+'</td></tr>'
+      }).join('')
+      let chartData=[]
+      try{chartData=JSON.parse(localStorage.getItem('_net_traffic_chart_')||'[]')}catch(e){}
+      const now=Date.now()
+      chartData.push({ts:now,sent:total.bytes_sent,recv:total.bytes_received})
+      if(chartData.length>60)chartData=chartData.slice(-60)
+      try{localStorage.setItem('_net_traffic_chart_',JSON.stringify(chartData))}catch(e){}
+      const chartHtml='<div style="background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow);margin-top:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:14px;font-weight:500">[chart] 流量趋势 (最近 '+chartData.length+' 个点)</div><div style="display:flex;gap:16px;font-size:11px"><span style="color:#4A6CF7">o 发送</span><span style="color:#34c759">o 接收</span></div></div><canvas id="netTrafficChart" width="700" height="200"></canvas></div>'
+      const sumHtml='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px"><div class="monitor-card" style="background:linear-gradient(135deg,#667eea,#764ba2)"><div style="font-size:22px;font-weight:700;color:#fff">'+fmtBytes(total.bytes_sent)+'</div><div style="font-size:11px;color:rgba(255,255,255,0.8)">[发] 总发送量</div></div><div class="monitor-card" style="background:linear-gradient(135deg,#11998e,#38ef7d)"><div style="font-size:22px;font-weight:700;color:#fff">'+fmtBytes(total.bytes_received)+'</div><div style="font-size:11px;color:rgba(255,255,255,0.8)">[收] 总接收量</div></div><div class="monitor-card" style="background:linear-gradient(135deg,#f093fb,#f5576c)"><div style="font-size:22px;font-weight:700;color:#fff">'+total.connections+'</div><div style="font-size:11px;color:rgba(255,255,255,0.8)">[连] 活跃连接</div></div></div>'
+      el.innerHTML=headerHtml+sumHtml+'<div style="background:var(--card-bg);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)"><div style="padding:10px 14px;border-bottom:1px solid #eee;font-size:13px;font-weight:500;color:var(--text)">流量排行 Top 10</div><div style="overflow-x:auto"><table class="monitor-table" style="font-size:12px;width:100%"><thead><tr><th style="width:36px;text-align:center">#</th><th style="min-width:140px;max-width:200px" title="远程地址:端口">目标地址</th><th style="width:60px">服务</th><th style="text-align:right;width:80px" title="从此机器发送到远程的数据量">发送</th><th style="text-align:right;width:80px" title="从远程接收的数据量">接收</th><th style="text-align:right;width:80px" title="发送+接收总量">总计</th><th style="width:100px" title="相对大小占比">占比</th><th style="width:50px;text-align:center" title="该目标的连接数">连接</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+chartHtml
+      el.innerHTML+='<script>setTimeout(function(){var c=document.getElementById("netTrafficChart");if(!c)return;var ctx=c.getContext("2d");var w=c.width,h=c.height;ctx.clearRect(0,0,w,h);try{var d=JSON.parse(localStorage.getItem("_net_traffic_chart_")||"[]");if(d.length<2){ctx.fillStyle="#999";ctx.font="13px sans-serif";ctx.textAlign="center";ctx.fillText("等待更多数据...",w/2,h/2);return}var s=d.map(function(x){return x.sent});var r=d.map(function(x){return x.recv});var max=Math.max.apply(null,s.concat(r))||1;var pad=30,bw=w-pad*2,bh=h-40;function draw(v,c){ctx.beginPath();ctx.strokeStyle=c;ctx.lineWidth=2;for(var i=0;i<v.length;i++){var x=pad+(i/(v.length-1||1))*bw;var y=h-20-(v[i]/max)*bh;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke()}draw(s,"#4A6CF7");draw(r,"#34c759");ctx.fillStyle="#999";ctx.font="10px sans-serif";ctx.textAlign="right";for(var t=0;t<=100;t+=25){ctx.fillText(t+"%",pad-4,h-20-(t/100)*bh)}}catch(e){}},100)<\/script>'
+      return
+    }
 
     // ── 审计页面 4: 用户登录历史 ──
     if(type==='login-history' && r.lines){
@@ -692,6 +729,7 @@ function monitorMeta(type){
     'open-ports':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/><polyline points="9 12 12 15 15 12"/></svg>`,label:'开放端口监听',sub:'系统当前监听的 TCP/UDP 端口',headers:['状态','接收Q','发送Q','本地地址:端口','远程地址:端口'],fields:['state','recvq','sendq','local','peer']},
     'active-connections':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,label:'活跃网络连接',sub:'当前已建立的外部网络连接',headers:['接收Q','发送Q','本地地址:端口','远程地址:端口'],fields:['recvq','sendq','local','peer']},
     'route-table':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,label:'路由表信息',sub:'展示网关、系统路由规则',headers:['目标网络','网关','设备','源','metric','协议','其他'],fields:['destination','via','dev','src','metric','proto','rest']},
+    'net-traffic':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,label:'网络流量监控',sub:'实时查看各连接流量排行 Top 10，折线图展示',headers:['目标地址:端口','服务','发送(B)','接收(B)','连接数'],fields:['remote','service','bytes_sent','bytes_received','connections']},
     'login-history':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,label:'用户登录历史',sub:'记录近期系统登录用户日志',headers:['用户','终端','来源IP','登录时间','状态'],fields:['user','tty','from','time','status']},
     'online-users':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,label:'当前在线用户',sub:'实时查看正在登录的在线终端用户',headers:['用户','终端','登录时间','来源'],fields:['user','tty','time','from']},
     'kernel-modules':{ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="2" y1="9" x2="6" y2="9"/><line x1="2" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="22" y2="9"/><line x1="18" y1="15" x2="22" y2="15"/></svg>`,label:'内核模块',sub:'查看系统当前已加载的 Kernel 内核模块',headers:['模块名','大小','被引用','被谁引用'],fields:['module','size','used','by']}
@@ -1057,150 +1095,12 @@ function openSysPage(id){
 }
 async function execSysAction(id,action){
   const el=document.getElementById('sysActionResult');if(!el)return
-  el.style.display='block';el.innerHTML='\u23f3 \u6267\u884c\u4e2d...'
+  el.style.display='block';el.innerHTML='⏳ 执行中...'
   try{
-    if(id==='startup-mgr'&&(action==='list'||action==='refresh')){
-      const r=await window.systemAPI?.executeOptimization('_sysmgr',id+':'+action)
-      if(r?.success&&r?.data){renderStartupList(el,r.data);return}
-      el.innerHTML='<div class="l error">\u274c '+(r?.error||'\u83b7\u53d6\u6570\u636e\u5931\u8d25')+'</div>'
-    }else if(id==='startup-mgr'&&action==='add-autostart'){
-      showAddAutostartForm(el)
-    }else{
-      const password=prompt('\u8bf7\u8f93\u5165\u7ba1\u7406\u5458\u5bc6\u7801\uff08\u5982\u679c\u4e0d\u9700\u8981\u5219\u7559\u7a7a\uff09')||''
-      const r=await window.systemAPI?.executeOptimization('_sysmgr',id+':'+action,password)
-      el.innerHTML=r?.success?'<div class="l success">\u2705 \u6267\u884c\u6210\u529f</div><div style="margin-top:6px;white-space:pre-wrap;font-size:11px;color:var(--text-sec)">'+(r.output||'')+'</div>':'<div class="l error">\u274c '+(r?.error||'\u9700\u8981\u7ba1\u7406\u5458\u5bc6\u7801')+'</div>'
-    }
-  }catch(e){el.innerHTML='<div class="l error">\u274c '+escHtml(e.message)+'</div>'}
+    const r=await window.systemAPI?.executeOptimization('_sysmgr',id+':'+action)
+    el.innerHTML=r?.success?'<div class="l success">✅ 执行成功</div><div style="margin-top:6px;white-space:pre-wrap;font-size:11px;color:var(--text-sec)">'+(r.output||'')+'</div>':'<div class="l error">❌ '+(r?.error||'需要管理员密码')+'</div>'
+  }catch(e){el.innerHTML='<div class="l error">❌ '+esc(e.message)+'</div>'}
 }
-function renderStartupList(el,data){
-  const sd=data.systemdServices||[]
-  const ai=data.autostartItems||[]
-  let html='<div style="font-size:13px;font-weight:600;margin-bottom:8px">\U0001f4cb \u5f00\u673a\u81ea\u542f\u52a8\u9879\u5217\u8868</div>'
-  html+='<div style="margin-bottom:12px;font-size:11px;color:var(--text-sec)">\u5171 '+sd.length+' \u4e2a systemd \u670d\u52a1, '+ai.length+' \u4e2a autostart \u684c\u9762\u9879</div>'
-  html+='<div style="margin-bottom:8px"><button class="btn" style="font-size:11px" onclick="refreshStartupList()">\U0001f504 \u5237\u65b0\u5217\u8868</button></div>'
-  if(sd.length>0){
-    html+='<div style="font-size:12px;font-weight:600;margin:10px 0 6px;padding:4px 8px;background:var(--bg);border-radius:4px">\u26a1 Systemd \u670d\u52a1</div>'
-    html+='<div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:4px">'
-    html+='<table style="width:100%;border-collapse:collapse;font-size:11px">'
-    html+='<tr style="background:var(--bg);position:sticky;top:0"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">\u670d\u52a1\u540d</th><th style="padding:6px 8px;text-align:center;border-bottom:1px solid var(--border)">\u72b6\u6001</th><th style="padding:6px 8px;text-align:center;border-bottom:1px solid var(--border)">\u64cd\u4f5c</th></tr>'
-    for(const s of sd.slice(0,60)){
-      const en=s.state==='enabled'||s.state==='static'
-      const sn=escHtml(s.name)
-      html+='<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+sn+'</td>'
-      html+='<td style="padding:4px 8px;text-align:center;border-bottom:1px solid var(--border)"><span style="color:'+(en?'var(--success)':'var(--danger)')+'">'+(en?'\u2705 \u5df2\u542f\u7528':'\u26d4 \u672a\u542f\u7528')+'</span></td>'
-      html+='<td style="padding:4px 8px;text-align:center;border-bottom:1px solid var(--border)"><button class="btn" style="font-size:10px;padding:2px 8px" onclick="toggleSystemdSvc(\''+sn+'\')">'+(en?'\u7981\u7528':'\u542f\u7528')+'</button></td></tr>'
-    }
-    html+='</table></div>'
-  }
-  if(ai.length>0){
-    html+='<div style="font-size:12px;font-weight:600;margin:12px 0 6px;padding:4px 8px;background:var(--bg);border-radius:4px">\U0001f4c2 Autostart \u684c\u9762\u9879</div>'
-    html+='<div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:4px">'
-    html+='<table style="width:100%;border-collapse:collapse;font-size:11px">'
-    html+='<tr style="background:var(--bg);position:sticky;top:0"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">\u540d\u79f0</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">\u547d\u4ee4</th><th style="padding:6px 8px;text-align:center;border-bottom:1px solid var(--border)">\u72b6\u6001</th><th style="padding:6px 8px;text-align:center;border-bottom:1px solid var(--border)">\u64cd\u4f5c</th></tr>'
-    for(const item of ai){
-      const en=item.source==='user'?!item.hidden:true
-      const dn=escHtml(item.displayName)
-      const ex=escHtml(item.exec||'-')
-      const fn=escHtml(item.name)
-      html+='<tr><td style="padding:4px 8px;border-bottom:1px solid var(--border)">'+dn+'</td>'
-      html+='<td style="padding:4px 8px;border-bottom:1px solid var(--border);max-width:180px;overflow:hidden;text-overflow:ellipsis" title="'+ex+'">'+ex+'</td>'
-      html+='<td style="padding:4px 8px;text-align:center;border-bottom:1px solid var(--border)"><span style="color:'+(en?'var(--success)':'var(--danger)')+'">'+(en?'\u2705 \u542f\u7528':'\u26d4 \u7981\u7528')+'</span></td>'
-      html+='<td style="padding:4px 8px;text-align:center;border-bottom:1px solid var(--border)">'
-      html+='<button class="btn" style="font-size:10px;padding:2px 8px;margin:1px" onclick="toggleAutostartItem(\''+fn+'\')">'+(en?'\u7981\u7528':'\u542f\u7528')+'</button>'
-      if(item.source==='user'){
-        html+='<button class="btn btn-outline" style="font-size:10px;padding:2px 8px;margin:1px;color:var(--danger)" onclick="removeAutostartItem(\''+fn+'\')">\u5220\u9664</button>'
-      }
-      html+='</td></tr>'
-    }
-    html+='</table></div>'
-  }
-  if(sd.length===0&&ai.length===0){
-    html+='<div style="text-align:center;padding:20px;color:var(--text-sec)">\u6682\u65e0\u542f\u52a8\u9879\u6570\u636e</div>'
-  }
-  el.innerHTML=html
-}
-function escHtml(s){
-  if(!s)return''
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
-}
-async function refreshStartupList(){
-  const el=document.getElementById('sysActionResult')
-  if(!el)return
-  el.innerHTML='\u23f3 \u5237\u65b0\u4e2d...'
-  try{
-    const r=await window.systemAPI?.executeOptimization('_sysmgr','startup-mgr:list')
-    if(r?.success&&r?.data){renderStartupList(el,r.data);return}
-    el.innerHTML='<div class="l error">\u274c \u83b7\u53d6\u6570\u636e\u5931\u8d25</div>'
-  }catch(e){el.innerHTML='<div class="l error">\u274c '+escHtml(e.message)+'</div>'}
-}
-async function toggleSystemdSvc(serviceName){
-  const el=document.getElementById('sysActionResult')
-  if(!el||!serviceName)return
-  el.innerHTML='\u23f3 \u6267\u884c\u4e2d...'
-  for(const prefix of ['startup-mgr:toggle-systemd:','startup-mgr:toggle-systemd-system:']){
-    try{
-      const pw=prompt('\u8bf7\u8f93\u5165\u7ba1\u7406\u5458\u5bc6\u7801\uff08\u5982\u679c\u4e0d\u9700\u8981\u5219\u7559\u7a7a\uff09')||''
-      const r=await window.systemAPI?.executeOptimization('_sysmgr',prefix+serviceName,pw)
-      if(r?.success){
-        el.innerHTML='<div class="l success">\u2705 '+(r.output||'\u64cd\u4f5c\u6210\u529f')+'</div><div style="text-align:center;margin-top:8px"><button class="btn" onclick="refreshStartupList()">\U0001f504 \u5237\u65b0\u5217\u8868</button></div>'
-        return
-      }
-    }catch(e){}
-  }
-  el.innerHTML='<div class="l error">\u274c \u64cd\u4f5c\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u670d\u52a1\u540d\u79f0\u6216\u6743\u9650</div>'
-}
-async function toggleAutostartItem(fileName){
-  const el=document.getElementById('sysActionResult')
-  if(!el||!fileName)return
-  el.innerHTML='\u23f3 \u6267\u884c\u4e2d...'
-  try{
-    const pw=prompt('\u8bf7\u8f93\u5165\u7ba1\u7406\u5458\u5bc6\u7801')||''
-    const r=await window.systemAPI?.executeOptimization('_sysmgr','startup-mgr:toggle-autostart:'+fileName,pw)
-    if(r?.success){
-      el.innerHTML='<div class="l success">\u2705 '+(r.output||'\u64cd\u4f5c\u6210\u529f')+'</div><div style="text-align:center;margin-top:8px"><button class="btn" onclick="refreshStartupList()">\U0001f504 \u5237\u65b0\u5217\u8868</button></div>'
-    }else{
-      el.innerHTML='<div class="l error">\u274c '+(r?.error||'\u64cd\u4f5c\u5931\u8d25')+'</div>'
-    }
-  }catch(e){el.innerHTML='<div class="l error">\u274c '+escHtml(e.message)+'</div>'}
-}
-async function removeAutostartItem(fileName){
-  if(!confirm('\u786e\u5b9a\u8981\u5220\u9664\u542f\u52a8\u9879 "'+fileName+'" \u5417\uff1f'))return
-  const el=document.getElementById('sysActionResult')
-  if(!el)return
-  el.innerHTML='\u23f3 \u6267\u884c\u4e2d...'
-  try{
-    const pw=prompt('\u8bf7\u8f93\u5165\u7ba1\u7406\u5458\u5bc6\u7801')||''
-    const r=await window.systemAPI?.executeOptimization('_sysmgr','startup-mgr:remove-autostart:'+fileName,pw)
-    if(r?.success){
-      el.innerHTML='<div class="l success">\u2705 '+(r.output||'\u5220\u9664\u6210\u529f')+'</div><div style="text-align:center;margin-top:8px"><button class="btn" onclick="refreshStartupList()">\U0001f504 \u5237\u65b0\u5217\u8868</button></div>'
-    }else{
-      el.innerHTML='<div class="l error">\u274c '+(r?.error||'\u5220\u9664\u5931\u8d25')+'</div>'
-    }
-  }catch(e){el.innerHTML='<div class="l error">\u274c '+escHtml(e.message)+'</div>'}
-}
-function showAddAutostartForm(el){
-  el.innerHTML='<button class="close-btn" onclick="execSysAction(\'startup-mgr\',\'list\')">\u2715 \u8fd4\u56de\u5217\u8868</button><h2 style="font-size:14px;margin-bottom:12px">\u2795 \u6dfb\u52a0\u81ea\u5b9a\u4e49\u542f\u52a8\u9879</h2><div style="display:flex;flex-direction:column;gap:10px"><label>\u663e\u793a\u540d\u79f0<input id="newStartupName" placeholder="\u4f8b\u5982: MyApp" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px"></label><label>\u542f\u52a8\u547d\u4ee4 <span style="color:var(--danger)">*</span><input id="newStartupCmd" placeholder="\u4f8b\u5982: /usr/bin/myapp --daemon" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px"></label><label>\u5907\u6ce8\uff08\u53ef\u9009\uff09<input id="newStartupComment" placeholder="\u7b80\u77ed\u63cf\u8ff0" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px"></label><button class="btn" onclick="submitNewAutostart()" style="margin-top:6px">\u2714 \u6dfb\u52a0</button></div>'
-}
-async function submitNewAutostart(){
-  const name=document.getElementById('newStartupName')?.value
-  const cmd=document.getElementById('newStartupCmd')?.value
-  const comment=document.getElementById('newStartupComment')?.value
-  if(!cmd){alert('\u8bf7\u8f93\u5165\u542f\u52a8\u547d\u4ee4');return}
-  const el=document.getElementById('sysActionResult')
-  if(!el)return
-  el.innerHTML='\u23f3 \u6dfb\u52a0\u4e2d...'
-  try{
-    const r=await window.systemAPI?.executeOptimization('_sysmgr','startup-mgr:add-autostart',JSON.stringify({execCmd:cmd,displayName:name||'',comment:comment||''}))
-    if(r?.success){
-      el.innerHTML='<div class="l success">\u2705 '+(r.output||'\u6dfb\u52a0\u6210\u529f')+'</div><div style="text-align:center;margin-top:8px"><button class="btn" onclick="refreshStartupList()">\U0001f504 \u5237\u65b0\u5217\u8868</button></div>'
-    }else{
-      el.innerHTML='<div class="l error">\u274c '+(r?.error||'\u6dfb\u52a0\u5931\u8d25')+'</div>'
-    }
-  }catch(e){el.innerHTML='<div class="l error">\u274c '+escHtml(e.message)+'</div>'}
-}
-
-
-
 async function renderSysConfig(el){
 
 
@@ -1627,7 +1527,9 @@ const TOOLS = [
   ]},
   {cat:'⚙️',name:'系统/政务',items:[
     {id:'sys-detail',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,name:'系统详细信息',desc:'硬件/CPU/内存/网络全量详情'},
-    {id:'gongwen',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,name:'公文排版',desc:'GB/T 9704 国标公文排版'}
+    {id:'gongwen',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,name:'公文排版',desc:'GB/T 9704 国标公文排版'},
+    {id:'file-search',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><polyline points="8 8 14 8 14 14"/></svg>`,name:'文件搜索',desc:'快速搜索系统文件，按名称、类型、大小、日期过滤'},
+
   ]},
   {cat:'🌐',name:'网络工具',items:[
     {id:'ip-scanner',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,name:'IP 地址扫描',desc:'扫描局域网内活跃设备 IP'},
@@ -1682,6 +1584,25 @@ function showToolModal(id,need){
     </div>`},
     'exam':{title:'📝 挑战题库',content:'<div class="sub">题库练习（已加载题库，共 <span id="examTotal">0</span> 题）</div><div class="actions" id="examActions"><button class="btn" onclick="startExam(\'order\')">📋 顺序模式</button><button class="btn" onclick="startExam(\'random\')">🎲 随机模式</button><button class="btn" onclick="startExam(\'reverse\')">🔄 倒序模式</button></div><div class="modal-output" id="examResult" style="display:none"></div><div id="examArea" style="display:none;margin-top:8px"><div style="font-size:14px;font-weight:500;margin-bottom:8px" id="examQuestion"></div><div id="examOptions" style="margin-bottom:8px"></div><div style="display:flex;gap:6px"><button class="btn btn-primary" onclick="nextExamQuestion()">下一题 →</button><button class="btn btn-outline" onclick="showExamResult()">📊 查看成绩</button></div></div>'},
     'gongwen':{title:'📋 公文排版',content:'<div class="sub">GB/T 9704 党政机关公文排版工具</div><div class="actions"><button class="btn" onclick="openGongwen()">📝 打开公文编辑器</button></div>'},
+    'file-search':{title:'🔍 文件搜索',content:'<div class="sub">快速搜索文件，支持按文件名、类型、大小、日期过滤</div><div class="sub" style="margin-top:8px">' +
+      '<div style="display:flex;gap:8px;margin-bottom:10px"><input type="text" id="searchKeyword" placeholder="输入文件名关键词..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px" onkeydown="if(event.key===\\"Enter\\") startFileSearch()" />' +
+      '<button class="btn btn-primary" onclick="startFileSearch()" style="padding:8px 16px;font-size:12px">🔍 搜索</button></div>' +
+      '<div style="margin-bottom:8px"><label style="font-size:12px"><input type="checkbox" id="showAdvanced" onchange="toggleFilterOptions()"> 显示高级过滤 (类型/大小/日期)</label></div>' +
+      '<div id="filterOptions" style="display:none;margin-bottom:10px;padding:10px;background:#f8f9fa;border-radius:6px">' +
+      '<div style="margin-bottom:8px"><label style="font-size:12px;font-weight:500;display:block;margin-bottom:4px">文件类型</label>' +
+      '<select id="typeSelect" style="padding:6px;border:1px solid var(--border);border-radius:4px;font-size:12px;width:100%">' +
+      '<option value="">不限类型</option><option value="document">文档 (doc/pdf/txt/md)</option><option value="image">图片 (jpg/png/gif/webp)</option><option value="video">视频 (mp4/avi/mkv/mov)</option><option value="audio">音频 (mp3/wav/flac/aac)</option><option value="archive">压缩包 (zip/tar/gz/rar/7z)</option><option value="executable">可执行文件</option>' +
+      '</select></div>' +
+      '<div style="margin-bottom:8px"><label style="font-size:12px;font-weight:500;display:block;margin-bottom:4px">文件大小</label>' +
+      '<select id="sizeSelect" style="padding:6px;border:1px solid var(--border);border-radius:4px;font-size:12px;width:100%">' +
+      '<option value="">不限大小</option><option value="-1k">小于 1KB</option><option value="1k-100k">1KB ~ 100KB</option><option value="100k-1m">100KB ~ 1MB</option><option value="1m-10m">1MB ~ 10MB</option><option value="10m-100m">10MB ~ 100MB</option><option value="+100m">大于 100MB</option>' +
+      '</select></div>' +
+      '<div><label style="font-size:12px;font-weight:500;display:block;margin-bottom:4px">修改日期</label>' +
+      '<select id="dateSelect" style="padding:6px;border:1px solid var(--border);border-radius:4px;font-size:12px;width:100%">' +
+      '<option value="">不限日期</option><option value="today">今天</option><option value="week">本周</option><option value="month">本月</option><option value="year">本年</option><option value="older">更早</option>' +
+      '</select></div>' +
+      '</div>' +
+      '<div class="modal-output" id="searchResult" style="display:none"></div>'},
     'ip-scanner':{title:'🔍 IP 地址扫描',content:'<div class="sub">扫描局域网内活跃设备 IP 地址</div><div class="actions"><button class="btn" onclick="runLiveTool(\'ip-scanner\')">▶ 启动 IP 扫描器</button><button class="btn" onclick="installLiveTool(\'ip-scanner\')">📥 安装工具</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;font-size:12px;line-height:1.6"></div>'},
     'subnetcalc':{title:'📡 子网计算器',content:'<div class="sub">IP 子网划分与计算工具</div><div class="actions"><button class="btn" onclick="runLiveTool(\'subnetcalc\')">▶ 启动子网计算器</button><button class="btn" onclick="installLiveTool(\'subnetcalc\')">📥 安装工具</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;font-size:12px;line-height:1.6"></div>'},
     'ftp-client':{title:'📁 FTP 客户端',content:'<div class="sub">轻量级 FTP 文件传输客户端</div><div class="actions"><button class="btn" onclick="runLiveTool(\'ftp-client\')">▶ 启动 FTP 客户端</button><button class="btn" onclick="installLiveTool(\'ftp-client\')">📥 安装工具</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;font-size:12px;line-height:1.6"></div>'},
@@ -1723,7 +1644,33 @@ function showToolModal(id,need){
     function drawSnake(){const c=document.getElementById('snakeCanvas');if(!c)return;const ctx=c.getContext('2d');ctx.clearRect(0,0,300,300);ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,300,300);snake.forEach((s,i)=>{ctx.fillStyle=i===0?'#4a6cf7':'#6c8cff';ctx.fillRect(s.x*20+1,s.y*20+1,18,18)});ctx.fillStyle='#ff6b6b';ctx.fillRect(food.x*20+1,food.y*20+1,18,18)}
     document.addEventListener('keydown',function(e){const k={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'}[e.key];if(k&&!((dir==='up'&&k==='down')||(dir==='down'&&k==='up')||(dir==='left'&&k==='right')||(dir==='right'&&k==='left'))){e.preventDefault();dir=k}});
     initSnake();
-    <\/script>`}
+    <\/script>`},
+    'localsend':{title:'📡 局域网文件传输',content:
+`<div class="sub" style="margin-bottom:8px">
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="btn" onclick="localsendScan()" id="lsScanBtn" style="font-size:12px;padding:6px 14px">🔍 扫描设备</button>
+        <button class="btn" onclick="localsendStartReceive()" id="lsReceiveBtn" style="font-size:12px;padding:6px 14px">📥 开启接收</button>
+        <button class="btn" onclick="localsendStopReceive()" id="lsStopBtn" style="font-size:12px;padding:6px 14px;display:none">⏹ 停止接收</button>
+        <span id="lsStatus" style="font-size:11px;color:var(--text-sec);padding:6px 0">就绪</span>
+      </div>
+      <div style="margin-bottom:8px"><strong>设备列表</strong></div>
+      <div id="lsDeviceList" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:60px;max-height:150px;overflow-y:auto;font-size:12px;background:#fafafa">
+        <div style="color:var(--text-ter);text-align:center;padding:20px 0">点击"扫描设备"搜索局域网内的设备</div>
+      </div>
+      <div style="margin:8px 0;display:flex;gap:8px;align-items:center">
+        <button class="btn" onclick="localsendSelectFile()" id="lsFileBtn" style="font-size:12px;padding:6px 14px">📂 选择文件</button>
+        <button class="btn" onclick="localsendSelectFolder()" id="lsFolderBtn" style="font-size:12px;padding:6px 14px">📁 选择文件夹</button>
+        <span id="lsFileInfo" style="font-size:11px;color:var(--text-sec)">未选择文件</span>
+      </div>
+      <div style="margin-bottom:4px"><strong>传输进度</strong></div>
+      <div id="lsProgress" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:50px;max-height:120px;overflow-y:auto;font-size:11px;background:#fafafa">
+        <div style="color:var(--text-ter);text-align:center;padding:10px 0">暂无传输</div>
+      </div>
+      <div style="margin-top:8px;margin-bottom:4px"><strong>传输记录</strong></div>
+      <div id="lsHistory" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:40px;max-height:100px;overflow-y:auto;font-size:11px;background:#fafafa">
+        <div style="color:var(--text-ter);text-align:center;padding:10px 0">暂无记录</div>
+      </div>
+    </div>`}
   }
   const modal=MODALS[id]||{title:'🧰 '+id,content:'<div class="sub">功能开发中...</div>'}
   document.getElementById('modalOverlay').classList.add('show')
@@ -2790,6 +2737,245 @@ function fmtMB(mb){if(!mb&&mb!==0)return '-';if(mb>=1024)return (mb/1024).toFixe
 function esc(t){if(!t)return '';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function stripAnsi(s){if(!s)return '';return s.replace(/\x1b\[[0-9;]*m/g,'')}
 
+function renderSystemApps(el){
+  el.innerHTML = `<div style="max-width:960px;margin:0 auto">
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
+      <div style="font-size:14px;color:var(--text-sec)">点击卡片启动系统应用，或通过 DBus / CLI 调用系统能力</div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <h3 style="font-size:14px;margin:0 0 10px;font-weight:600">🛡️ 安全中心</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px">
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-defender')">
+          <div style="font-size:28px;margin-bottom:6px">🛡️</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">安全中心</div>
+          <div style="font-size:11px;color:#888">启动安全中心主界面</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('com.deepin.defender.firewall','/com/deepin/defender/firewall','com.deepin.defender.firewall.GetStatus')">
+          <div style="font-size:28px;margin-bottom:6px">🧱</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">防火墙状态</div>
+          <div style="font-size:11px;color:#888">查询防火墙状态</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('com.deepin.defender.virusupdate','/com/deepin/defender/virusupdate','com.deepin.defender.virusupdate.GetStatus')">
+          <div style="font-size:28px;margin-bottom:6px">🦠</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">病毒查杀</div>
+          <div style="font-size:11px;color:#888">查询病毒库状态</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('com.deepin.defender.USBManager','/com/deepin/defender/USBManager','com.deepin.defender.USBManager.GetStatus')">
+          <div style="font-size:28px;margin-bottom:6px">🔌</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">USB 安全</div>
+          <div style="font-size:11px;color:#888">USB 设备管控状态</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('com.deepin.defender.netcheck','/com/deepin/defender/netcheck','com.deepin.defender.netcheck.CheckNetwork')">
+          <div style="font-size:28px;margin-bottom:6px">🌐</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">网络检测</div>
+          <div style="font-size:11px;color:#888">运行网络连通性检测</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('com.deepin.defender.LoginSafety','/com/deepin/defender/LoginSafety','com.deepin.defender.LoginSafety.GetStatus')">
+          <div style="font-size:28px;margin-bottom:6px">🔐</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">登录安全</div>
+          <div style="font-size:11px;color:#888">登录安全配置状态</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('com.deepin.defender.peripherals','/com/deepin/defender/peripherals','com.deepin.defender.peripherals.GetStatus')">
+          <div style="font-size:28px;margin-bottom:6px">🖱️</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">外设安全</div>
+          <div style="font-size:11px;color:#888">外设安全管理状态</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('com.deepin.defender.fileaudit','/com/deepin/defender/fileaudit','com.deepin.defender.fileaudit.GetStatus')">
+          <div style="font-size:28px;margin-bottom:6px">📁</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">文件审计</div>
+          <div style="font-size:11px;color:#888">文件审计状态</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-defender','--module=autostart')">
+          <div style="font-size:28px;margin-bottom:6px">🚀</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">自启动管理</div>
+          <div style="font-size:11px;color:#888">管理开机自启项</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <h3 style="font-size:14px;margin:0 0 10px;font-weight:600">⚙️ 系统工具</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px">
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-devicemanager')">
+          <div style="font-size:28px;margin-bottom:6px">🖥️</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">设备管理器</div>
+          <div style="font-size:11px;color:#888">查看硬件设备信息</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-diskmanager')">
+          <div style="font-size:28px;margin-bottom:6px">💾</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">磁盘管理器</div>
+          <div style="font-size:11px;color:#888">管理磁盘分区</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-system-monitor')">
+          <div style="font-size:28px;margin-bottom:6px">📊</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">系统监视器</div>
+          <div style="font-size:11px;color:#888">进程与资源监控</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-log-viewer')">
+          <div style="font-size:28px;margin-bottom:6px">📋</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">日志查看</div>
+          <div style="font-size:11px;color:#888">查看系统日志</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-boot-maker')">
+          <div style="font-size:28px;margin-bottom:6px">💿</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">启动盘制作</div>
+          <div style="font-size:11px;color:#888">制作系统启动盘</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-cleaner')">
+          <div style="font-size:28px;margin-bottom:6px">🧹</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">系统清理</div>
+          <div style="font-size:11px;color:#888">清理系统垃圾文件</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-data-transfer')">
+          <div style="font-size:28px;margin-bottom:6px">📤</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">数据迁移</div>
+          <div style="font-size:11px;color:#888">迁移系统数据</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-screen-recorder')">
+          <div style="font-size:28px;margin-bottom:6px">🎥</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">截图录屏</div>
+          <div style="font-size:11px;color:#888">截图与屏幕录制</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-ocr')">
+          <div style="font-size:28px;margin-bottom:6px">🔍</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">图文识别</div>
+          <div style="font-size:11px;color:#888">OCR 文字识别</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-scanner')">
+          <div style="font-size:28px;margin-bottom:6px">📄</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">扫描</div>
+          <div style="font-size:11px;color:#888">文档扫描管理</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-compressor')">
+          <div style="font-size:28px;margin-bottom:6px">🗜️</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">归档管理</div>
+          <div style="font-size:11px;color:#888">压缩与解压文件</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-deb-installer')">
+          <div style="font-size:28px;margin-bottom:6px">📦</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">软件包安装</div>
+          <div style="font-size:11px;color:#888">安装 deb 软件包</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('deepin-terminal')">
+          <div style="font-size:28px;margin-bottom:6px">💻</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">终端</div>
+          <div style="font-size:11px;color:#888">打开深度终端</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <h3 style="font-size:14px;margin:0 0 10px;font-weight:600">🎛️ 控制中心</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px">
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('org.deepin.dde.Network1','/org/deepin/dde/Network1','org.deepin.dde.Network1.GetStatus')">
+          <div style="font-size:28px;margin-bottom:6px">🌐</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">网络设置</div>
+          <div style="font-size:11px;color:#888">查询网络状态</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('com.deepin.daemon.Accounts','/com/deepin/daemon/Accounts','com.deepin.daemon.Accounts.GetUserList')">
+          <div style="font-size:28px;margin-bottom:6px">👤</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">账户管理</div>
+          <div style="font-size:11px;color:#888">查询用户账户</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('org.deepin.dde.Timedate1','/org/deepin/dde/Timedate1','org.deepin.dde.Timedate1.GetStatus')">
+          <div style="font-size:28px;margin-bottom:6px">⏰</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">时间设置</div>
+          <div style="font-size:11px;color:#888">查询时间与日期</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('org.deepin.dde.Display1','/org/deepin/dde/Display1','org.deepin.dde.Display1.GetPrimary')">
+          <div style="font-size:28px;margin-bottom:6px">🖥️</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">显示设置</div>
+          <div style="font-size:11px;color:#888">查询显示配置</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="callDbusService('org.deepin.dde.Update1','/org/deepin/dde/Update1','org.deepin.dde.Update1.GetCheckInterval')">
+          <div style="font-size:28px;margin-bottom:6px">🔄</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">系统更新</div>
+          <div style="font-size:11px;color:#888">检查系统更新</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <h3 style="font-size:14px;margin:0 0 10px;font-weight:600">🎯 服务与支持</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px">
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('uos-service-support')">
+          <div style="font-size:28px;margin-bottom:6px">🎧</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">服务与支持</div>
+          <div style="font-size:11px;color:#888">官方服务与帮助</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('uos-service-support --feedback')">
+          <div style="font-size:28px;margin-bottom:6px">💬</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">反馈建议</div>
+          <div style="font-size:11px;color:#888">提交反馈建议</div>
+        </div>
+        <div class="card" style="padding:14px;cursor:pointer;text-align:center" onclick="launchSysApp('uos-activator')">
+          <div style="font-size:28px;margin-bottom:6px">🔑</div>
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px">授权管理</div>
+          <div style="font-size:11px;color:#888">查看系统授权</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <h3 style="font-size:14px;margin:0 0 10px;font-weight:600">⌨️ CLI 命令执行</h3>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="cliCmdInput" type="text" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:monospace;background:var(--card-bg);color:var(--text)" placeholder="输入命令，如: uos-activator --status" onkeydown="if(event.key==='Enter')execCliCmd()"/>
+        <button class="btn-primary" onclick="execCliCmd()">执行</button>
+      </div>
+      <pre id="cliOutput" style="display:none;background:#1e1e2e;color:#cdd6f4;padding:12px;border-radius:6px;font-size:12px;overflow-x:auto;white-space:pre-wrap;max-height:200px"></pre>
+    </div>
+  </div>`
+}
+
+window.launchSysApp = async function(appName, args) {
+  const outputEl = document.getElementById('cliOutput')
+  if (outputEl) { outputEl.style.display = 'block'; outputEl.textContent = '⏳ 正在启动 ' + appName + '...' }
+  try {
+    const result = await window.systemApp?.launchApp(args ? appName + ' ' + args : appName)
+    if (outputEl) {
+      if (result?.success) outputEl.textContent = '✅ ' + appName + ' 已启动'
+      else outputEl.textContent = '❌ 启动失败: ' + (result?.error || '未知错误')
+    }
+  } catch(e) {
+    if (outputEl) outputEl.textContent = '❌ 启动异常: ' + e.message
+  }
+}
+
+window.callDbusService = async function(service, objectPath, method) {
+  const outputEl = document.getElementById('cliOutput')
+  if (outputEl) { outputEl.style.display = 'block'; outputEl.textContent = '⏳ 正在调用 ' + service + '.' + method + '...' }
+  try {
+    const result = await window.systemApp?.callDbus(service, objectPath, method, [])
+    if (outputEl) {
+      if (result?.success) outputEl.textContent = '📡 调用结果:\n' + (result.output || '成功')
+      else outputEl.textContent = '❌ 调用失败: ' + (result?.error || '未知错误')
+    }
+  } catch(e) {
+    if (outputEl) outputEl.textContent = '❌ 调用异常: ' + e.message
+  }
+}
+
+window.execCliCmd = async function() {
+  const inputEl = document.getElementById('cliCmdInput')
+  const outputEl = document.getElementById('cliOutput')
+  if (!inputEl || !outputEl) return
+  const cmd = inputEl.value.trim()
+  if (!cmd) return
+  outputEl.style.display = 'block'
+  outputEl.textContent = '⏳ 正在执行: $ ' + cmd + '\n'
+  try {
+    const result = await window.systemApp?.callCli(cmd)
+    if (result?.success) {
+      outputEl.textContent = '$ ' + cmd + '\n' + (result.output || '(命令执行成功，无输出)')
+    } else {
+      outputEl.textContent = '$ ' + cmd + '\n❌ 执行失败: ' + (result?.error || '未知错误') + (result?.output ? '\n' + result.output : '')
+    }
+  } catch(e) {
+    outputEl.textContent = '❌ 执行异常: ' + e.message
+  }
+}
+
 renderNav();switchPage(NAV[0].id)
 
 // 安全基线：指定编号加固
@@ -2853,6 +3039,161 @@ async function renderLocalSend(el){
     '</div>' +
     '<div id="lsLog" style="margin-top:12px;display:none;background:#1e1e2e;color:#cdd6f4;border-radius:8px;padding:12px;font-size:12px;font-family:monospace;max-height:200px;overflow-y:auto;line-height:1.6"></div>' +
   ''].join('\n')
+}
+
+
+// ============ 局域网文件传输 (LocalSend) 弹窗 ============
+let lsDevices = []
+let lsSelectedAddress = ''
+let lsSelectedHostname = ''
+let lsFiles = []
+
+async function localsendScan() {
+  const list = document.getElementById('lsDeviceList')
+  const status = document.getElementById('lsStatus')
+  if (!list || !status) return
+  list.innerHTML = '<div style="color:var(--text-ter);text-align:center;padding:10px 0">⏳ 扫描中...</div>'
+  status.textContent = '正在扫描设备...'
+  try {
+    const result = await window.toolAPI.execute('localsend-discovery', {})
+    if (result && result.success && result.devices && result.devices.length > 0) {
+      lsDevices = result.devices
+      list.innerHTML = ''
+      for (var i = 0; i < result.devices.length; i++) {
+        var d = result.devices[i]
+        list.innerHTML +=
+          '<div class="ls-device" onclick="localsendSelectDevice(\'' + d.address + '\',\'' + (d.hostname || d.address) + '\')" style="padding:6px 10px;cursor:pointer;border-radius:4px;margin:2px 0;background:var(--card-bg);border:1px solid var(--border);display:flex;align-items:center;gap:8px">' +
+            '<span style="font-size:16px">💻</span>' +
+            '<div><div style="font-weight:500;font-size:12px">' + (d.hostname || '未知设备') + '</div>' +
+            '<div style="font-size:10px;color:var(--text-ter)">' + d.address + '</div></div>' +
+          '</div>'
+      }
+      status.textContent = '发现 ' + result.devices.length + ' 个设备'
+    } else {
+      list.innerHTML = '<div style="color:var(--text-ter);text-align:center;padding:10px 0">未发现设备</div>'
+      status.textContent = '未发现设备'
+    }
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--danger);text-align:center;padding:10px 0">扫描失败: ' + e.message + '</div>'
+    status.textContent = '扫描失败'
+  }
+}
+
+function localsendSelectDevice(address, hostname) {
+  lsSelectedAddress = address
+  lsSelectedHostname = hostname
+  document.getElementById('lsStatus').textContent = '已选中: ' + hostname + ' (' + address + ')'
+  // Highlight selected device
+  var devices = document.querySelectorAll('.ls-device')
+  for (var i = 0; i < devices.length; i++) {
+    devices[i].style.borderColor = 'var(--border)'
+    devices[i].style.background = 'var(--card-bg)'
+  }
+  event.currentTarget.style.borderColor = 'var(--primary)'
+  event.currentTarget.style.background = 'var(--primary-light)'
+}
+
+async function localsendSelectFile() {
+  try {
+    const file = await window.fileAPI.selectFile()
+    if (file) {
+      lsFiles = [file]
+      document.getElementById('lsFileInfo').textContent = '已选择文件: ' + file.split('/').pop()
+      if (lsSelectedAddress) {
+        await doSendFiles()
+      } else {
+        document.getElementById('lsStatus').textContent = '请先选择目标设备'
+      }
+    }
+  } catch(e) {
+    document.getElementById('lsStatus').textContent = '选择文件失败: ' + e.message
+  }
+}
+
+async function localsendSelectFolder() {
+  try {
+    const dir = await window.fileAPI.selectDirectory()
+    if (dir) {
+      lsFiles = [dir]
+      document.getElementById('lsFileInfo').textContent = '文件夹已选择'
+      if (lsSelectedAddress) {
+        await doSendFiles()
+      } else {
+        document.getElementById('lsStatus').textContent = '请先选择目标设备'
+      }
+    }
+  } catch(e) {
+    document.getElementById('lsStatus').textContent = '选择文件夹失败: ' + e.message
+  }
+}
+
+async function doSendFiles() {
+  const progress = document.getElementById('lsProgress')
+  const status = document.getElementById('lsStatus')
+  if (!progress || !status) return
+  progress.innerHTML = '<div style="color:var(--primary);text-align:center;padding:5px 0">⏳ 正在传输...</div>'
+  status.textContent = '正在传输到 ' + lsSelectedHostname + '...'
+  try {
+    const result = await window.toolAPI.execute('localsend-send', {
+      targetAddress: lsSelectedAddress,
+      targetPort: 42136,
+      files: lsFiles
+    })
+    if (result && result.success && result.results) {
+      var html = '<div style="color:var(--success);font-weight:600;margin-bottom:4px">✅ 传输完成</div>'
+      for (var i = 0; i < result.results.length; i++) {
+        var r = result.results[i]
+        html += '<div style="padding:2px 0">' + (r.success ? '✅' : '❌') + ' ' + r.file + (r.success ? ' 成功' : ' 失败: ' + (r.error || '')) + '</div>'
+      }
+      progress.innerHTML = html
+      status.textContent = '传输完成'
+      var succ = 0
+      for (var i = 0; i < result.results.length; i++) { if (result.results[i].success) succ++ }
+      addLsHistory('发送到 ' + lsSelectedHostname + ' (' + lsSelectedAddress + ')', succ + '/' + result.results.length + ' 成功')
+    } else {
+      progress.innerHTML = '<div style="color:var(--danger)">❌ 传输失败: ' + (result ? result.error : '未知错误') + '</div>'
+      status.textContent = '传输失败'
+    }
+  } catch(e) {
+    progress.innerHTML = '<div style="color:var(--danger)">❌ 传输出错: ' + e.message + '</div>'
+    status.textContent = '传输出错'
+  }
+}
+
+async function localsendStartReceive() {
+  try {
+    const result = await window.toolAPI.execute('localsend-receive', { saveDir: '/tmp/localsend_received' })
+    if (result && result.success) {
+      document.getElementById('lsReceiveBtn').style.display = 'none'
+      document.getElementById('lsStopBtn').style.display = 'inline-block'
+      document.getElementById('lsStatus').textContent = '📥 接收中 (端口 42136)'
+    } else {
+      document.getElementById('lsStatus').textContent = '开启接收失败: ' + (result ? result.error : '未知错误')
+    }
+  } catch(e) {
+    document.getElementById('lsStatus').textContent = '开启接收出错: ' + e.message
+  }
+}
+
+async function localsendStopReceive() {
+  try {
+    await window.toolAPI.execute('localsend-stop', {})
+    document.getElementById('lsReceiveBtn').style.display = 'inline-block'
+    document.getElementById('lsStopBtn').style.display = 'none'
+    document.getElementById('lsStatus').textContent = '已停止接收'
+  } catch(e) {
+    document.getElementById('lsStatus').textContent = '停止出错: ' + e.message
+  }
+}
+
+function addLsHistory(action, result) {
+  var history = document.getElementById('lsHistory')
+  if (!history) return
+  var time = new Date().toLocaleTimeString()
+  var empty = history.querySelector('div[style*="text-align:center"]')
+  if (empty) empty.remove()
+  history.innerHTML += '<div style="padding:4px 0;border-bottom:1px solid var(--border-light);font-size:11px"><span style="color:var(--text-ter)">[' + time + ']</span> ' + action + ' — ' + result + '</div>'
+  history.scrollTop = history.scrollHeight
 }
 
 async function localsendGetStatus(){
@@ -3174,6 +3515,359 @@ function showToast(msg){
   t.style.opacity = '1'
   if(_toastTimer) clearTimeout(_toastTimer)
   _toastTimer = setTimeout(() => { t.style.opacity = '0' }, 3000)
+}
+
+
+
+// ============ APT 更新历史与回滚 ============
+let _aptHistoryData = null
+
+function escHtml(s) {
+  if (!s) return ''
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+async function renderAptHistory(el){
+  el.innerHTML = '<div style="display:flex;gap:12px;margin-bottom:16px">' +
+    '<div class="tabs" style="display:flex;gap:0;background:#f0f0f0;border-radius:8px;padding:2px">' +
+      '<button class="tab-btn active" data-tab="history" onclick="switchAptTab(this,\'history\')" style="padding:6px 18px;border:none;border-radius:6px;cursor:pointer;font-size:12px;background:var(--primary);color:#fff;font-weight:500">📋 更新历史</button>' +
+      '<button class="tab-btn" data-tab="rollback" onclick="switchAptTab(this,\'rollback\')" style="padding:6px 18px;border:none;border-radius:6px;cursor:pointer;font-size:12px;background:transparent;color:#666">🔄 版本回滚</button>' +
+    '</div>' +
+    '<div style="flex:1"></div>' +
+    '<div style="display:flex;gap:6px;align-items:center">' +
+      '<span id="aptHistoryCount" style="font-size:12px;color:var(--text-sec)">加载中...</span>' +
+      '<button class="btn btn-sm" onclick="refreshAptHistory()" style="padding:3px 10px;font-size:11px">🔄 刷新</button>' +
+    '</div>' +
+  '</div>' +
+  '<div id="aptHistoryContent" style="flex:1;overflow-y:auto"><div style="text-align:center;padding:30px;color:var(--text-sec)">⏳ 正在加载更新历史...</div></div>'
+
+  await refreshAptHistory()
+}
+
+async function refreshAptHistory(){
+  const cnt = document.getElementById('aptHistoryCount')
+  const content = document.getElementById('aptHistoryContent')
+  if(!content) return
+  cnt.textContent = '⏳ 加载中...'
+  content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-sec)">⏳ 正在解析 APT 更新历史...</div>'
+
+  try{
+    const r = await window.aptHistoryAPI.list()
+    if(r?.success && r.entries){
+      _aptHistoryData = r.entries
+      cnt.textContent = '📋 共 ' + r.entries.length + ' 条记录'
+      renderAptHistoryList(r.entries)
+    } else {
+      content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger)">❌ ' + escHtml(r?.error||'获取历史失败') + '</div>'
+    }
+  }catch(e){
+    content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger)">❌ ' + escHtml(e.message) + '</div>'
+  }
+}
+
+function renderAptHistoryList(entries){
+  const content = document.getElementById('aptHistoryContent')
+  if(!content || !entries.length){
+    content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-sec)">暂无更新记录</div>'
+    return
+  }
+  
+  let html = '<div style="display:flex;flex-direction:column;gap:8px">'
+  for(let i=0;i<entries.length;i++){
+    const e = entries[i]
+    const totalChanges = e.install.length + e.upgrade.length + e.remove.length + e.purge.length + e.downgrade.length
+    const dateStr = e.startDate || '未知时间'
+    
+    // 判断操作类型
+    let actionType = '📦'
+    let actionLabel = '更新'
+    if(e.install.length > 0 && e.upgrade.length === 0 && e.remove.length === 0 && e.purge.length === 0) {
+      actionType = '➕'
+      actionLabel = '安装'
+    } else if(e.remove.length > 0 || e.purge.length > 0) {
+      actionType = '➖'
+      actionLabel = '删除'
+    } else if(e.downgrade.length > 0) {
+      actionType = '⬇'
+      actionLabel = '降级'
+    }
+    
+    html += '<div class="apt-entry" onclick="toggleAptEntry(this)" style="background:#fff;border-radius:10px;padding:12px 16px;cursor:pointer;border:1px solid #eee;transition:all .15s">' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<span style="font-size:16px">' + actionType + '</span>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:13px;font-weight:500;color:var(--text)">' + escHtml(actionLabel) + ' · ' + totalChanges + ' 个软件包</div>' +
+          '<div style="font-size:11px;color:var(--text-sec);margin-top:2px">' + escHtml(dateStr) + '</div>' +
+        '</div>' +
+        '<span style="font-size:11px;color:var(--text-ter);white-space:nowrap">▾ 展开</span>' +
+      '</div>' +
+      '<div class="apt-entry-detail" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #eee">'
+    
+    // 命令信息
+    if(e.commandline){
+      html += '<div style="font-size:11px;color:var(--text-sec);margin-bottom:6px;word-break:break-all"><code style="background:#f5f6f8;padding:2px 6px;border-radius:3px;font-size:11px">' + escHtml(e.commandline) + '</code></div>'
+    }
+    
+    // 安装的包
+    if(e.install.length){
+      html += '<div style="margin-bottom:6px"><span style="font-size:11px;font-weight:500;color:var(--success)">➕ 安装 (' + e.install.length + ')</span></div>'
+      html += e.install.map(p => '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#f0faf0;border-radius:4px;margin-bottom:3px;font-size:12px">' +
+        '<span style="font-weight:500">' + escHtml(p.name) + '</span>' +
+        '<span style="color:var(--text-sec);font-size:11px">' + escHtml(p.arch) + '</span>' +
+        '<span style="margin-left:auto;color:var(--success);font-size:11px">' + escHtml(p.newVersion) + '</span>' +
+      '</div>').join('')
+    }
+    
+    // 升级的包
+    if(e.upgrade.length){
+      html += '<div style="margin-bottom:6px;margin-top:8px"><span style="font-size:11px;font-weight:500;color:var(--primary)">⬆ 升级 (' + e.upgrade.length + ')</span></div>'
+      html += e.upgrade.map(p => '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#f0f4ff;border-radius:4px;margin-bottom:3px;font-size:12px">' +
+        '<span style="font-weight:500">' + escHtml(p.name) + '</span>' +
+        '<span style="color:var(--text-sec);font-size:11px">' + escHtml(p.arch) + '</span>' +
+        '<span style="margin-left:auto;font-size:11px">' +
+          '<span style="color:#e53935;text-decoration:line-through">' + escHtml(p.oldVersion) + '</span>' +
+          ' → ' +
+          '<span style="color:var(--success);font-weight:500">' + escHtml(p.newVersion) + '</span>' +
+        '</span>' +
+        '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showRollbackDialog(&apos;" + escHtml(p.name) + "&apos;,&apos;" + escHtml(p.oldVersion) + "&apos;)" style="padding:2px 8px;font-size:10px;margin-left:4px">↩ 回滚</button>' +
+      '</div>').join('')
+    }
+    
+    // 降级的包
+    if(e.downgrade.length){
+      html += '<div style="margin-bottom:6px;margin-top:8px"><span style="font-size:11px;font-weight:500;color:var(--warning)">⬇ 降级 (' + e.downgrade.length + ')</span></div>'
+      html += e.downgrade.map(p => '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#fff8e6;border-radius:4px;margin-bottom:3px;font-size:12px">' +
+        '<span style="font-weight:500">' + escHtml(p.name) + '</span>' +
+        '<span style="color:var(--text-sec);font-size:11px">' + escHtml(p.arch) + '</span>' +
+        '<span style="margin-left:auto;font-size:11px">' +
+          '<span style="color:#e53935;text-decoration:line-through">' + escHtml(p.oldVersion) + '</span>' +
+          ' → ' +
+          '<span style="color:var(--warning);font-weight:500">' + escHtml(p.newVersion) + '</span>' +
+        '</span>' +
+      '</div>').join('')
+    }
+    
+    // 删除的包
+    if(e.remove.length){
+      html += '<div style="margin-bottom:6px;margin-top:8px"><span style="font-size:11px;font-weight:500;color:var(--danger)">➖ 删除 (' + e.remove.length + ')</span></div>'
+      html += e.remove.map(p => '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#fff0f0;border-radius:4px;margin-bottom:3px;font-size:12px">' +
+        '<span style="font-weight:500">' + escHtml(p.name) + '</span>' +
+        '<span style="color:var(--text-sec);font-size:11px">' + escHtml(p.arch) + '</span>' +
+        '<span style="margin-left:auto;color:var(--danger);font-size:11px">' + escHtml(p.version) + '</span>' +
+      '</div>').join('')
+    }
+    
+    if(e.purge.length){
+      html += '<div style="margin-bottom:6px;margin-top:8px"><span style="font-size:11px;font-weight:500;color:var(--danger)">🗑 彻底删除 (' + e.purge.length + ')</span></div>'
+      html += e.purge.map(p => '<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:#fff0f0;border-radius:4px;margin-bottom:3px;font-size:12px">' +
+        '<span style="font-weight:500">' + escHtml(p.name) + '</span>' +
+        '<span style="margin-left:auto;color:var(--danger);font-size:11px">' + escHtml(p.version) + '</span>' +
+      '</div>').join('')
+    }
+    
+    html += '</div></div>'
+  }
+  html += '</div>'
+  content.innerHTML = html
+}
+
+function toggleAptEntry(el){
+  const detail = el.querySelector('.apt-entry-detail')
+  if(detail){
+    const isHidden = detail.style.display === 'none'
+    detail.style.display = isHidden ? 'block' : 'none'
+    const toggle = el.querySelector('.apt-entry-detail + *') || el
+    const arrow = el.querySelector('[style*="white-space:nowrap"]')
+    if(arrow) arrow.textContent = isHidden ? '▾ 收起' : '▸ 展开'
+  }
+}
+
+function switchAptTab(btn, tab){
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.style.background = 'transparent'
+    b.style.color = '#666'
+  })
+  btn.style.background = 'var(--primary)'
+  btn.style.color = '#fff'
+  btn.style.fontWeight = '500'
+
+  const content = document.getElementById('aptHistoryContent')
+  if(!content) return
+  
+  if(tab === 'history'){
+    if(_aptHistoryData) renderAptHistoryList(_aptHistoryData)
+    else refreshAptHistory()
+  } else if(tab === 'rollback'){
+    renderRollbackPanel(content)
+  }
+}
+
+async function renderRollbackPanel(el){
+  el.innerHTML = '<div style="max-width:600px;margin:0 auto">' +
+    '<div style="font-size:14px;font-weight:600;margin-bottom:10px">🔄 软件包版本回滚</div>' +
+    '<div style="font-size:12px;color:var(--text-sec);margin-bottom:14px">输入软件包名称，查看可用版本并选择回滚</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:14px">' +
+      '<input id="rollbackPkgInput" placeholder="输入软件包名称，如: dde-printer" style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none" onkeydown="if(event.key===\'Enter\') searchRollbackPkg()">' +
+      '<button class="btn btn-primary" onclick="searchRollbackPkg()">🔍 查询</button>' +
+    '</div>' +
+    '<div id="rollbackResult"></div>' +
+  '</div>'
+}
+
+async function searchRollbackPkg(){
+  const input = document.getElementById('rollbackPkgInput')
+  const result = document.getElementById('rollbackResult')
+  const pkgName = input?.value?.trim()
+  if(!pkgName){ result.innerHTML = '<div style="color:var(--danger);font-size:12px">请输入软件包名称</div>'; return }
+  
+  result.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 查询中...</div>'
+  
+  try{
+    const r = await window.aptHistoryAPI.packageVersions(pkgName)
+    if(r?.success){
+      let html = '<div style="background:#fff;border-radius:10px;padding:16px;border:1px solid #eee">'
+      html += '<div style="font-size:13px;font-weight:500;margin-bottom:8px">📦 ' + escHtml(pkgName) + '</div>'
+      
+      if(r.currentVersion){
+        html += '<div style="font-size:12px;color:var(--text-sec);margin-bottom:10px">当前版本: <span style="color:var(--primary);font-weight:500">' + escHtml(r.currentVersion) + '</span></div>'
+      }
+      
+      if(r.versions && r.versions.length){
+        html += '<div style="font-size:12px;font-weight:500;color:var(--text-sec);margin-bottom:6px">可用版本 (' + r.versions.length + '):</div>'
+        html += '<div style="display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto">'
+        for(const v of r.versions){
+          html += '<div style="display:flex;align-items:center;padding:6px 10px;background:' + (v.isCurrent?'#e8f5e9':'#f8f9fa') + ';border-radius:6px;font-size:12px">' +
+            '<span style="flex:1">' + escHtml(v.version) + '</span>'
+          if(v.isCurrent){
+            html += '<span style="color:var(--success);font-size:11px;font-weight:500">✓ 当前版本</span>'
+          } else {
+            html += '<button class="btn btn-sm btn-warning" onclick="executeRollback(&apos;" + escHtml(pkgName) + "&apos;,&apos;" + escHtml(v.version).replace(/'/g,"\\'") + "&apos;)" style="padding:3px 10px;font-size:11px">↩ 回滚到此版本</button>'
+          }
+          html += '</div>'
+        }
+        html += '</div>'
+      } else {
+        html += '<div style="color:var(--text-sec);font-size:12px">没有找到其他可用版本</div>'
+      }
+      html += '</div>'
+      result.innerHTML = html
+    } else {
+      result.innerHTML = '<div style="color:var(--danger);font-size:12px">❌ ' + escHtml(r?.error||'查询失败') + '</div>'
+    }
+  }catch(e){
+    result.innerHTML = '<div style="color:var(--danger);font-size:12px">❌ ' + escHtml(e.message) + '</div>'
+  }
+}
+
+async function executeRollback(pkgName, targetVersion){
+  if(!confirm('确认要将 ' + pkgName + ' 回滚到 ' + targetVersion + ' 版本？
+
+此操作可能需要 sudo 密码。')) return
+  
+  const password = prompt('请输入 sudo 密码（留空则尝试无密码执行）:')
+  if(password === null) return
+  
+  const resultEl = document.getElementById('rollbackResult')
+  if(resultEl) resultEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在回滚 ' + pkgName + ' 到 ' + targetVersion + '，请稍候...</div>'
+  
+  try{
+    const r = await window.aptHistoryAPI.rollback(pkgName, targetVersion, password || '')
+    if(r?.success){
+      if(resultEl) resultEl.innerHTML = '<div style="background:#e8f5e9;border-radius:10px;padding:16px;border:1px solid #c8e6c9">' +
+        '<div style="font-size:14px;color:var(--success);font-weight:500;margin-bottom:8px">✅ 回滚成功</div>' +
+        '<div style="font-size:11px;color:var(--text);max-height:200px;overflow-y:auto;font-family:monospace;white-space:pre-wrap;background:#f5f6f8;padding:8px;border-radius:4px">' + escHtml(r.output||'') + '</div>' +
+        '<button class="btn btn-sm" onclick="refreshAptHistory()" style="margin-top:8px;padding:4px 12px;font-size:11px">🔄 刷新历史</button></div>'
+    } else {
+      if(resultEl) resultEl.innerHTML = '<div style="background:#fff0f0;border-radius:10px;padding:16px;border:1px solid #ffcdd2">' +
+        '<div style="font-size:14px;color:var(--danger);font-weight:500;margin-bottom:8px">❌ 回滚失败</div>' +
+        '<div style="font-size:12px;color:var(--text)">' + escHtml(r?.error||'未知错误') + '</div></div>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<div style="background:#fff0f0;border-radius:10px;padding:16px;border:1px solid #ffcdd2">' +
+      '<div style="font-size:14px;color:var(--danger);font-weight:500;margin-bottom:8px">❌ 回滚失败</div>' +
+      '<div style="font-size:12px;color:var(--text)">' + escHtml(e.message) + '</div></div>'
+  }
+}
+
+function showRollbackDialog(pkgName, oldVersion){
+  // Switch to rollback tab
+  const rollbackBtn = document.querySelector('.tab-btn[data-tab="rollback"]')
+  if(rollbackBtn) {
+    rollbackBtn.click()
+    // Fill the package name
+    const input = document.getElementById('rollbackPkgInput')
+    if(input) {
+      input.value = pkgName
+      searchRollbackPkg()
+    }
+  }
+}
+
+
+// ============ 文件搜索 ============
+async function startFileSearch() {
+  const kw = document.getElementById('searchKeyword')
+  const resultDiv = document.getElementById('searchResult')
+  if (!kw || !resultDiv) return
+  const keyword = kw.value.trim()
+  if (!keyword) { resultDiv.style.display = 'block'; resultDiv.innerHTML = '<div style="color:var(--text-sec);text-align:center;padding:20px 0">请输入搜索关键词</div>'; return }
+  resultDiv.style.display = 'block'
+  resultDiv.innerHTML = '<div style="text-align:center;padding:20px 0"><div class="spinner"></div><div style="margin-top:8px;font-size:13px;color:var(--text-sec)">正在搜索...</div></div>'
+  try {
+    const filters = {}
+    const showAdvanced = document.getElementById('showAdvanced')
+    if (showAdvanced && showAdvanced.checked) {
+      const typeSelect = document.getElementById('typeSelect')
+      const sizeSelect = document.getElementById('sizeSelect')
+      const dateSelect = document.getElementById('dateSelect')
+      if (typeSelect && typeSelect.value) filters.type = typeSelect.value
+      if (sizeSelect && sizeSelect.value) filters.size = sizeSelect.value
+      if (dateSelect && dateSelect.value) filters.date = dateSelect.value
+    }
+    const result = await window.toolAPI.execute('file-search', { keyword, filters })
+    if (result && result.success && result.files && result.files.length > 0) {
+      let html = '<div style="font-size:12px;color:var(--text-sec);margin-bottom:8px">找到 <strong style="color:var(--primary)">' + result.files.length + '</strong> 个文件</div>'
+      html += '<div style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:6px">'
+      for (const f of result.files) {
+        const icon = f.isDir ? '📁' : '📄'
+        const typeLabel = f.type || '未知'
+        html += '<div style="padding:8px 10px;border-bottom:1px solid #f0f0f0;display:flex;align-items:flex-start;gap:8px;font-size:12px">'
+        html += '<span style="flex-shrink:0;font-size:16px">' + icon + '</span>'
+        html += '<div style="flex:1;min-width:0"><div style="font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.name + '</div>'
+        html += '<div style="font-size:10px;color:var(--text-ter);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.path + '</div>'
+        html += '<div style="font-size:10px;color:var(--text-ter);margin-top:1px">' + typeLabel + ' · ' + (f.sizeStr || '') + ' · ' + (f.dateStr || '') + '</div></div>'
+        html += '<button class="btn" style="font-size:10px;padding:3px 8px;flex-shrink:0" onclick="openFileLocation(\'' + f.path.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">📂 打开位置</button>'
+        html += '</div>'
+      }
+      html += '</div>'
+      resultDiv.innerHTML = html
+    } else if (result && result.success) {
+      resultDiv.innerHTML = '<div style="color:var(--text-sec);text-align:center;padding:20px 0">未找到匹配的文件</div>'
+    } else {
+      resultDiv.innerHTML = '<div style="color:#e74c3c;text-align:center;padding:20px 0">搜索失败: ' + (result.error || '未知错误') + '</div>'
+    }
+  } catch (e) {
+    resultDiv.innerHTML = '<div style="color:#e74c3c;text-align:center;padding:20px 0">搜索出错: ' + e.message + '</div>'
+  }
+}
+
+function toggleFilterOptions() {
+  const cb = document.getElementById('showAdvanced')
+  const opts = document.getElementById('filterOptions')
+  if (cb && opts) opts.style.display = cb.checked ? 'block' : 'none'
+}
+
+async function openFileLocation(filePath) {
+  if (!filePath) return
+  try {
+    await window.toolAPI.execute('open-file-path', filePath)
+  } catch (e) {
+    try {
+      await window.toolAPI.invoke('shell:openPath', filePath.replace(/\\/[^\\/]+$/,''))
+    } catch (e2) {
+      console.error('无法打开文件位置:', e2)
+    }
+  }
 }
 
 </script>
