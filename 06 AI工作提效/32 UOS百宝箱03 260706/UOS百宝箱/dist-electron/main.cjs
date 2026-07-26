@@ -3609,12 +3609,29 @@ ipcMain.handle('phase2-usb', async (_, action, params) => {
 ipcMain.handle("systemapp-launch", async (_, appName) => {
   try {
     const { execSync } = require("child_process")
-    execSync("gtk-launch " + appName.replace(/[^a-zA-Z0-9._-]/g, "") + " 2>/dev/null || " +
-      "xdg-open " + appName.replace(/[^a-zA-Z0-9._-]/g, "") + " 2>/dev/null || " +
-      appName.replace(/[^a-zA-Z0-9._-]/g, "") + " 2>/dev/null", { timeout: 10000 })
+    const safeName = appName.replace(/[^a-zA-Z0-9._-]/g, "")
+    // 使用 gapplication launch 启动桌面应用（Deepin/GNOME 标准方式）
+    execSync("gapplication launch " + safeName + ".desktop 2>/dev/null || " +
+      "gtk-launch " + safeName + " 2>/dev/null", { timeout: 10000 })
     return { success: true }
   } catch(e) {
-    return { success: false, error: e.message }
+    // 降级: 通过 shell.openPath 打开 .desktop 文件
+    try {
+      const desktopPaths = [
+        "/usr/share/applications/" + safeName + ".desktop",
+        "/usr/local/share/applications/" + safeName + ".desktop",
+        "/var/lib/snapd/desktop/applications/" + safeName + ".desktop"
+      ]
+      for (const dp of desktopPaths) {
+        if (require("fs").existsSync(dp)) {
+          shell.openPath(dp)
+          return { success: true }
+        }
+      }
+      return { success: false, error: "无法启动应用: " + safeName }
+    } catch(e2) {
+      return { success: false, error: e2.message }
+    }
   }
 })
 

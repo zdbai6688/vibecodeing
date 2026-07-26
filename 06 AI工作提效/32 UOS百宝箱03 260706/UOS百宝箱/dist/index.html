@@ -168,6 +168,68 @@ body{font-family:-apple-system,"Noto Sans CJK SC","PingFang SC","Microsoft YaHei
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()"><div class="modal" id="modalContent"></div></div>
 
 <script>
+// ========== 全局错误监控 ==========
+// 前端错误捕获和存储
+window.__ERROR_LOGS_KEY__ = '_uos_error_logs'
+window.__MAX_ERROR_LOGS__ = 50
+
+function addErrorLog(type, message, source, lineno, colno, stack) {
+  try {
+    var logs = JSON.parse(localStorage.getItem(window.__ERROR_LOGS_KEY__) || '[]')
+    logs.push({
+      type: type,
+      message: message,
+      source: source || '',
+      lineno: lineno || 0,
+      colno: colno || 0,
+      stack: stack || '',
+      time: new Date().toISOString(),
+      version: '1.4.0'
+    })
+    if (logs.length > window.__MAX_ERROR_LOGS__) {
+      logs = logs.slice(logs.length - window.__MAX_ERROR_LOGS__)
+    }
+    localStorage.setItem(window.__ERROR_LOGS_KEY__, JSON.stringify(logs))
+  } catch(e) { /* ignore storage errors */ }
+}
+
+window.onerror = function(msg, source, lineno, colno, error) {
+  addErrorLog('render', msg, source, lineno, colno, error ? error.stack : '')
+  // Update badge if about nav item exists
+  var badge = document.querySelector('.nav-item[data-page="about"] .badge')
+  if (badge) {
+    var count = JSON.parse(localStorage.getItem(window.__ERROR_LOGS_KEY__) || '[]').length
+    badge.textContent = count > 99 ? '99+' : count
+    badge.style.display = 'inline-flex'
+  }
+  return false
+}
+
+window.addEventListener('unhandledrejection', function(event) {
+  var reason = event.reason || {}
+  addErrorLog('promise', reason.message || String(reason), '', 0, 0, reason.stack || '')
+  var badge = document.querySelector('.nav-item[data-page="about"] .badge')
+  if (badge) {
+    var count = JSON.parse(localStorage.getItem(window.__ERROR_LOGS_KEY__) || '[]').length
+    badge.textContent = count > 99 ? '99+' : count
+    badge.style.display = 'inline-flex'
+  }
+})
+
+function getErrorLogs() {
+  try {
+    return JSON.parse(localStorage.getItem(window.__ERROR_LOGS_KEY__) || '[]')
+  } catch(e) { return [] }
+}
+
+function clearErrorLogs() {
+  try {
+    localStorage.removeItem(window.__ERROR_LOGS_KEY__)
+    var badge = document.querySelector('.nav-item[data-page="about"] .badge')
+    if (badge) badge.style.display = 'none'
+  } catch(e) {}
+}
+
 const NAV = [
   // ===== 系统工具 =====
   {id:'sysinfo',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>`,label:'系统信息',desc:'查看系统硬件与软件信息'},
@@ -2674,6 +2736,19 @@ async function submitFeedback(){
 
 // ============ 关于 ============
 function renderAbout(el){
+  // Initialize badge count
+  setTimeout(function(){
+    var badge = document.querySelector('.nav-item[data-page="about"] .badge')
+    if (badge) {
+      var count = (getErrorLogs() || []).length
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count
+        badge.style.display = 'inline-flex'
+      }
+    }
+  }, 100)
+  var _errorTab = 'main'
+
   el.innerHTML=`<div style="max-width:640px;margin:0 auto">
     <div style="background:var(--card-bg);border-radius:12px;padding:32px;box-shadow:var(--shadow);text-align:center;margin-bottom:14px">
       <div style="font-size:64px;margin-bottom:14px">🛠️</div>
