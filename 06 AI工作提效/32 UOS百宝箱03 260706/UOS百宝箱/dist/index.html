@@ -191,7 +191,8 @@ const NAV = [
   // ===== 系统应用集成 =====
   {id:'systemapps',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#e8f5e9;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:#2e7d32;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>`,label:'系统应用',desc:'系统能力调用与集成'}
 ,  // ===== 🛠️ 更多实用功能 =====
-  {id:'phase2-more',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>`,label:'更多实用功能',desc:'启动项管理/文件搜索/健康检查/USB启动盘/基准测试/备份还原/驱动管理/远程桌面'}
+  {id:'phase2-more',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>`,label:'更多实用功能',desc:'启动项管理/文件搜索/健康检查/USB启动盘/基准测试/备份还原/驱动管理/远程桌面'},
+  {id:'crashanalyze',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>`,label:'崩溃分析',desc:'系统崩溃记录查看、分析诊断与解决方案推荐'}
 ]
 const MONITOR_SUB = [
   {group:'进程资源类',items:[{id:'top-cpu',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,label:'CPU 消耗排行'},{id:'top-mem',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,label:'内存消耗排行'},{id:'zombie',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="8" y1="9" x2="8.01" y2="9"/><line x1="16" y1="9" x2="16.01" y2="9"/><path d="M16 15a4 4 0 0 1-8 0"/></svg>`,label:'僵尸进程检测'}]},
@@ -349,7 +350,8 @@ function switchPage(id){
   else if(id==='compliance') renderCompliance(el)
   else if(id==='about') renderAbout(el)
   else if(id==='systemapps') renderSystemApps(el)
-  else if(id==='phase2-more') renderPhase2Page(el)
+    else if(id==='crashanalyze') renderCrashAnalyze(el)
+else if(id==='phase2-more') renderPhase2Page(el)
 }
 
 function switchMonitorSub(id){_currentSub=id;const p=NAV.find(i=>i.id==='monitor');document.getElementById('pageTitle').innerHTML=p.ico+' '+p.label;document.getElementById('pageDesc').textContent=p.desc;renderSubNav(id);renderMonitorDetail(document.getElementById('pageContent'),id)}
@@ -4010,7 +4012,393 @@ function showRollbackDialog(pkgName, oldVersion){
 }
 
 
-// ============ 文件搜索 ============
+
+// ============ 系统崩溃分析 ============
+async function renderCrashAnalyze(el){
+  el.innerHTML = '<div style="max-width:960px;margin:0 auto">' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">' +
+      '<button class="btn btn-primary" onclick="refreshCrashList()">🔍 查看崩溃记录</button>' +
+      '<button class="btn btn-warning" onclick="refreshCrashLogs()">📋 查看错误日志</button>' +
+      '<button class="btn btn-sec" onclick="renderCrashAnalyze(document.getElementById('pageContent'))">🔄 刷新</button>' +
+    '</div>' +
+    '<div style="background:var(--card-bg);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px">' +
+      '<div style="display:flex;border-bottom:1px solid var(--border)">' +
+        '<div class="crash-tab active" data-tab="coredumps" onclick="switchCrashTab(this,'coredumps')" style="padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--primary);color:var(--primary);-webkit-user-select:none;user-select:none">💥 崩溃记录</div>' +
+        '<div class="crash-tab" data-tab="logs" onclick="switchCrashTab(this,'logs')" style="padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-sec);border-bottom:2px solid transparent;-webkit-user-select:none;user-select:none">📝 错误日志</div>' +
+        '<div class="crash-tab" data-tab="charts" onclick="switchCrashTab(this,'charts')" style="padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-sec);border-bottom:2px solid transparent;-webkit-user-select:none;user-select:none">📊 统计分析</div>' +
+        '<div class="crash-tab" data-tab="suggest" onclick="switchCrashTab(this,'suggest')" style="padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-sec);border-bottom:2px solid transparent;-webkit-user-select:none;user-select:none">💡 解决方案</div>' +
+      '</div>' +
+      '<div id="crashCoredumps" style="padding:14px 18px;font-size:13px;color:var(--text-sec)">点击"查看崩溃记录"进行检测</div>' +
+    '</div></div>'
+  try {
+    window._crashData = { coredumps: null, logs: null }
+    const r = await window.crashAPI.listCoredumps()
+    if (r && r.success) {
+      window._crashData.coredumps = r.coredumps || []
+      displayCoredumps(r.coredumps || [])
+    }
+  } catch(e) {}
+  try {
+    const r = await window.crashAPI.getCrashLogs()
+    if (r && r.success) {
+      window._crashData.logs = r.logs || []
+    }
+  } catch(e) {}
+  try {
+    if (window._crashData && window._crashData.coredumps && window._crashData.coredumps.length) {
+      renderCrashCharts(window._crashData.coredumps)
+    }
+  } catch(e) {}
+}
+
+async function refreshCrashList(){
+  const body = document.getElementById('crashCoredumps')
+  if(!body) return
+  body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在获取崩溃记录...</div>'
+  try{
+    const r = await window.crashAPI.listCoredumps()
+    if (r && r.success && r.coredumps && r.coredumps.length) {
+      if (window._crashData) window._crashData.coredumps = r.coredumps
+      displayCoredumps(r.coredumps)
+    } else {
+      body.innerHTML = noDataHtml('系统未检测到崩溃记录', '系统运行正常，无 coredump 文件')
+    }
+  } catch(e){
+    body.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">❌ ' + esc(e.message) + '</div>'
+  }
+}
+
+function displayCoredumps(coredumps){
+  const body = document.getElementById('crashCoredumps')
+  if(!body) return
+  if(!coredumps || coredumps.length === 0){
+    body.innerHTML = noDataHtml('系统未检测到崩溃记录', '')
+    return
+  }
+  let html = '<div style="font-size:12px;color:var(--text-sec);margin-bottom:8px">共发现 <strong style="color:var(--primary)">' + coredumps.length + '</strong> 条崩溃记录</div>' +
+    '<div style="max-height:350px;overflow-y:auto;border:1px solid var(--border-light);border-radius:6px">' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead>' +
+    '<tr style="background:#f9f9f9"><th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">时间</th>' +
+    '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">进程</th>' +
+    '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">信号</th>' +
+    '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">PID</th>' +
+    '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">操作</th></tr></thead><tbody>'
+  for(const c of coredumps){
+    const signal = esc(c.signal || '?')
+    const sigColor = signal === 'SIGSEGV' || signal === '11' ? 'var(--danger)' :
+                     signal === 'SIGABRT' || signal === '6' ? 'var(--warning)' : 'var(--text)'
+    html += '<tr><td style="padding:8px 10px;border-bottom:1px solid #f5f5f5;white-space:nowrap;font-size:11px">' + esc(c.time || '') + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5;font-weight:500">' + esc(c.package || esc(c.exe || '未知')) + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5;color:' + sigColor + ';font-weight:500">' + signal + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5;font-size:11px;color:var(--text-sec)">' + esc(c.pid || '') + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5">' +
+      '<button class="btn btn-sm" onclick="analyzeCoredump('' + esc(c.pid || '').replace(/'/g,"\\'") + '','' + esc(c.signal || '').replace(/'/g,"\\'") + '','' + esc(c.package || c.exe || '').replace(/'/g,"\\'") + '','' + esc(c.exe || '').replace(/'/g,"\\'") + '')" style="padding:2px 8px;font-size:10px">🔍 分析</button></td></tr>'
+  }
+  html += '</tbody></table></div>'
+  body.innerHTML = html
+}
+
+async function analyzeCoredump(pid, signal, pkg, exe){
+  document.getElementById('modalOverlay').classList.add('show')
+  document.getElementById('modalContent').innerHTML =
+    '<button class="close-btn" onclick="closeModal()">✕</button>' +
+    '<h2>🔍 崩溃分析</h2>' +
+    '<div class="sub">正在分析崩溃信息，请稍候...</div>' +
+    '<div id="crashAnalysisResult" style="margin-top:12px;font-size:13px"><div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在分析...</div></div>'
+  try{
+    const info = await window.crashAPI.analyzeCoredump(pid)
+    const suggestions = await window.crashAPI.getSuggestions(signal, pkg, exe)
+    
+    let html = ''
+    if (info && info.success) {
+      html += '<div style="background:var(--card-bg);border-radius:8px;padding:14px;margin-bottom:12px;border:1px solid var(--border-light)">' +
+        '<div style="font-weight:600;font-size:14px;margin-bottom:8px">📊 崩溃详细信息</div>'
+      if (info.info) {
+        html += '<pre style="font-size:11px;background:#f5f5f5;padding:8px;border-radius:4px;max-height:200px;overflow:auto;white-space:pre-wrap">' + esc(info.info) + '</pre>'
+      }
+      if (info.backtrace) {
+        html += '<div style="font-weight:600;font-size:13px;margin:8px 0 4px">🔍 堆栈跟踪</div>' +
+          '<pre style="font-size:11px;background:#fff8f0;padding:8px;border-radius:4px;max-height:200px;overflow:auto;white-space:pre-wrap;border:1px solid #ffe0b2">' + esc(info.backtrace) + '</pre>'
+      }
+      html += '</div>'
+    } else {
+      html += '<div style="background:#fff0f0;border-radius:8px;padding:14px;margin-bottom:12px"><span style="color:var(--danger)">❌ 获取崩溃详情失败: ' + esc((info && info.error) || '未知错误') + '</span></div>'
+    }
+    
+    if (suggestions && suggestions.success && suggestions.recommendations && suggestions.recommendations.length) {
+      html += '<div style="background:#f0f9f0;border-radius:8px;padding:14px;border:1px solid #c8e6c9">' +
+        '<div style="font-weight:600;font-size:14px;margin-bottom:8px">💡 推荐解决方案</div>'
+      for (const rec of suggestions.recommendations) {
+        html += '<div style="padding:8px;margin-bottom:6px;background:#fff;border-radius:6px;border-left:3px solid var(--primary)">' +
+          '<div style="font-weight:500;font-size:13px">' + esc(rec.title) + '</div>' +
+          '<div style="font-size:11px;color:var(--text-sec);margin:4px 0">' + esc(rec.desc) + '</div>' +
+          (rec.command ? '<code style="display:block;font-size:10px;background:#333;color:#fff;padding:4px 8px;border-radius:4px;margin-top:4px">' + esc(rec.command) + '</code>' : '') +
+        '</div>'
+      }
+      html += '</div>'
+    } else {
+      html += '<div style="background:#f0f9f0;border-radius:8px;padding:14px;border:1px solid #c8e6c9">' +
+        '<div style="font-weight:600;font-size:14px;margin-bottom:4px">💡 通用建议</div>' +
+        '<div style="font-size:12px;color:var(--text-sec)">重新安装相关应用或更新系统到最新版本</div></div>'
+    }
+    
+    document.getElementById('crashAnalysisResult').innerHTML = html
+    const sub = document.querySelector('#modalContent .sub')
+    if (sub) sub.textContent = ''
+  } catch(e){
+    document.getElementById('crashAnalysisResult').innerHTML = '<div style="color:var(--danger);padding:10px">❌ ' + esc(e.message) + '</div>'
+  }
+}
+
+async function refreshCrashLogs(){
+  const body = document.getElementById('crashCoredumps')
+  if(!body) return
+  body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在获取系统错误日志...</div>'
+  try{
+    const r = await window.crashAPI.getCrashLogs()
+    if (r && r.success && r.logs && r.logs.length) {
+      if (window._crashData) window._crashData.logs = r.logs
+      displayCrashLogs(r.logs)
+    } else {
+      body.innerHTML = noDataHtml('系统日志中无错误记录', '')
+    }
+  } catch(e){
+    body.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">❌ ' + esc(e.message) + '</div>'
+  }
+}
+
+function displayCrashLogs(logs){
+  const body = document.getElementById('crashCoredumps')
+  if(!body) return
+  if(!logs || logs.length === 0){
+    body.innerHTML = noDataHtml('系统日志中无错误记录', '')
+    return
+  }
+  let html = '<div style="font-size:12px;color:var(--text-sec);margin-bottom:8px">显示最近 <strong style="color:var(--primary)">' + logs.length + '</strong> 条错误日志</div>' +
+    '<div style="max-height:400px;overflow-y:auto;border:1px solid var(--border-light);border-radius:6px">'
+  for(const log of logs){
+    const sevIcon = log.severity === 'fatal' ? '🔥' : log.severity === 'error' ? '❌' : '⚠️'
+    const sevColor = log.severity === 'fatal' ? '#e65100' : log.severity === 'error' ? 'var(--danger)' : 'var(--warning)'
+    html += '<div style="padding:8px 10px;border-bottom:1px solid #f5f5f5;font-size:12px;display:flex;align-items:flex-start;gap:6px">' +
+      '<span style="flex-shrink:0">' + sevIcon + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:2px">' +
+        '<span style="font-size:10px;color:var(--text-ter)">' + esc(log.time || '') + '</span>' +
+        '<span style="font-size:10px;color:' + sevColor + ';font-weight:500">' + esc(log.app || '') + '</span>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text);word-break:break-all">' + esc(log.message || '') + '</div></div></div>'
+  }
+  html += '</div>'
+  body.innerHTML = html
+}
+
+// ============ Tab switching for crash analysis ============
+function switchCrashTab(el, tab){
+  document.querySelectorAll('.crash-tab').forEach(function(t){
+    t.classList.remove('active')
+    t.style.borderBottomColor = 'transparent'
+    t.style.color = 'var(--text-sec)'
+    t.style.fontWeight = '500'
+  })
+  el.classList.add('active')
+  el.style.borderBottomColor = 'var(--primary)'
+  el.style.color = 'var(--primary)'
+  el.style.fontWeight = '600'
+  
+  var body = document.getElementById('crashCoredumps')
+  if (!body) return
+  
+  if (tab === 'coredumps') {
+    var data = window._crashData && window._crashData.coredumps
+    if (data && data.length) {
+      displayCoredumps(data)
+    } else {
+      body.innerHTML = noDataHtml('系统未检测到崩溃记录', '点击上方"查看崩溃记录"按钮进行检测')
+    }
+  } else if (tab === 'logs') {
+    var data = window._crashData && window._crashData.logs
+    if (data && data.length) {
+      displayCrashLogs(data)
+    } else {
+      body.innerHTML = noDataHtml('系统日志中无错误记录', '点击上方"查看错误日志"按钮加载')
+    }
+  } else if (tab === 'charts') {
+    var data = window._crashData && window._crashData.coredumps
+    if (data && data.length) {
+      renderCrashCharts(data)
+    } else {
+      body.innerHTML = noDataHtml('暂无数据生成统计图表', '请先点击"查看崩溃记录"获取数据')
+    }
+  } else if (tab === 'suggest') {
+    renderCrashSuggestions()
+  }
+}
+
+// ============ Crash Statistics Charts ============
+function renderCrashCharts(coredumps){
+  var body = document.getElementById('crashCoredumps')
+  if (!body) return
+  if (!coredumps || coredumps.length === 0) {
+    body.innerHTML = noDataHtml('暂无崩溃数据', '请先获取崩溃记录')
+    return
+  }
+  
+  var signalCount = {}
+  var appCount = {}
+  var total = coredumps.length
+  for (var i = 0; i < total; i++) {
+    var c = coredumps[i]
+    var sig = c.signal || '未知'
+    signalCount[sig] = (signalCount[sig] || 0) + 1
+    var app = c.package || c.exe || '未知'
+    appCount[app] = (appCount[app] || 0) + 1
+  }
+  
+  var signalSorted = Object.keys(signalCount).sort(function(a,b){ return signalCount[b] - signalCount[a] })
+  var appSorted = Object.keys(appCount).sort(function(a,b){ return appCount[b] - appCount[a] })
+  var maxSigCount = Math.max.apply(null, Object.values(signalCount))
+  var maxAppCount = Math.max.apply(null, Object.values(appCount))
+  
+  var sigColors = { 'SIGSEGV':'var(--danger)','SIGABRT':'var(--warning)','SIGFPE':'#e65100','SIGILL':'#9c27b0','SIGBUS':'#ff6f00','11':'var(--danger)','6':'var(--warning)','8':'#e65100','4':'#9c27b0','7':'#ff6f00' }
+  function getSigColor(s){ return sigColors[s] || 'var(--primary)' }
+  
+  var html = '<div style="font-size:13px;color:var(--text-sec);margin-bottom:12px">基于 <strong style="color:var(--primary)">' + total + '</strong> 条崩溃记录生成</div>'
+  
+  // Signal distribution
+  html += '<div style="background:var(--card-bg);border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid var(--border-light)">' +
+    '<div style="font-weight:600;font-size:14px;margin-bottom:10px">📊 信号类型分布</div>'
+  for (var i = 0; i < signalSorted.length; i++) {
+    var s = signalSorted[i]
+    var cnt = signalCount[s]
+    var pct = Math.round(cnt / total * 100)
+    var color = getSigColor(s)
+    html += '<div style="margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px">' +
+        '<span style="font-weight:500;color:' + color + '">' + esc(s) + '</span>' +
+        '<span>' + cnt + ' (' + pct + '%)</span>' +
+      '</div>' +
+      '<div style="background:#f0f0f0;border-radius:4px;height:18px;overflow:hidden">' +
+        '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:4px;transition:width 0.3s"></div>' +
+      '</div></div>'
+  }
+  html += '</div>'
+  
+  // App crash ranking
+  var topN = Math.min(appSorted.length, 10)
+  html += '<div style="background:var(--card-bg);border-radius:8px;padding:14px;border:1px solid var(--border-light)">' +
+    '<div style="font-weight:600;font-size:14px;margin-bottom:10px">🏆 应用崩溃排行 (Top ' + topN + ')</div>'
+  var topApps = appSorted.slice(0, 10)
+  var rankColors = ['#e53935','#ff7043','#ffa726','#ffca28','#9ccc65','#66bb6a','#26a69a','#42a5f5','#ab47bc','#8d6e63']
+  for (var i = 0; i < topApps.length; i++) {
+    var a = topApps[i]
+    var cnt = appCount[a]
+    var pct = Math.round(cnt / total * 100)
+    var barW = Math.round(cnt / maxAppCount * 100)
+    html += '<div style="display:flex;align-items:center;margin-bottom:6px;gap:8px">' +
+      '<span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:' + rankColors[i] + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">' + (i + 1) + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:12px;font-weight:500;margin-bottom:1px">' + esc(a) + '</div>' +
+        '<div style="background:#f0f0f0;border-radius:3px;height:14px;overflow:hidden">' +
+          '<div style="height:100%;width:' + barW + '%;background:' + rankColors[i] + ';border-radius:3px;transition:width 0.3s"></div>' +
+        '</div></div>' +
+      '<span style="font-size:12px;font-weight:500;color:var(--text)">' + cnt + '</span></div>'
+  }
+  html += '</div>'
+  
+  // Summary stats
+  html += '<div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap">' +
+    '<div style="flex:1;min-width:120px;background:var(--card-bg);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border-light)">' +
+      '<div style="font-size:11px;color:var(--text-sec)">崩溃总数</div>' +
+      '<div style="font-size:24px;font-weight:700;color:var(--danger)">' + total + '</div></div>' +
+    '<div style="flex:1;min-width:120px;background:var(--card-bg);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border-light)">' +
+      '<div style="font-size:11px;color:var(--text-sec)">受影响应用</div>' +
+      '<div style="font-size:24px;font-weight:700;color:var(--warning)">' + appSorted.length + '</div></div>' +
+    '<div style="flex:1;min-width:120px;background:var(--card-bg);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border-light)">' +
+      '<div style="font-size:11px;color:var(--text-sec)">信号类型数</div>' +
+      '<div style="font-size:24px;font-weight:700;color:var(--primary)">' + signalSorted.length + '</div></div></div>'
+  
+  body.innerHTML = html
+}
+
+// ============ Crash Suggestions Panel ============
+function renderCrashSuggestions(){
+  var body = document.getElementById('crashCoredumps')
+  if (!body) return
+  var coredumps = window._crashData && window._crashData.coredumps
+  
+  if (!coredumps || coredumps.length === 0) {
+    body.innerHTML = noDataHtml('暂无崩溃数据', '请先获取崩溃记录以获取针对性建议')
+    return
+  }
+  
+  var latest = coredumps[0]
+  var signal = latest.signal || ''
+  var pkg = latest.package || latest.exe || ''
+  var exe = latest.exe || ''
+  
+  body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在生成建议...</div>'
+  
+  if (window.crashAPI && window.crashAPI.getSuggestions) {
+    window.crashAPI.getSuggestions(signal, pkg, exe).then(function(s){
+      var html = ''
+      if (s && s.success && s.recommendations && s.recommendations.length) {
+        html += '<div style="font-size:12px;color:var(--text-sec);margin-bottom:10px">基于最新崩溃记录 (<strong>' + esc(signal) + '</strong>, ' + esc(pkg || exe) + ') 的解决方案</div>'
+        var icons = ['🔧','🛠️','📦','⚙️','🔄','🧹','💾','🔒']
+        for (var i = 0; i < s.recommendations.length; i++) {
+          var rec = s.recommendations[i]
+          html += '<div style="padding:12px 14px;margin-bottom:8px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border-light);border-left:3px solid var(--primary)">' +
+            '<div style="display:flex;align-items:flex-start;gap:8px">' +
+              '<span style="font-size:16px;flex-shrink:0">' + icons[i % icons.length] + '</span>' +
+              '<div style="flex:1">' +
+                '<div style="font-weight:600;font-size:13px;margin-bottom:2px">' + esc(rec.title) + '</div>' +
+                '<div style="font-size:12px;color:var(--text-sec);line-height:1.5">' + esc(rec.desc) + '</div>'
+          if (rec.command) {
+            html += '<div style="margin-top:6px;background:#2d2d2d;border-radius:4px;padding:6px 10px;font-size:11px;font-family:monospace;color:#e8e8e8;overflow-x:auto;white-space:nowrap">$ ' + esc(rec.command) + '</div>'
+          }
+          html += '</div></div></div>'
+        }
+      } else {
+        html = renderGeneralSuggestions(signal, pkg || exe)
+      }
+      body.innerHTML = html
+    }).catch(function(){
+      body.innerHTML = renderGeneralSuggestions(signal, pkg || exe)
+    })
+  } else {
+    body.innerHTML = renderGeneralSuggestions(signal, pkg || exe)
+  }
+}
+
+function renderGeneralSuggestions(signal, appName){
+  var escApp = esc(appName || '')
+  var sigTips = {
+    'SIGSEGV': { title:'内存访问越界 (Segfault)', desc:'应用试图访问未分配或已释放的内存地址，通常由指针错误或缓冲区溢出引起。建议更新应用到最新版本，或查看是否有已知的内存泄漏问题。', cmd:'sudo apt update && sudo apt upgrade ' + escApp },
+    'SIGABRT': { title:'进程主动终止 (Abort)', desc:'应用调用了 abort() 主动终止，通常由内部断言失败或检测到致命错误引起。建议查看应用日志获取详细错误信息。', cmd:'journalctl -u ' + escApp + ' --since "1 hour ago" | tail -50' },
+    'SIGFPE': { title:'算术运算异常', desc:'除零或浮点运算溢出等算术错误。建议检查应用输入数据是否合法，或更新应用版本。', cmd:'' },
+    'SIGILL': { title:'非法指令', desc:'CPU 试图执行非法指令，可能是二进制文件损坏、CPU 不兼容或内存损坏。建议重新安装应用。', cmd:'sudo apt reinstall ' + escApp },
+    'SIGBUS': { title:'总线错误', desc:'内存对齐错误或访问无效内存映射。建议检查系统内存健康状况。', cmd:'sudo memtester 256M 1' }
+  }
+  var tip = sigTips[signal] || { title:'系统崩溃', desc:'应用意外终止，可能原因包括：内存不足、资源耗尽、应用缺陷或系统环境问题。建议执行以下操作排查。', cmd:'dmesg | tail -20' }
+  
+  return '<div style="font-size:12px;color:var(--text-sec);margin-bottom:10px">基于信号类型 ' + esc(signal) + ' 的通用建议</div>' +
+    '<div style="padding:12px 14px;margin-bottom:8px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border-light);border-left:3px solid var(--primary)">' +
+      '<div style="display:flex;align-items:flex-start;gap:8px">' +
+        '<span style="font-size:16px;flex-shrink:0">💡</span>' +
+        '<div style="flex:1">' +
+          '<div style="font-weight:600;font-size:13px;margin-bottom:2px">' + esc(tip.title) + '</div>' +
+          '<div style="font-size:12px;color:var(--text-sec);line-height:1.5">' + esc(tip.desc) + '</div>' +
+          (tip.command ? '<div style="margin-top:6px;background:#2d2d2d;border-radius:4px;padding:6px 10px;font-size:11px;font-family:monospace;color:#e8e8e8;overflow-x:auto;white-space:nowrap">$ ' + tip.command + '</div>' : '') +
+        '</div></div></div>'
+}
+
+function noDataHtml(title, sub){
+  return '<div style="text-align:center;padding:30px;font-size:13px;color:var(--text-sec)">' +
+    '<div style="font-size:40px;margin-bottom:10px">📭</div>' +
+    '<div>' + esc(title) + '</div>' +
+    (sub ? '<div style="font-size:11px;margin-top:4px">' + esc(sub) + '</div>' : '') +
+  '</div>'
+}
+// ============ 文件搜索 ============// ============ 文件搜索 ============
 async function startFileSearch() {
   const kw = document.getElementById('searchKeyword')
   const resultDiv = document.getElementById('searchResult')
