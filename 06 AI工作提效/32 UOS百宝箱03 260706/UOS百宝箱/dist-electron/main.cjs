@@ -13,10 +13,90 @@ const os = require('os')
 const { spawn, execSync } = require('child_process')
 const https = require('https')
 
-let mainWindow = null
-let tray = null
-let weatherFloatWindow = null
-let closeBehavior = 'hide'
+
+
+// ========== 主进程错误监控 ==========
+const __ERROR_LOG_PATH__ = path.join(app.getPath("userData"), "uos-error.log")
+
+function appendErrorLog(level, source, message, stack) {
+  try {
+    const timestamp = new Date().toISOString()
+    const entry = "[" + timestamp + "] [" + level + "] [" + source + "] " + message + "\n" + (stack ? stack + "\n" : "")
+    fs.appendFileSync(__ERROR_LOG_PATH__, entry)
+    if (!global.__mainErrorLogs) global.__mainErrorLogs = []
+    global.__mainErrorLogs.push({ level: level, source: source, message: message, stack: stack || "", time: timestamp })
+    if (global.__mainErrorLogs.length > 200) {
+      global.__mainErrorLogs = global.__mainErrorLogs.slice(-200)
+    }
+  } catch(e) { /* silent */ }
+}
+
+process.on("uncaughtException", function(error) {
+  appendErrorLog("FATAL", "uncaughtException", error.message, error.stack)
+  console.error("[UOS Error] Uncaught Exception:", error)
+})
+
+process.on("unhandledRejection", function(reason, promise) {
+  var msg = reason ? (reason.message || String(reason)) : "Unknown rejection"
+  var stack = reason ? reason.stack : ""
+  appendErrorLog("ERROR", "unhandledRejection", msg, stack)
+  console.error("[UOS Error] Unhandled Rejection:", msg)
+})
+// ========== 错误日志 IPC Handler ==========
+ipcMain.handle('get-error-logs', async () => {
+  try {
+    var logs = []
+    if (global.__mainErrorLogs) {
+      logs = global.__mainErrorLogs.slice()
+    }
+    // Also try to read from log file to get any persisted logs
+    var fileLogs = []
+    try {
+      if (fs.existsSync(__ERROR_LOG_PATH__)) {
+        var raw = fs.readFileSync(__ERROR_LOG_PATH__, 'utf-8')
+        var lines = raw.trim().split('\n').filter(Boolean)
+        for (var li = 0; li < lines.length; li++) {
+          var line = lines[li]
+          var match = line.match(/^\[(.*?)\] \[(.*?)\] \[(.*?)\] (.*)$/)
+          if (match) {
+            fileLogs.push({
+              time: match[1],
+              level: match[2],
+              source: match[3],
+              message: match[4],
+              stack: lines[li + 1] && lines[li + 1].startsWith('Error') ? lines[li + 1] : ''
+            })
+          }
+        }
+      }
+    } catch(e) { /* ignore file read errors */ }
+    // Merge file logs into memory logs (avoid duplicates by checking time + message)
+    var existingTimes = new Set(logs.map(function(l) { return l.time + l.message }))
+    for (var fl = 0; fl < fileLogs.length; fl++) {
+      var key = fileLogs[fl].time + fileLogs[fl].message
+      if (!existingTimes.has(key)) {
+        logs.push(fileLogs[fl])
+        existingTimes.add(key)
+      }
+    }
+    return { success: true, logs: logs }
+  } catch(e) {
+    return { success: false, error: e.message, logs: [] }
+  }
+})
+
+ipcMain.handle('clear-error-logs', async () => {
+  try {
+    global.__mainErrorLogs = []
+    if (fs.existsSync(__ERROR_LOG_PATH__)) {
+      fs.writeFileSync(__ERROR_LOG_PATH__, '')
+    }
+    return { success: true }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
 
 // ========== 窗口创建 ==========
 
@@ -592,13 +672,8 @@ ipcMain.handle('set-auto-start', (_, enable) => {
 
 // ========== 应用生命周期 ==========
 
-app.whenReady().then(() => {
-  createMainWindow()
-  createTray()
-  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createMainWindow(); else mainWindow?.show() })
-})
 
-app.on('window-all-closed', () => { if (closeBehavior === 'quit') app.quit() })
+
 
 // 单实例锁
 const gotTheLock = app.requestSingleInstanceLock()
@@ -3609,12 +3684,29 @@ ipcMain.handle('phase2-usb', async (_, action, params) => {
 ipcMain.handle("systemapp-launch", async (_, appName) => {
   try {
     const { execSync } = require("child_process")
-    execSync("gtk-launch " + appName.replace(/[^a-zA-Z0-9._-]/g, "") + " 2>/dev/null || " +
-      "xdg-open " + appName.replace(/[^a-zA-Z0-9._-]/g, "") + " 2>/dev/null || " +
-      appName.replace(/[^a-zA-Z0-9._-]/g, "") + " 2>/dev/null", { timeout: 10000 })
+    const safeName = appName.replace(/[^a-zA-Z0-9._-]/g, "")
+    // 使用 gapplication launch 启动桌面应用（Deepin/GNOME 标准方式）
+    execSync("gapplication launch " + safeName + ".desktop 2>/dev/null || " +
+      "gtk-launch " + safeName + " 2>/dev/null", { timeout: 10000 })
     return { success: true }
   } catch(e) {
-    return { success: false, error: e.message }
+    // 降级: 通过 shell.openPath 打开 .desktop 文件
+    try {
+      const desktopPaths = [
+        "/usr/share/applications/" + safeName + ".desktop",
+        "/usr/local/share/applications/" + safeName + ".desktop",
+        "/var/lib/snapd/desktop/applications/" + safeName + ".desktop"
+      ]
+      for (const dp of desktopPaths) {
+        if (require("fs").existsSync(dp)) {
+          shell.openPath(dp)
+          return { success: true }
+        }
+      }
+      return { success: false, error: "无法启动应用: " + safeName }
+    } catch(e2) {
+      return { success: false, error: e2.message }
+    }
   }
 })
 
@@ -3645,5 +3737,384 @@ ipcMain.handle("systemapp-cli", async (_, command) => {
     return { success: true, output: result.trim() }
   } catch(e) {
     return { success: false, error: e.message, output: e.stdout?.toString?.() || "" }
+  }
+})
+// ========== 磁盘分析器 IPC (Stage 2) ==========
+ipcMain.handle('disk-analyzer', async (event, action) => {
+  try {
+    if (action === 'usage') {
+      // Get disk usage using df
+      const output = execSync('df -h --type=ext4 --type=ext3 --type=ext2 --type=btrfs --type=xfs --type=vfat --type=ntfs 2>/dev/null || df -h 2>/dev/null', { timeout: 10000, encoding: 'utf-8' })
+      const lines = output.trim().split('\n').slice(1) // skip header
+      const mounts = lines.map(function(line) {
+        const parts = line.split(/\s+/)
+        if (parts.length < 6) return null
+        return {
+          fs: parts[0] || '',
+          total: parseSize(parts[1]),
+          used: parseSize(parts[2]),
+          free: parseSize(parts[3]),
+          usePercent: (parts[4]||'').replace('%', ''),
+          mount: parts[5] || ''
+        }
+      }).filter(Boolean)
+      return { success: true, mounts: mounts }
+    } else if (action === 'big-files') {
+      // Find files larger than 100MB
+      const cmd = 'find /home /var /opt /tmp -xdev -type f -size +100M 2>/dev/null | head -200 | while read f; do sz=$(stat --format=%s "$f" 2>/dev/null); [ -n "$sz" ] && echo "$sz $f"; done'
+      const output = execSync(cmd, { timeout: 30000, encoding: 'utf-8' })
+      const files = []
+      output.trim().split('\n').forEach(function(line) {
+        if (!line.trim()) return
+        const idx = line.trim().indexOf(' ')
+        if (idx > 0) {
+          const sizeStr = line.trim().substring(0, idx)
+          const pathStr = line.trim().substring(idx + 1)
+          const bytes = parseInt(sizeStr, 10) || 0
+          files.push({ size: bytes, path: pathStr, displaySize: formatBytes(bytes) })
+        }
+      })
+      return { success: true, files: files }
+    }
+    return { success: false, error: '未知操作' }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+// Helper: parse size like "1.5G", "234M", "1.0T" to bytes
+function parseSize(str) {
+  if (!str) return 0
+  const s = String(str).toUpperCase()
+  const m = s.match(/^([\d.]+)([BKMGTPE])?$/)
+  if (!m) return parseFloat(s) || 0
+  const val = parseFloat(m[1])
+  const unit = m[2] || 'B'
+  const units = { 'B': 1, 'K': 1024, 'M': 1048576, 'G': 1073741824, 'T': 1099511627776 }
+  return Math.round(val * (units[unit] || 1))
+}
+
+// Helper: parse display size string to bytes
+function parseSize2(str) {
+  if (!str) return 0
+  const s = String(str).toUpperCase()
+  const m = s.match(/^([\d.]+)([BKMGTPE])?/)
+  if (!m) return parseFloat(s) || 0
+  const val = parseFloat(m[1])
+  const unit = m[2] || 'B'
+  const units = { 'B': 1, 'K': 1024, 'M': 1048576, 'G': 1073741824, 'T': 1099511627776, 'P': 1125899906842624 }
+  return Math.round(val * (units[unit] || 1))
+}
+
+// ========== 系统日志查看器 IPC (Stage 2) ==========
+ipcMain.handle('syslog-viewer', async (event, action, options) => {
+  try {
+    if (action === 'search') {
+      // Build journalctl command
+      var cmd = 'journalctl --no-pager -n 200 --output=short-iso 2>/dev/null'
+      if (options && options.boot === '-1') {
+        cmd += ' -b'
+      }
+      if (options && options.priority) {
+        cmd += ' -p ' + options.priority
+      }
+      if (options && options.keyword) {
+        cmd += ' | grep -i "' + options.keyword.replace(/"/g, '\\"') + '"'
+      }
+      cmd += ' 2>/dev/null | tail -200'
+      const output = execSync(cmd, { timeout: 15000, encoding: 'utf-8' })
+      const lines = output.trim().split('\n').filter(Boolean)
+      return { success: true, lines: lines }
+    } else if (action === 'tail') {
+      // Get latest 50 log entries
+      const cmd = 'journalctl --no-pager -n 50 --output=short-iso 2>/dev/null'
+      const output = execSync(cmd, { timeout: 10000, encoding: 'utf-8' })
+      const lines = output.trim().split('\n').filter(Boolean)
+      return { success: true, lines: lines }
+    }
+    return { success: false, error: '未知操作' }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+
+ipcMain.handle('vpn-install-tools', async (_, password) => {
+  try {
+    if (!password) return { success: false, error: '需要 sudo 密码' }
+    const scriptPath = path.join(__dirname, '../resources/scripts/Phase3/vpn_mgr.sh')
+    const fs = require('fs')
+    if (!fs.existsSync(scriptPath)) return { success: false, error: '脚本文件不存在' }
+    const { spawn } = require('child_process')
+    return new Promise((resolve) => {
+      // Use bash -c with echo to pipe password to sudo -S
+      const child = spawn('bash', ['-c', 'echo "$SUDO_PWD" | sudo -S bash ' + scriptPath + ' install-tools 2>&1'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env, SUDO_PWD: password }
+      })
+      let output = ''
+      let err = ''
+      child.stdout.on('data', d => { output += d.toString() })
+      child.stderr.on('data', d => { err += d.toString() })
+      child.on('close', (code) => {
+        resolve({ success: code === 0, output: output, error: err })
+      })
+    })
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+// ========== 性能基准测试 IPC (Stage 3) ==========
+ipcMain.handle('benchmark', async (event, action, options) => {
+  try {
+    // ---------- CPU 性能测试 ----------
+    if (action === 'cpu') {
+      // 使用 sysbench 做 CPU 素数计算测试
+      var cmd1 = 'which sysbench 2>/dev/null && sysbench cpu --cpu-max-prime=20000 --time=10 run 2>&1 || echo "sysbench_not_found"'
+      var output1 = execSync(cmd1, { timeout: 15000, encoding: 'utf-8', shell: '/bin/bash' })
+      if (output1.indexOf('sysbench_not_found') >= 0) {
+        // fallback: 使用 bash 计算圆周率 5000 位
+        var cmd2 = 'echo "scale=5000; 4*a(1)" | timeout 10 bc -l 2>&1 | tail -1'
+        var output2 = execSync(cmd2, { timeout: 12000, encoding: 'utf-8', shell: '/bin/bash' })
+        var timeCmd = 'bash -c "TIMEFORMAT=%R; time echo \"scale=5000; 4*a(1)\" | bc -l" 2>&1'
+        var timeOutput = execSync(timeCmd, { timeout: 12000, encoding: 'utf-8', shell: '/bin/bash' })
+        var lines2 = timeOutput.trim().split('\n').filter(Boolean)
+        var calcTime = lines2.length > 1 ? lines2[lines2.length - 1].trim() : 'N/A'
+        return {
+          success: true,
+          type: 'cpu',
+          method: 'bc (pi 5000 digits)',
+          result: output2.trim().substring(0, 100) + '...',
+          elapsed: calcTime + 's',
+          raw: output2.trim()
+        }
+      }
+      // Parse sysbench output
+      var eventsMatch = output1.match(/total number of events:\s+(\d+)/i)
+      var totalTimeMatch = output1.match(/total time:\s+([\d.]+[a-z]*)/i)
+      var minLatMatch = output1.match(/min:\s+([\d.]+)/i)
+      var avgLatMatch = output1.match(/avg:\s+([\d.]+)/i)
+      var maxLatMatch = output1.match(/max:\s+([\d.]+)/i)
+      var eventsPerSecMatch = output1.match(/events \(avg\/stddev\):\s+([\d.]+)/i)
+      return {
+        success: true,
+        type: 'cpu',
+        method: 'sysbench (prime 20000, 10s)',
+        events: eventsMatch ? parseInt(eventsMatch[1]) : 0,
+        totalTime: totalTimeMatch ? totalTimeMatch[1].trim() : '',
+        minLat: minLatMatch ? minLatMatch[1] : '',
+        avgLat: avgLatMatch ? avgLatMatch[1] : '',
+        maxLat: maxLatMatch ? maxLatMatch[1] : '',
+        eventsPerSec: eventsPerSecMatch ? eventsPerSecMatch[1] : '',
+        raw: output1
+      }
+    }
+
+    // ---------- 磁盘读写测试 ----------
+    if (action === 'disk') {
+      var testFile = '/tmp/.uos_benchmark_disk_test.tmp'
+      var blockSize = (options && options.blockSize) || '1M'
+      var count = (options && options.count) || 256
+
+      // 清理可能存在的旧测试文件
+      execSync('rm -f ' + testFile + ' 2>/dev/null', { timeout: 3000 })
+
+      // 写入测试 (dd sequential write)
+      var writeCmd = 'dd if=/dev/zero of=' + testFile + ' bs=' + blockSize + ' count=' + count + ' conv=fdatasync 2>&1'
+      var writeOut = execSync(writeCmd, { timeout: 30000, encoding: 'utf-8', shell: '/bin/bash' })
+      var writeSpeedMatch = writeOut.match(/\(?([\d.]+)\s*(MB|GB|kB|KB)\/?s/i) || writeOut.match(/bytes.*copied.*?([\d.]+)\s*[kKMGTPE]?B\/s/i)
+
+      // 读取测试 (dd sequential read with drop_caches)
+      var readOut = execSync('dd if=' + testFile + ' of=/dev/null bs=' + blockSize + ' 2>&1', { timeout: 30000, encoding: 'utf-8', shell: '/bin/bash' })
+      var readSpeedMatch = readOut.match(/\(?([\d.]+)\s*(MB|GB|kB|KB)\/?s/i) || readOut.match(/bytes.*copied.*?([\d.]+)\s*[kKMGTPE]?B\/s/i)
+
+      // 随机写入测试 (512K 随机写)
+      var randWriteOut = execSync('dd if=/dev/urandom of=' + testFile + ' bs=4K count=1024 conv=fdatasync 2>&1', { timeout: 30000, encoding: 'utf-8', shell: '/bin/bash' })
+      var randWriteSpeedMatch = randWriteOut.match(/\(?([\d.]+)\s*(MB|GB|kB|KB)\/?s/i) || randWriteOut.match(/bytes.*copied.*?([\d.]+)\s*[kKMGTPE]?B\/s/i)
+
+      // 清理
+      execSync('rm -f ' + testFile + ' 2>/dev/null', { timeout: 3000 })
+
+      return {
+        success: true,
+        type: 'disk',
+        blockSize: blockSize,
+        count: count,
+        writeSpeed: writeSpeedMatch ? writeSpeedMatch[0].trim() : 'N/A',
+        readSpeed: readSpeedMatch ? readSpeedMatch[0].trim() : 'N/A',
+        randWriteSpeed: randWriteSpeedMatch ? randWriteSpeedMatch[0].trim() : 'N/A',
+        writeRaw: writeOut.trim(),
+        readRaw: readOut.trim(),
+        randWriteRaw: randWriteOut.trim()
+      }
+    }
+
+    // ---------- 内存带宽测试 ----------
+    if (action === 'memory') {
+      // 优先使用 sysbench memory 测试
+      var cmd1 = 'which sysbench 2>/dev/null && sysbench memory --memory-block-size=1M --memory-total-size=10G run 2>&1 || echo "sysbench_not_found"'
+      var output1 = execSync(cmd1, { timeout: 30000, encoding: 'utf-8', shell: '/bin/bash' })
+      if (output1.indexOf('sysbench_not_found') >= 0) {
+        // fallback: 使用 python 做内存读写测试
+        var pythonScript = [
+          'import time, os, sys',
+          'size_mb = 256',
+          'block_size = 1024 * 1024',
+          'total_ops = size_mb',
+          '',
+          '# 写入测试',
+          'start = time.time()',
+          'for i in range(total_ops):',
+          '    buf = bytearray(block_size)',
+          'write_time = time.time() - start',
+          'write_speed = (size_mb * 2) / write_time if write_time > 0 else 0',
+          '',
+          '# 读取测试',
+          'buf3 = bytearray(block_size * total_ops)',
+          'start = time.time()',
+          'total_read = 0',
+          'for i in range(0, len(buf3), block_size):',
+          '    _ = buf3[i:i+block_size]',
+          '    total_read += 1',
+          'read_time = time.time() - start',
+          'read_speed = (size_mb * 2) / read_time if read_time > 0 else 0',
+          '',
+          'print("WRITE_SPEED: %.2f MB/s" % write_speed)',
+          'print("READ_SPEED: %.2f MB/s" % read_speed)',
+          'print("WRITE_TIME: %.4f s" % write_time)',
+          'print("READ_TIME: %.4f s" % read_time)',
+        ].join('\n')
+        var result = execSync('python3 -c ' + JSON.stringify(pythonScript), { timeout: 30000, encoding: 'utf-8', shell: '/bin/bash' })
+        var writeSpeed2 = (result.match(/WRITE_SPEED:\s*([\d.]+)\s*MB\/s/) || [])[1] || ''
+        var readSpeed2 = (result.match(/READ_SPEED:\s*([\d.]+)\s*MB\/s/) || [])[1] || ''
+        var writeTime2 = (result.match(/WRITE_TIME:\s*([\d.]+)\s*s/) || [])[1] || ''
+        var readTime2 = (result.match(/READ_TIME:\s*([\s\d.]+)\s*s/) || [])[1] || ''
+        return {
+          success: true,
+          type: 'memory',
+          method: 'python (256MB block)',
+          writeSpeed: writeSpeed2 ? writeSpeed2 + ' MB/s' : 'N/A',
+          readSpeed: readSpeed2 ? readSpeed2 + ' MB/s' : 'N/A',
+          writeTime: writeTime2 ? writeTime2 + 's' : '',
+          readTime: readTime2 ? readTime2 + 's' : '',
+          raw: result.trim()
+        }
+      }
+      // Parse sysbench memory output
+      var totalOpsMatch = output1.match(/Total operations:\s+(\d+)/i) || output1.match(/operations performed:\s+(\d+)/i)
+      var totalDataMatch = output1.match(/total data:\s+([\d.]+[a-z]+)/i)
+      var throughputMatch = output1.match(/throughput:\s+([\d.]+)\s*mb\/s/i) || output1.match(/transferred \([\d.]+ (?:MB|GB).*?([\d.]+)\s*MB\/sec/i)
+      var latencyAvgMatch = output1.match(/avg:\s+([\d.]+)/i)
+      return {
+        success: true,
+        type: 'memory',
+        method: 'sysbench (1M blocks, 10G total)',
+        totalOps: totalOpsMatch ? totalOpsMatch[1] : '',
+        totalData: totalDataMatch ? totalDataMatch[1] : '',
+        throughput: throughputMatch ? throughputMatch[1] + ' MB/s' : '',
+        avgLatency: latencyAvgMatch ? latencyAvgMatch[1] + ' ms' : '',
+        raw: output1
+      }
+    }
+
+    // ---------- 网络速度测试 ----------
+    if (action === 'network') {
+      // 使用 curl 下载测试文件测速
+      var testSources = [
+        { url: 'http://speedtest.tele2.net/10MB.zip', label: 'Tele2 10MB', size: 10 },
+        { url: 'http://speedtest.tele2.net/1MB.zip', label: 'Tele2 1MB', size: 1 }
+      ]
+      var results = []
+
+      for (var si = 0; si < testSources.length; si++) {
+        var src = testSources[si]
+        try {
+          var netOutput = execSync('curl -o /dev/null -s -w "%{speed_download} %{time_total} %{size_download}" --connect-timeout 5 --max-time 15 ' + src.url + ' 2>/dev/null', { timeout: 20000, encoding: 'utf-8', shell: '/bin/bash' })
+          var parts = netOutput.trim().split(/\s+/)
+          if (parts.length >= 3) {
+            var speedBps = parseFloat(parts[0]) || 0
+            var timeTotal = parseFloat(parts[1]) || 0
+            var sizeDownload = parseInt(parts[2]) || 0
+            var speedMBps = (speedBps / (1024 * 1024)).toFixed(2)
+            var speedMbps = (speedBps * 8 / (1024 * 1024)).toFixed(2)
+            results.push({
+              source: src.label,
+              speed: speedMBps + ' MB/s',
+              speedMbps: speedMbps + ' Mbps',
+              time: timeTotal.toFixed(2) + 's',
+              size: (sizeDownload / (1024 * 1024)).toFixed(1) + ' MB'
+            })
+          }
+          if (results.length > 0) break
+        } catch (netErr) {
+          results.push({ source: src.label, error: netErr.message.substring(0, 80) })
+        }
+      }
+
+      // 检查 iperf3 是否可用
+      var iperfAvailable = false
+      try {
+        var iperfCheck = execSync('which iperf3 2>/dev/null', { timeout: 3000, encoding: 'utf-8' })
+        iperfAvailable = !!iperfCheck.trim()
+      } catch (e) {}
+
+      return {
+        success: true,
+        type: 'network',
+        results: results,
+        iperfAvailable: iperfAvailable,
+        iperfNote: iperfAvailable ? 'iperf3 已安装，可在终端中使用: iperf3 -c <server>' : 'iperf3 未安装，可用 sudo apt install iperf3 安装'
+      }
+    }
+
+    return { success: false, error: '未知测试类型: ' + action }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+// ========== 系统备份与还原 IPC (Stage 3) ==========
+ipcMain.handle('system-backup', async (event, action, params) => {
+  try {
+    var scriptPath = path.join(__dirname, '../resources/scripts/Phase3/system_backup.sh')
+    if (!fs.existsSync(scriptPath)) {
+      return { success: false, error: '备份脚本文件不存在' }
+    }
+    
+    var cmd = 'bash ' + scriptPath + ' ' + action
+    if (action === 'restore' && params && params.file) {
+      cmd += ' -f "' + params.file.replace(/"/g, '\\"') + '"'
+    } else if (action === 'export' && params && params.path) {
+      // export 需要一个已有的备份文件，我们先执行 backup 拿到最新备份
+      var backupResult = execSync(cmd, { timeout: 60000, encoding: 'utf-8', shell: '/bin/bash' })
+      var lines = backupResult.trim().split('\n')
+      var backupFile = lines.length > 0 ? lines[lines.length - 1].trim() : ''
+      if (backupFile && backupFile.endsWith('.tar.gz')) {
+        // 复制到指定目录
+        var destDir = params.path
+        var destFile = path.join(destDir, 'uos_system_backup_' + new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19) + '.tar.gz')
+        fs.copyFileSync(backupFile, destFile)
+        return { success: true, output: '备份已导出到: ' + destFile + '\n文件大小: ' + formatBytes(fs.statSync(destFile).size) }
+      }
+      return { success: true, output: backupResult }
+    } else if (action === 'import' && params && params.file) {
+      cmd += ' -f "' + params.file.replace(/"/g, '\\"') + '"'
+    }
+    
+    var output = execSync(cmd, { timeout: 60000, encoding: 'utf-8', shell: '/bin/bash' })
+    
+    // 从输出中提取备份文件路径（备份操作最后一行是文件路径）
+    if (action === 'backup') {
+      var outLines = output.trim().split('\n')
+      var lastLine = outLines.length > 0 ? outLines[outLines.length - 1].trim() : ''
+      if (lastLine.endsWith('.tar.gz')) {
+        return { success: true, output: output, backupFile: lastLine }
+      }
+    }
+    
+    return { success: true, output: output }
+  } catch (e) {
+    return { success: false, error: e.message }
   }
 })

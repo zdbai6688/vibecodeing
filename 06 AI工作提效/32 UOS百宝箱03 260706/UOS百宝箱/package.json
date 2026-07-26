@@ -1,0 +1,76 @@
+{
+  "name": "uos-baibaoxiang",
+  "version": "1.1.5",
+  "private": true,
+  "description": "专为统信UOS系统打造的系统工具箱 - 原创",
+  "main": "dist-electron/main.cjs",
+  "scripts": {
+    "start": "./uos-baibaoxiang",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "test:shell": "bats test/shell/",
+    "test:python": "python3 -m pytest test/unit/test_tool_helper.py -v",
+    "test:all": "npm test && npm run test:shell && npm run test:python",
+    "build:deb": "electron-builder --linux deb",
+    "build:appimage": "electron-builder --linux AppImage",
+    "build:all": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.0",
+    "@vitest/coverage-v8": "^3.1.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.uos.baibaoxiang",
+    "productName": "UOS运维工具箱",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "resources/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/",
+        "to": "resources/",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "linux": {
+      "target": [
+        "deb",
+        "AppImage"
+      ],
+      "category": "Utility",
+      "icon": "resources/icon.png",
+      "artifactName": "${productName}_${version}_${arch}.${ext}",
+      "synopsis": "专为统信UOS系统打造的系统运维工具箱",
+      "description": "UOS运维工具箱集成系统信息查看、监控、优化、修复、安全补丁等多项功能。",
+      "maintainer": "UOS Team <pd@uniontech.com>",
+      "desktop": {
+        "Name": "UOS运维工具箱",
+        "Comment": "系统运维工具集成",
+        "Categories": "System;Utility;"
+      }
+    },
+    "deb": {
+      "depends": [
+        "python3",
+        "procps",
+        "coreutils",
+        "grep",
+        "sed"
+      ]
+    },
+    "asar": true,
+    "asarUnpack": [
+      "resources/**"
+    ]
+  }
+}

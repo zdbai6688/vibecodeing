@@ -42,6 +42,17 @@ contextBridge.exposeInMainWorld('scriptAPI', {
 
 // 文件操作 API
 contextBridge.exposeInMainWorld('fileAPI', {
+  formatSize: (bytes) => {
+    if (!bytes && bytes !== 0) return '-'
+    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+    let size = bytes
+    let unitIdx = 0
+    while (size >= 1024 && unitIdx < units.length - 1) {
+      size /= 1024
+      unitIdx++
+    }
+    return size.toFixed(unitIdx > 0 ? 1 : 0) + ' ' + units[unitIdx]
+  },
   selectDirectory: () => ipcRenderer.invoke('select-directory'),
   selectFile: (filters) => ipcRenderer.invoke('select-file', filters),
   saveFileDialog: (name, filters) => ipcRenderer.invoke('save-file-dialog', name, filters),
@@ -338,4 +349,41 @@ contextBridge.exposeInMainWorld('systemApp', {
   launchApp: (appName) => ipcRenderer.invoke('systemapp-launch', appName),
   callDbus: (service, objectPath, method, args) => ipcRenderer.invoke('systemapp-dbus', { service, objectPath, method, args }),
   callCli: (command) => ipcRenderer.invoke('systemapp-cli', command)
+})
+
+// ========== 错误监控 API ==========
+contextBridge.exposeInMainWorld('errorAPI', {
+  getLogs: () => ipcRenderer.invoke('get-error-logs'),
+  clearLogs: () => ipcRenderer.invoke('clear-error-logs')
+})
+// 磁盘分析器 API (Stage 2)
+contextBridge.exposeInMainWorld('diskAPI', {
+  getDiskUsage: () => ipcRenderer.invoke('disk-analyzer', 'usage'),
+  getBigFiles: () => ipcRenderer.invoke('disk-analyzer', 'big-files')
+})
+
+// 日志查看器 API (Stage 2)
+contextBridge.exposeInMainWorld('logAPI', {
+  search: (opts) => ipcRenderer.invoke('syslog-viewer', 'search', opts),
+  tail: () => ipcRenderer.invoke('syslog-viewer', 'tail')
+})
+
+
+// VPNa 管理 API
+
+// 性能基准测试 API (Stage 3)
+contextBridge.exposeInMainWorld('benchmarkAPI', {
+  run: (action, options) => ipcRenderer.invoke('benchmark', action, options)
+})
+
+// 系统备份与还原 API (Stage 3)
+contextBridge.exposeInMainWorld('phase2API', {
+  backup: (action, params) => ipcRenderer.invoke('system-backup', action, params),
+  startup: (action, params) => ipcRenderer.invoke('system-backup', action, params),
+  health: () => ipcRenderer.invoke('system-backup', 'backup', {}),
+  usb: (action, params) => ipcRenderer.invoke('system-backup', action, params),
+  driver: (action, params) => ipcRenderer.invoke('system-backup', action, params),
+  remote: (action, params) => ipcRenderer.invoke('system-backup', action, params),
+  search: (params) => ipcRenderer.invoke('system-backup', 'backup', params),
+  benchmark: (type) => ipcRenderer.invoke('system-backup', 'backup', {})
 })
