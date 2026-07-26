@@ -194,7 +194,8 @@ contextBridge.exposeInMainWorld('perfAPI', {
 contextBridge.exposeInMainWorld('crashAPI', {
   listCoredumps: () => ipcRenderer.invoke('crash-list-coredumps'),
   analyzeCoredump: (id) => ipcRenderer.invoke('crash-analyze', id),
-  getCrashLogs: () => ipcRenderer.invoke('crash-get-logs')
+  getCrashLogs: () => ipcRenderer.invoke('crash-get-logs'),
+  getSuggestions: (signal, pkg, exe) => ipcRenderer.invoke('crash-get-suggestions', signal, pkg, exe)
 })
 
 // 等保合规检查 API
@@ -338,3 +339,5 @@ contextBridge.exposeInMainWorld('systemApp', {
   callDbus: (service, objectPath, method, args) => ipcRenderer.invoke('systemapp-dbus', { service, objectPath, method, args }),
   callCli: (command) => ipcRenderer.invoke('systemapp-cli', command)
 })
+
+// VPNa 管理 API

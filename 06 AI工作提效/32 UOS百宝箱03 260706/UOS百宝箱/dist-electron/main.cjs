@@ -3080,14 +3080,28 @@ ipcMain.handle('capture-recording-status', async () => {
 ipcMain.handle('hotkey-list', async () => {
   const { execSync } = require('child_process')
   try {
-    const raw = execSync("gsettings list-recursively org.gnome.desktop.wm.keybindings 2>/dev/null | head -50", { timeout: 10000, encoding: 'utf-8' }).toString()
-    const lines = raw.split('\n').filter(l => l.trim()).map(l => {
-      const parts = l.split(' ');
-      const key = parts[0]||'';
-      const val = parts.slice(2).join(' ').replace(/'/g,'')||'';
-      return { key: key.split('.').pop(), value: val }
-    })
-    return { success: true, shortcuts: lines }
+    const schemas = ['org.gnome.desktop.wm.keybindings', 'com.deepin.dde.keybinding', 'org.gnome.settings-daemon.plugins.media-keys']
+    const allShortcuts = []
+    const seen = new Set()
+    for (const schema of schemas) {
+      try {
+        const raw = execSync("gsettings list-recursively " + schema + " 2>/dev/null | head -80", { timeout: 10000, encoding: 'utf-8' }).toString()
+        raw.split('\n').filter(l => l.trim()).forEach(l => {
+          const idx = l.indexOf(' ')
+          if (idx < 0) return
+          const keyPath = l.substring(0, idx).trim()
+          const val = l.substring(idx + 1).trim().replace(/'/g, '') || ''
+          const keyName = keyPath.split('.').pop() || ''
+          // deduplicate
+          const dedupKey = keyName + ':' + val
+          if (!seen.has(dedupKey) && keyName) {
+            seen.add(dedupKey)
+            allShortcuts.push({ key: keyName, value: val, source: schema })
+          }
+        })
+      } catch {}
+    }
+    return { success: true, shortcuts: allShortcuts }
   } catch(e) { return { success: false, error: e.message } }
 })
 ipcMain.handle('hotkey-set', async (_, key, cmd) => {
@@ -3105,12 +3119,17 @@ ipcMain.handle('hotkey-reset', async () => {
   } catch(e) { return { success: false, error: e.message } }
 })
 ipcMain.handle('hotkey-export', async () => {
-  const { execSync } = require('child_process'); const fs = require('fs'); const path = require('path')
+  const { execSync } = require('child_process'); const fs = require('fs'); const { dialog } = require('electron')
   try {
-    const raw = execSync("gsettings list-recursively org.gnome.desktop.wm.keybindings 2>/dev/null", { timeout: 10000, encoding: 'utf-8' }).toString()
-    const file = path.join(require('electron').app.getPath('desktop'), `shortcuts_export_${Date.now()}.dconf`)
-    fs.writeFileSync(file, raw, 'utf-8')
-    return { success: true, file }
+    const raw = execSync("gsettings list-recursively org.gnome.desktop.wm.keybindings 2>/dev/null && echo '---' && gsettings list-recursively com.deepin.dde.keybinding 2>/dev/null && echo '---' && gsettings list-recursively org.gnome.settings-daemon.plugins.media-keys 2>/dev/null", { timeout: 15000, encoding: 'utf-8' }).toString()
+    const win = require('electron').BrowserWindow.getAllWindows()[0]
+    const r = await dialog.showSaveDialog(win, {
+      defaultPath: 'uos_shortcuts_export.dconf',
+      filters: [{ name: '快捷键配置', extensions: ['dconf', 'txt'] }]
+    })
+    if (r.canceled || !r.filePath) return { success: false, error: '已取消' }
+    fs.writeFileSync(r.filePath, raw, 'utf-8')
+    return { success: true, file: r.filePath }
   } catch(e) { return { success: false, error: e.message } }
 })
 ipcMain.handle('hotkey-import', async (_, path) => {
@@ -3626,5 +3645,239 @@ ipcMain.handle("systemapp-cli", async (_, command) => {
     return { success: true, output: result.trim() }
   } catch(e) {
     return { success: false, error: e.message, output: e.stdout?.toString?.() || "" }
+  }
+})
+
+// ========== VPN 管理 IPC ==========
+const VPN_SCRIPT = path.join(__dirname, '../resources/scripts/Phase3/vpn_mgr.sh')
+
+ipcMain.handle('vpn-list', async () => {
+  try {
+    const out = execSync('nmcli -t connection show', { timeout: 10000, encoding: 'utf-8' })
+    const lines = out.trim().split('\n').filter(Boolean)
+    const allConns = lines.map(l => {
+      const parts = l.split(':')
+      return { name: parts[0] || '', uuid: parts[1] || '', type: parts[2] || '', device: parts[3] || '' }
+    })
+    const vpnConns = allConns.filter(c => c.type && c.type.indexOf('vpn') >= 0)
+    
+    // 获取活跃连接
+    let activeNames = []
+    try {
+      const activeOut = execSync('nmcli -t connection show --active', { timeout: 5000, encoding: 'utf-8' })
+      const activeLines = activeOut.trim().split('\n').filter(Boolean)
+      activeNames = activeLines.map(l => l.split(':')[0])
+    } catch(e) {}
+    
+    // 获取详情
+    const details = {}
+    for (const c of vpnConns) {
+      try {
+        const detailOut = execSync(`nmcli -s -t connection show "${c.name}"`, { timeout: 5000, encoding: 'utf-8' })
+        const detailLines = detailOut.trim().split('\n').filter(Boolean)
+        const detail = {}
+        detailLines.forEach(l => {
+          const idx = l.indexOf(':')
+          if (idx > 0) {
+            const key = l.substring(0, idx).trim()
+            const val = l.substring(idx + 1).trim()
+            detail[key] = val
+          }
+        })
+        const vpnType = detail['vpn-type'] || c.type || ''
+        let address = ''
+        try {
+          const ipOut = execSync(`nmcli -t connection show "${c.name}" | grep ipv4.address | head -1`, { timeout: 5000, encoding: 'utf-8' })
+          const ipMatch = ipOut.match(/ipv4\.address:(.+)/)
+          if (ipMatch) address = ipMatch[1].trim()
+        } catch(e) {}
+        details[c.name] = {
+          vpnType: vpnType,
+          address: address,
+          gateway: detail['vpn-gateway'] || '',
+          autoReconnect: detail['connection.autoconnect'] === 'yes',
+          device: c.device || ''
+        }
+      } catch(e) { details[c.name] = { vpnType: c.type, autoReconnect: false } }
+    }
+    
+    return {
+      success: true,
+      connections: vpnConns.map(c => ({ name: c.name, type: c.type, active: activeNames.includes(c.name) })),
+      details: details
+    }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-get-detail', async (_, name) => {
+  try {
+    const out = execSync(`nmcli -s connection show "${name}"`, { timeout: 10000, encoding: 'utf-8' })
+    const lines = out.trim().split('\n').filter(Boolean)
+    const data = {}
+    lines.forEach(l => {
+      const idx = l.indexOf(':')
+      if (idx > 0) {
+        data[l.substring(0, idx).trim()] = l.substring(idx + 1).trim()
+      }
+    })
+    return { success: true, detail: data, raw: out }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-add', async (_, config) => {
+  try {
+    const { name, type, gateway } = config || {}
+    if (!name) return { success: false, error: '缺少连接名称' }
+    let nmType = ''
+    if (type === 'l2tp') nmType = 'l2tp'
+    else if (type === 'openvpn') nmType = 'openvpn'
+    else if (type === 'pptp') nmType = 'pptp'
+    else if (type === 'strongswan') nmType = 'strongswan'
+    else nmType = type || 'l2tp'
+    const gw = gateway ? `vpn.gateway ${gateway}` : ''
+    let cmd = `nmcli connection add type vpn vpn-type ${nmType} con-name "${name}"${gw ? ' '+gw : ''}`
+    if (type === 'l2tp') cmd += ` ipv4.method auto`
+    execSync(cmd, { timeout: 15000, encoding: 'utf-8' })
+    return { success: true }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-remove', async (_, name) => {
+  try {
+    execSync(`nmcli connection delete "${name}"`, { timeout: 10000, encoding: 'utf-8' })
+    return { success: true }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-connect', async (_, name) => {
+  try {
+    execSync(`nmcli connection up "${name}"`, { timeout: 30000, encoding: 'utf-8' })
+    return { success: true }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-disconnect', async (_, name) => {
+  try {
+    execSync(`nmcli connection down "${name}"`, { timeout: 15000, encoding: 'utf-8' })
+    return { success: true }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-status', async () => {
+  try {
+    const out = execSync('nmcli -t connection show --active', { timeout: 10000, encoding: 'utf-8' })
+    const lines = out.trim().split('\n').filter(Boolean)
+    const activeVpn = lines.filter(l => l.includes(':vpn:')).map(l => {
+      const parts = l.split(':')
+      return { name: parts[0] || '', device: parts[3] || '', type: parts[2] || '' }
+    })
+    let ip = ''
+    if (activeVpn.length > 0 && activeVpn[0].device) {
+      try {
+        const ipOut = execSync(`ip addr show ${activeVpn[0].device} 2>/dev/null | grep 'inet ' | head -1`, { timeout: 5000, encoding: 'utf-8' })
+        const m = ipOut.match(/inet\s+([\d.]+)/)
+        if (m) ip = m[1]
+      } catch(e) {}
+    }
+    return { success: true, active: activeVpn, ip: ip }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-import', async (_, filePath) => {
+  try {
+    if (!filePath) return { success: false, error: '未指定文件路径' }
+    const ext = path.extname(filePath).toLowerCase()
+    let vpnType = ''
+    if (ext === '.ovpn') vpnType = 'openvpn'
+    else if (ext === '.pcf') vpnType = 'l2tp'
+    else vpnType = '' // 自动检测
+    const cmd = vpnType
+      ? `nmcli connection import type ${vpnType} file "${filePath}"`
+      : `nmcli connection import type openvpn file "${filePath}" 2>/dev/null || nmcli connection import type l2tp file "${filePath}" 2>/dev/null`
+    execSync(cmd, { timeout: 30000, encoding: 'utf-8' })
+    return { success: true, message: `配置 ${path.basename(filePath)} 导入成功` }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-export', async (_, name, dir) => {
+  try {
+    if (!name) return { success: false, error: '未指定连接名称' }
+    const targetDir = dir || __dirname
+    execSync(`nmcli connection export "${name}" "${targetDir}"`, { timeout: 15000, encoding: 'utf-8' })
+    const outPath = path.join(targetDir, `${name}.nmconnection`)
+    return { success: true, path: outPath }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-set-autoreconnect', async (_, name, enable) => {
+  try {
+    const val = enable ? 'yes' : 'no'
+    execSync(`nmcli connection modify "${name}" connection.autoconnect ${val}`, { timeout: 10000, encoding: 'utf-8' })
+    return { success: true }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-check-tools', async () => {
+  try {
+    const pkgs = ['openvpn', 'xl2tpd', 'network-manager-l2tp', 'network-manager-l2tp-gnome',
+      'network-manager-openvpn', 'network-manager-openvpn-gnome',
+      'network-manager-pptp', 'network-manager-strongswan']
+    const missing = []
+    for (const pkg of pkgs) {
+      try {
+        execSync(`dpkg -s ${pkg} 2>/dev/null | grep -q 'Status: install ok'`, { timeout: 5000 })
+      } catch(e) {
+        missing.push(pkg)
+      }
+    }
+    return { success: true, installed: pkgs.filter(p => !missing.includes(p)), missing }
+  } catch(e) {
+    return { success: false, error: e.message }
+  }
+})
+
+ipcMain.handle('vpn-install-tools', async (_, password) => {
+  try {
+    if (!password) return { success: false, error: '需要 sudo 密码' }
+    const scriptPath = path.join(__dirname, '../resources/scripts/Phase3/vpn_mgr.sh')
+    const fs = require('fs')
+    if (!fs.existsSync(scriptPath)) return { success: false, error: '脚本文件不存在' }
+    const { spawn } = require('child_process')
+    return new Promise((resolve) => {
+      // Use bash -c with echo to pipe password to sudo -S
+      const child = spawn('bash', ['-c', 'echo "$SUDO_PWD" | sudo -S bash ' + scriptPath + ' install-tools 2>&1'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env, SUDO_PWD: password }
+      })
+      let output = ''
+      let err = ''
+      child.stdout.on('data', d => { output += d.toString() })
+      child.stderr.on('data', d => { err += d.toString() })
+      child.on('close', (code) => {
+        resolve({ success: code === 0, output: output, error: err })
+      })
+    })
+  } catch(e) {
+    return { success: false, error: e.message }
   }
 })

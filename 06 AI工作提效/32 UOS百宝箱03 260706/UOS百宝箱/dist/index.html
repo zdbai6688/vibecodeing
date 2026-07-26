@@ -181,7 +181,8 @@ const NAV = [
   {id:'tools',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>`,label:'高效工具',desc:'文档、图片、音视频处理工具箱'},
     {id:'apthistory',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>`,label:'更新历史',desc:'APT 更新历史查看与版本回滚'},
   {id:'pkgmanager',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="2" x2="9" y2="6"/><line x1="15" y1="2" x2="15" y2="6"/><line x1="9" y1="18" x2="9" y2="22"/><line x1="15" y1="18" x2="15" y2="22"/><line x1="2" y1="9" x2="6" y2="9"/><line x1="2" y1="15" x2="6" y2="15"/><line x1="18" y1="9" x2="22" y2="9"/><line x1="18" y1="15" x2="22" y2="15"/></svg></span>`,label:'软件管理',desc:'deb 软件包搜索、安装与卸载'},
-  // ===== 其他 ===== 
+    {id:'compliance',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></span>`,label:'等保合规',desc:'等保 2.0 三级合规检查与修复'},
+// ===== 其他 ===== 
     {id:'localsend',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>`,label:'局域网传输',desc:'基于 Python 的局域网文件共享传输'},
 {id:'changelog',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>`,label:'更新日志',desc:'版本更新记录与变更说明'},
   {id:'feedback',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>`,label:'反馈建议',desc:'问题反馈与功能建议'},
@@ -189,6 +190,16 @@ const NAV = [
   {id:'about',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>`,label:'关于',desc:'版本信息'},
   // ===== 系统应用集成 =====
   {id:'systemapps',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#e8f5e9;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:#2e7d32;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>`,label:'系统应用',desc:'系统能力调用与集成'}
+,  // ===== 🛠️ 更多实用功能 =====
+  {id:'phase2-more',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>`,label:'更多实用功能',desc:'启动项管理/文件搜索/健康检查/USB启动盘/基准测试/备份还原/驱动管理/远程桌面'},
+  {id:'crashanalyze',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>`,label:'崩溃分析',desc:'系统崩溃记录查看、分析诊断与解决方案推荐'},
+  {id:'shortcut-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="6" y1="12" x2="6.01" y2="12"/><line x1="10" y1="12" x2="10.01" y2="12"/><line x1="14" y1="12" x2="14.01" y2="12"/><line x1="18" y1="12" x2="18.01" y2="12"/></svg></span>`,label:'快捷键管理',desc:'查看和配置系统快捷键'},
+
+  // ===== Stage 4: 高级运维功能 =====
+  {id:'docker-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>`,label:'容器管理',desc:'Docker 容器/镜像管理 · 启动/停止 · 日志查看 · 镜像拉取'},
+  {id:'upgrade-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>`,label:'升级助手',desc:'系统版本升级 · 升级前检查 · 过程监控 · 失败回滚'},
+  {id:'asset-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>`,label:'资产清单',desc:'硬件扫描 · 软件盘点 · 资产报告 · 导出 CSV/Excel'},
+  {id:'remote-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15"/></svg></span>`,label:'远程管理',desc:'SSH 密钥管理 · 批量命令执行 · 远程文件传输 · 系统监控'},
 ]
 const MONITOR_SUB = [
   {group:'进程资源类',items:[{id:'top-cpu',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,label:'CPU 消耗排行'},{id:'top-mem',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,label:'内存消耗排行'},{id:'zombie',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="8" y1="9" x2="8.01" y2="9"/><line x1="16" y1="9" x2="16.01" y2="9"/><path d="M16 15a4 4 0 0 1-8 0"/></svg>`,label:'僵尸进程检测'}]},
@@ -288,7 +299,8 @@ const OPTIMIZE = [
   {id:'apt-clean',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="21 16 21 8 12 3 3 8 3 16 12 21 21 16 21 8 12 3 12 21"/><line x1="3" y1="8" x2="12" y2="13"/><line x1="12" y1="13" x2="21" y2="8"/></svg>`,name:'APT 缓存清理',desc:'清理 APT 软件包缓存、残留安装包，释放磁盘空间',type:'terminal',options:[{v:'clean-old',l:'清理旧版本安装包',d:'仅清理过期缓存'},{v:'clean-all',l:'完全清空 APT 缓存',d:'清空缓存+清理残留依赖'},{v:'fix-lock',l:'修复 APT 锁文件',d:'删除锁文件+修复 dpkg'}]},
   {id:'disable-services',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,name:'禁用冗余服务',desc:'关闭常驻服务，减少开机资源占用',type:'terminal',options:[{v:'batch',l:'一键禁用冗余服务',d:'批量禁用 CUPS/蓝牙/Avahi 等'}]},
   {id:'fix-high-cpu',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`,name:'修复 CPU 高占用',desc:'终止异常高负载进程，禁止开机自启',type:'terminal',options:[{v:'kill-high',l:'一键终止高耗进程',d:'终止 imwheel/clipman/tracker'},{v:'disable-autostart',l:'禁用开机启动',d:'禁止高耗进程自启'}]},
-  {id:'clean-logs',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,name:'系统日志清理',desc:'删除系统运行日志，释放磁盘存储空间',type:'terminal',options:[{v:'clean-7days',l:'清理7天前日志',d:'删除7天前系统和应用日志'},{v:'clean-buffer',l:'清空日志缓冲区',d:'清空 journald 缓冲区'}]}
+  {id:'clean-logs',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,name:'系统日志清理',desc:'删除系统运行日志，释放磁盘存储空间',type:'terminal',options:[{v:'clean-7days',l:'清理7天前日志',d:'删除7天前系统和应用日志'},{v:'clean-buffer',l:'清空日志缓冲区',d:'清空 journald 缓冲区'}]},
+  {id:'vpn-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>`,label:'VPN管理',desc:'L2TP/IPsec/OpenVPN 配置 · 连接管理 · 状态监控'},
 ]
 
 let _currentPage='overview',_currentSub=null,_monitorTimer=null,_progressHandler=null
@@ -343,9 +355,19 @@ function switchPage(id){
   else if(id==='feedback') renderFeedback(el)
   else if(id==='settings') renderSettings(el)
   else if(id==='security') renderSecurity(el)
+  else if(id==='compliance') renderCompliance(el)
   else if(id==='about') renderAbout(el)
   else if(id==='systemapps') renderSystemApps(el)
-}
+  else if(id==='shortcut-mgr') renderShortcutMgr(el)
+    else if(id==='crashanalyze') renderCrashAnalyze(el)
+  else if(id==='vpn-mgr') renderVpnPage(el)
+    else if(id==='printer') renderPrinterPage(el)
+else if(id==='phase2-more') renderPhase2Page(el)
+
+  else if(id==='docker-mgr') renderDockerPage(el)
+  else if(id==='upgrade-mgr') renderUpgradePage(el)
+  else if(id==='asset-mgr') renderAssetPage(el)
+  else if(id==='remote-mgr') renderRemotePage(el)}
 
 function switchMonitorSub(id){_currentSub=id;const p=NAV.find(i=>i.id==='monitor');document.getElementById('pageTitle').innerHTML=p.ico+' '+p.label;document.getElementById('pageDesc').textContent=p.desc;renderSubNav(id);renderMonitorDetail(document.getElementById('pageContent'),id)}
 
@@ -2734,7 +2756,7 @@ function toggleLicenseKey(){
 }
 
 function fmtMB(mb){if(!mb&&mb!==0)return '-';if(mb>=1024)return (mb/1024).toFixed(1)+' GB';return mb+' MB'}
-function esc(t){if(!t)return '';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function esc(t){if(!t)return '';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\x27/g,'&#39;')}
 function stripAnsi(s){if(!s)return '';return s.replace(/\x1b\[[0-9;]*m/g,'')}
 
 function renderSystemApps(el){
@@ -2975,6 +2997,207 @@ window.execCliCmd = async function() {
     outputEl.textContent = '❌ 执行异常: ' + e.message
   }
 }
+
+// ---- 等保合规检查 ----
+async function renderCompliance(el){
+  el.innerHTML = '<div style="max-width:960px;margin:0 auto">' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">' +
+      '<button class="btn btn-primary" onclick="runComplianceCheck()">🔍 开始检查</button>' +
+      '<button class="btn btn-success" onclick="fixAllCompliance()">🔧 一键修复</button>' +
+      '<button class="btn btn-warning" onclick="generateComplianceReport()">📋 生成报告</button>' +
+      '<button class="btn btn-sec" onclick="renderCompliance(document.getElementById(\'pageContent\'))">🔄 刷新</button>' +
+    '</div>' +
+    '<div style="background:var(--card-bg);border-radius:10px;box-shadow:var(--shadow);overflow:hidden">' +
+      '<div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px">🛡️ 等保 2.0 三级合规检查 (20项)</div>' +
+      '<div id="compResults" style="padding:14px 18px;font-size:13px;color:var(--text-sec)">点击"开始检查"进行等保合规检测</div>' +
+    '</div></div>'
+  try{
+    const r = await window.complianceAPI.getResults()
+    if(r?.success && r.results?.items?.length){
+      displayComplianceResults(r.results)
+    }
+  } catch(e) {}
+}
+
+async function runComplianceCheck(){
+  const body = document.getElementById('compResults')
+  if(!body) return
+  body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在执行合规检查 (共20项)...</div>'
+  try{
+    const r = await window.complianceAPI.runCheck()
+    if(r?.success && r.items){
+      displayComplianceResults(r)
+    } else {
+      body.innerHTML = '<span style="color:var(--danger)">❌ ' + esc(r?.error || '检查失败') + '</span>'
+    }
+  } catch(e) { body.innerHTML = '<span style="color:var(--danger)">❌ ' + esc(e.message) + '</span>' }
+}
+
+function displayComplianceResults(data){
+  const body = document.getElementById('compResults')
+  if(!body) return
+  const items = data.items || []
+  const score = data.score || 0
+  const passed = data.passed || 0
+  const warnings = data.warnings || 0
+  const failed = data.failed || 0
+
+  let html = '<div style="font-size:13px">'
+  const scoreColor = score >= 80 ? 'var(--success)' : score >= 60 ? 'var(--warning)' : 'var(--danger)'
+  html += '<div style="text-align:center;padding:14px;margin-bottom:12px;background:#f9f9f9;border-radius:8px">' +
+    '<span style="font-size:32px;font-weight:700;color:' + scoreColor + '">' + score + '</span>' +
+    '<span style="color:var(--text-sec);margin-left:8px">/ 100</span>' +
+    '<div style="font-size:12px;margin-top:4px;display:flex;gap:12px;justify-content:center">' +
+      '<span style="color:var(--success)">✅ 通过:' + passed + '</span>' +
+      '<span style="color:var(--danger)">❌ 未通过:' + failed + '</span>' +
+      '<span style="color:var(--warning)">⚠️ 警告:' + warnings + '</span>' +
+    '</div></div>'
+
+  const categories = {}
+  for(const item of items){
+    const cat = item.category || '其他'
+    if(!categories[cat]) categories[cat] = []
+    categories[cat].push(item)
+  }
+
+  for(const [cat, catItems] of Object.entries(categories)){
+    html += '<div style="font-size:12px;font-weight:600;color:var(--text-sec);padding:8px 0 4px;border-bottom:1px solid var(--border-light);margin-top:8px">📁 ' + esc(cat) + ' (' + catItems.length + '项)</div>'
+    for(const item of catItems){
+      const status = item.status || 'fail'
+      const icon = status === 'pass' ? '✅' : status === 'warn' ? '⚠️' : '❌'
+      const color = status === 'pass' ? 'var(--success)' : status === 'warn' ? 'var(--warning)' : 'var(--danger)'
+      const canFix = status === 'fail' || status === 'warn'
+      html += '<div style="padding:8px;margin:4px 0;border-left:3px solid ' + color + ';background:#fafafa;border-radius:4px">' +
+        '<div style="display:flex;align-items:center;gap:6px;justify-content:space-between">' +
+          '<span><span>' + icon + '</span><span style="font-weight:500;margin-left:4px">' + esc(item.name || item.title || item.id || '检查项') + '</span></span>' +
+          (canFix ? '<button class="btn btn-sm btn-outline" onclick="fixComplianceItem(\'' + item.id + '\')" style="font-size:10px;padding:2px 8px">🔧 修复</button>' : '') +
+        '</div>' +
+        (item.description ? '<div style="font-size:11px;color:var(--text-sec);margin-top:2px">' + esc(item.description) + '</div>' : '') +
+        (item.suggestion ? '<div style="font-size:11px;color:var(--primary);margin-top:2px">💡 ' + esc(item.suggestion) + '</div>' : '') +
+      '</div>'
+    }
+  }
+  body.innerHTML = html + '</div>'
+}
+
+async function fixComplianceItem(id){
+  const overlay = document.getElementById('modalOverlay')
+  overlay.classList.add('show')
+  document.getElementById('modalContent').innerHTML =
+    '<button class="close-btn" onclick="closeModal()">✕</button>' +
+    '<h2>🔧 修复检查项</h2>' +
+    '<div class="sub">需要管理员密码执行修复操作</div>' +
+    '<div style="margin:12px 0">' +
+      '<input type="password" id="fixPwdInput" placeholder="请输入管理员密码" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none">' +
+    '</div>' +
+    '<div class="actions" style="flex-direction:row">' +
+      '<button class="btn btn-primary" onclick="doFixItem(\'' + id + '\')" style="flex:1">🔧 确认修复</button>' +
+      '<button class="btn btn-sec" onclick="closeModal()" style="flex:1">取消</button>' +
+    '</div>' +
+    '<div id="fixResult" style="margin-top:10px;font-size:12px;display:none"></div>'
+  setTimeout(function(){
+    const inp = document.getElementById('fixPwdInput')
+    if(inp){ inp.focus(); inp.onkeydown = function(e){ if(e.key === 'Enter') doFixItem(id) } }
+  }, 100)
+}
+
+async function doFixItem(id){
+  const pwdInput = document.getElementById('fixPwdInput')
+  if(!pwdInput || !pwdInput.value.trim()){ pwdInput?.focus(); return }
+  const pwd = pwdInput.value.trim()
+  const resultEl = document.getElementById('fixResult')
+  if(resultEl) resultEl.style.display = 'block'
+  const actions = document.querySelector('#modalContent .actions')
+  if(actions) actions.style.display = 'none'
+  if(resultEl) resultEl.innerHTML = '<span style="color:var(--text-sec)">⏳ 正在修复...</span>'
+  try{
+    const r = await window.complianceAPI.fixItem(id, pwd)
+    if(resultEl){
+      resultEl.innerHTML = r?.success
+        ? '<span style="color:var(--success)">✅ 修复完成</span><pre style="background:#f5f5f5;padding:8px;border-radius:4px;margin-top:6px;font-size:11px;max-height:150px;overflow:auto">' + esc(r.output || '') + '</pre>'
+        : '<span style="color:var(--danger)">❌ ' + esc(r?.error || '修复失败') + '</span>'
+    }
+  } catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + esc(e.message) + '</span>'
+  }
+  setTimeout(function(){ closeModal(); runComplianceCheck() }, 3000)
+}
+
+async function fixAllCompliance(){
+  const overlay = document.getElementById('modalOverlay')
+  overlay.classList.add('show')
+  document.getElementById('modalContent').innerHTML =
+    '<button class="close-btn" onclick="closeModal()">✕</button>' +
+    '<h2>🔧 一键修复所有不合规项</h2>' +
+    '<div class="sub">需要管理员密码执行全部修复操作，将依次修复所有未通过的检查项</div>' +
+    '<div style="margin:12px 0"><input type="password" id="fixAllPwdInput" placeholder="请输入管理员密码" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none"></div>' +
+    '<div class="actions" style="flex-direction:row">' +
+      '<button class="btn btn-success" onclick="doFixAll()" style="flex:1">🔧 开始修复全部</button>' +
+      '<button class="btn btn-sec" onclick="closeModal()" style="flex:1">取消</button>' +
+    '</div>' +
+    '<div id="fixAllProgress" style="margin-top:10px;font-size:12px;display:none"></div>'
+  setTimeout(function(){
+    const inp = document.getElementById('fixAllPwdInput')
+    if(inp){ inp.focus(); inp.onkeydown = function(e){ if(e.key === 'Enter') doFixAll() } }
+  }, 100)
+}
+
+async function doFixAll(){
+  const pwdInput = document.getElementById('fixAllPwdInput')
+  if(!pwdInput || !pwdInput.value.trim()){ pwdInput?.focus(); return }
+  const pwd = pwdInput.value.trim()
+  const progressEl = document.getElementById('fixAllProgress')
+  if(progressEl) progressEl.style.display = 'block'
+  const actions = document.querySelector('#modalContent .actions')
+  if(actions) actions.style.display = 'none'
+  if(progressEl) progressEl.innerHTML = '<span style="color:var(--text-sec)">⏳ 正在获取待修复项...</span>'
+  try{
+    const check = await window.complianceAPI.runCheck()
+    const fixItems = (check?.items || []).filter(function(i){ return i.status === 'fail' || i.status === 'warn' })
+    if(fixItems.length === 0){
+      if(progressEl) progressEl.innerHTML = '<span style="color:var(--success)">✅ 所有检查项已通过，无需修复</span>'
+      setTimeout(function(){ closeModal() }, 2000)
+      return
+    }
+    let html = '<div style="font-size:12px">'
+    for(let i = 0; i < fixItems.length; i++){
+      const item = fixItems[i]
+      html += '<div style="padding:4px 0">[' + (i+1) + '/' + fixItems.length + '] 🔧 ' + esc(item.name) + '...'
+      try{
+        const result = await window.complianceAPI.fixItem(item.id, pwd)
+        html += result?.success ? ' <span style="color:var(--success)">✅ 完成</span>' : ' <span style="color:var(--danger)">❌ ' + esc(result?.error || '失败') + '</span>'
+      } catch(e){ html += ' <span style="color:var(--danger)">❌ ' + esc(e.message) + '</span>' }
+      html += '</div>'
+      if(progressEl) progressEl.innerHTML = html
+    }
+    html += '<div style="margin-top:8px;padding:6px;background:#f0f9f0;border-radius:4px;text-align:center"><span style="color:var(--success);font-weight:500">✅ 一键修复完成</span></div>'
+    if(progressEl) progressEl.innerHTML = html
+  } catch(e){
+    if(progressEl) progressEl.innerHTML = '<span style="color:var(--danger)">❌ ' + esc(e.message) + '</span>'
+  }
+  setTimeout(function(){ closeModal(); runComplianceCheck() }, 3000)
+}
+
+async function generateComplianceReport(){
+  const body = document.getElementById('compResults')
+  if(!body) return
+  body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在生成合规检查报告...</div>'
+  try{
+    const r = await window.complianceAPI.generateReport()
+    if(r?.success && r.file){
+      body.innerHTML = '<div style="text-align:center;padding:20px;font-size:13px">' +
+        '<div style="font-size:40px;margin-bottom:10px">📋</div>' +
+        '<div style="font-weight:500">合规报告已生成</div>' +
+        '<div style="color:var(--text-sec);margin:6px 0">' + esc(r.file) + '</div>' +
+        '<button class="btn btn-primary" onclick="window.fileAPI.openPath(\'' + esc(r.file).replace(/\x27/g,"\\" + String.fromCharCode(39)) + '\')">📂 打开文件位置</button>' +
+        '<button class="btn btn-sec" style="margin-left:8px" onclick="runComplianceCheck()">🔄 返回</button>' +
+      '</div>'
+    } else {
+      body.innerHTML = '<span style="color:var(--danger)">❌ ' + esc(r?.error || '生成报告失败') + '</span>'
+    }
+  } catch(e) { body.innerHTML = '<span style="color:var(--danger)">❌ ' + esc(e.message) + '</span>' }
+}
+
 
 renderNav();switchPage(NAV[0].id)
 
@@ -3629,7 +3852,7 @@ function renderAptHistoryList(entries){
           ' → ' +
           '<span style="color:var(--success);font-weight:500">' + escHtml(p.newVersion) + '</span>' +
         '</span>' +
-        '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showRollbackDialog(&apos;" + escHtml(p.name) + "&apos;,&apos;" + escHtml(p.oldVersion) + "&apos;)" style="padding:2px 8px;font-size:10px;margin-left:4px">↩ 回滚</button>' +
+        '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showRollbackDialog(\x27" + escHtml(p.name) + "\x27,\x27" + escHtml(p.oldVersion) + "\x27)" style="padding:2px 8px;font-size:10px;margin-left:4px">↩ 回滚</button>' +
       '</div>').join('')
     }
     
@@ -3741,7 +3964,7 @@ async function searchRollbackPkg(){
           if(v.isCurrent){
             html += '<span style="color:var(--success);font-size:11px;font-weight:500">✓ 当前版本</span>'
           } else {
-            html += '<button class="btn btn-sm btn-warning" onclick="executeRollback(&apos;" + escHtml(pkgName) + "&apos;,&apos;" + escHtml(v.version).replace(/'/g,"\\'") + "&apos;)" style="padding:3px 10px;font-size:11px">↩ 回滚到此版本</button>'
+            html += '<button class="btn btn-sm btn-warning" onclick="executeRollback(\x27" + escHtml(pkgName) + "\x27,\x27" + escHtml(v.version).replace(/\x27/g,"\\" + String.fromCharCode(39)) + "\x27)" style="padding:3px 10px;font-size:11px">↩ 回滚到此版本</button>'
           }
           html += '</div>'
         }
@@ -3760,9 +3983,7 @@ async function searchRollbackPkg(){
 }
 
 async function executeRollback(pkgName, targetVersion){
-  if(!confirm('确认要将 ' + pkgName + ' 回滚到 ' + targetVersion + ' 版本？
-
-此操作可能需要 sudo 密码。')) return
+  if(!confirm('确认要将 ' + pkgName + ' 回滚到 ' + targetVersion + ' 版本？')) return
   
   const password = prompt('请输入 sudo 密码（留空则尝试无密码执行）:')
   if(password === null) return
@@ -3804,7 +4025,393 @@ function showRollbackDialog(pkgName, oldVersion){
 }
 
 
-// ============ 文件搜索 ============
+
+// ============ 系统崩溃分析 ============
+async function renderCrashAnalyze(el){
+  el.innerHTML = '<div style="max-width:960px;margin:0 auto">' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">' +
+      '<button class="btn btn-primary" onclick="refreshCrashList()">🔍 查看崩溃记录</button>' +
+      '<button class="btn btn-warning" onclick="refreshCrashLogs()">📋 查看错误日志</button>' +
+      '<button class="btn btn-sec" onclick="renderCrashAnalyze(document.getElementById(\'pageContent\'))">🔄 刷新</button>' +
+    '</div>' +
+    '<div style="background:var(--card-bg);border-radius:10px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px">' +
+      '<div style="display:flex;border-bottom:1px solid var(--border)">' +
+        '<div class="crash-tab active" data-tab="coredumps" onclick="switchCrashTab(this,\'coredumps\')" style="padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid var(--primary);color:var(--primary);-webkit-user-select:none;user-select:none">💥 崩溃记录</div>' +
+        '<div class="crash-tab" data-tab="logs" onclick="switchCrashTab(this,\'logs\')" style="padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-sec);border-bottom:2px solid transparent;-webkit-user-select:none;user-select:none">📝 错误日志</div>' +
+        '<div class="crash-tab" data-tab="charts" onclick="switchCrashTab(this,\'charts\')" style="padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-sec);border-bottom:2px solid transparent;-webkit-user-select:none;user-select:none">📊 统计分析</div>' +
+        '<div class="crash-tab" data-tab="suggest" onclick="switchCrashTab(this,\'suggest\')" style="padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-sec);border-bottom:2px solid transparent;-webkit-user-select:none;user-select:none">💡 解决方案</div>' +
+      '</div>' +
+      '<div id="crashCoredumps" style="padding:14px 18px;font-size:13px;color:var(--text-sec)">点击"查看崩溃记录"进行检测</div>' +
+    '</div></div>'
+  try {
+    window._crashData = { coredumps: null, logs: null }
+    const r = await window.crashAPI.listCoredumps()
+    if (r && r.success) {
+      window._crashData.coredumps = r.coredumps || []
+      displayCoredumps(r.coredumps || [])
+    }
+  } catch(e) {}
+  try {
+    const r = await window.crashAPI.getCrashLogs()
+    if (r && r.success) {
+      window._crashData.logs = r.logs || []
+    }
+  } catch(e) {}
+  try {
+    if (window._crashData && window._crashData.coredumps && window._crashData.coredumps.length) {
+      renderCrashCharts(window._crashData.coredumps)
+    }
+  } catch(e) {}
+}
+
+async function refreshCrashList(){
+  const body = document.getElementById('crashCoredumps')
+  if(!body) return
+  body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在获取崩溃记录...</div>'
+  try{
+    const r = await window.crashAPI.listCoredumps()
+    if (r && r.success && r.coredumps && r.coredumps.length) {
+      if (window._crashData) window._crashData.coredumps = r.coredumps
+      displayCoredumps(r.coredumps)
+    } else {
+      body.innerHTML = noDataHtml('系统未检测到崩溃记录', '系统运行正常，无 coredump 文件')
+    }
+  } catch(e){
+    body.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">❌ ' + esc(e.message) + '</div>'
+  }
+}
+
+function displayCoredumps(coredumps){
+  const body = document.getElementById('crashCoredumps')
+  if(!body) return
+  if(!coredumps || coredumps.length === 0){
+    body.innerHTML = noDataHtml('系统未检测到崩溃记录', '')
+    return
+  }
+  let html = '<div style="font-size:12px;color:var(--text-sec);margin-bottom:8px">共发现 <strong style="color:var(--primary)">' + coredumps.length + '</strong> 条崩溃记录</div>' +
+    '<div style="max-height:350px;overflow-y:auto;border:1px solid var(--border-light);border-radius:6px">' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead>' +
+    '<tr style="background:#f9f9f9"><th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">时间</th>' +
+    '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">进程</th>' +
+    '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">信号</th>' +
+    '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">PID</th>' +
+    '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">操作</th></tr></thead><tbody>'
+  for(const c of coredumps){
+    const signal = esc(c.signal || '?')
+    const sigColor = signal === 'SIGSEGV' || signal === '11' ? 'var(--danger)' :
+                     signal === 'SIGABRT' || signal === '6' ? 'var(--warning)' : 'var(--text)'
+    html += '<tr><td style="padding:8px 10px;border-bottom:1px solid #f5f5f5;white-space:nowrap;font-size:11px">' + esc(c.time || '') + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5;font-weight:500">' + esc(c.package || esc(c.exe || '未知')) + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5;color:' + sigColor + ';font-weight:500">' + signal + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5;font-size:11px;color:var(--text-sec)">' + esc(c.pid || '') + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5">' +
+      '<button class="btn btn-sm" onclick="alert("分析功能开发中")" style="padding:2px 8px;font-size:10px">🔍 分析</button></td></tr>'
+  }
+  html += '</tbody></table></div>'
+  body.innerHTML = html
+}
+
+async function analyzeCoredump(pid, signal, pkg, exe){
+  document.getElementById('modalOverlay').classList.add('show')
+  document.getElementById('modalContent').innerHTML =
+    '<button class="close-btn" onclick="closeModal()">✕</button>' +
+    '<h2>🔍 崩溃分析</h2>' +
+    '<div class="sub">正在分析崩溃信息，请稍候...</div>' +
+    '<div id="crashAnalysisResult" style="margin-top:12px;font-size:13px"><div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在分析...</div></div>'
+  try{
+    const info = await window.crashAPI.analyzeCoredump(pid)
+    const suggestions = await window.crashAPI.getSuggestions(signal, pkg, exe)
+    
+    let html = ''
+    if (info && info.success) {
+      html += '<div style="background:var(--card-bg);border-radius:8px;padding:14px;margin-bottom:12px;border:1px solid var(--border-light)">' +
+        '<div style="font-weight:600;font-size:14px;margin-bottom:8px">📊 崩溃详细信息</div>'
+      if (info.info) {
+        html += '<pre style="font-size:11px;background:#f5f5f5;padding:8px;border-radius:4px;max-height:200px;overflow:auto;white-space:pre-wrap">' + esc(info.info) + '</pre>'
+      }
+      if (info.backtrace) {
+        html += '<div style="font-weight:600;font-size:13px;margin:8px 0 4px">🔍 堆栈跟踪</div>' +
+          '<pre style="font-size:11px;background:#fff8f0;padding:8px;border-radius:4px;max-height:200px;overflow:auto;white-space:pre-wrap;border:1px solid #ffe0b2">' + esc(info.backtrace) + '</pre>'
+      }
+      html += '</div>'
+    } else {
+      html += '<div style="background:#fff0f0;border-radius:8px;padding:14px;margin-bottom:12px"><span style="color:var(--danger)">❌ 获取崩溃详情失败: ' + esc((info && info.error) || '未知错误') + '</span></div>'
+    }
+    
+    if (suggestions && suggestions.success && suggestions.recommendations && suggestions.recommendations.length) {
+      html += '<div style="background:#f0f9f0;border-radius:8px;padding:14px;border:1px solid #c8e6c9">' +
+        '<div style="font-weight:600;font-size:14px;margin-bottom:8px">💡 推荐解决方案</div>'
+      for (const rec of suggestions.recommendations) {
+        html += '<div style="padding:8px;margin-bottom:6px;background:#fff;border-radius:6px;border-left:3px solid var(--primary)">' +
+          '<div style="font-weight:500;font-size:13px">' + esc(rec.title) + '</div>' +
+          '<div style="font-size:11px;color:var(--text-sec);margin:4px 0">' + esc(rec.desc) + '</div>' +
+          (rec.command ? '<code style="display:block;font-size:10px;background:#333;color:#fff;padding:4px 8px;border-radius:4px;margin-top:4px">' + esc(rec.command) + '</code>' : '') +
+        '</div>'
+      }
+      html += '</div>'
+    } else {
+      html += '<div style="background:#f0f9f0;border-radius:8px;padding:14px;border:1px solid #c8e6c9">' +
+        '<div style="font-weight:600;font-size:14px;margin-bottom:4px">💡 通用建议</div>' +
+        '<div style="font-size:12px;color:var(--text-sec)">重新安装相关应用或更新系统到最新版本</div></div>'
+    }
+    
+    document.getElementById('crashAnalysisResult').innerHTML = html
+    const sub = document.querySelector('#modalContent .sub')
+    if (sub) sub.textContent = ''
+  } catch(e){
+    document.getElementById('crashAnalysisResult').innerHTML = '<div style="color:var(--danger);padding:10px">❌ ' + esc(e.message) + '</div>'
+  }
+}
+
+async function refreshCrashLogs(){
+  const body = document.getElementById('crashCoredumps')
+  if(!body) return
+  body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在获取系统错误日志...</div>'
+  try{
+    const r = await window.crashAPI.getCrashLogs()
+    if (r && r.success && r.logs && r.logs.length) {
+      if (window._crashData) window._crashData.logs = r.logs
+      displayCrashLogs(r.logs)
+    } else {
+      body.innerHTML = noDataHtml('系统日志中无错误记录', '')
+    }
+  } catch(e){
+    body.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">❌ ' + esc(e.message) + '</div>'
+  }
+}
+
+function displayCrashLogs(logs){
+  const body = document.getElementById('crashCoredumps')
+  if(!body) return
+  if(!logs || logs.length === 0){
+    body.innerHTML = noDataHtml('系统日志中无错误记录', '')
+    return
+  }
+  let html = '<div style="font-size:12px;color:var(--text-sec);margin-bottom:8px">显示最近 <strong style="color:var(--primary)">' + logs.length + '</strong> 条错误日志</div>' +
+    '<div style="max-height:400px;overflow-y:auto;border:1px solid var(--border-light);border-radius:6px">'
+  for(const log of logs){
+    const sevIcon = log.severity === 'fatal' ? '🔥' : log.severity === 'error' ? '❌' : '⚠️'
+    const sevColor = log.severity === 'fatal' ? '#e65100' : log.severity === 'error' ? 'var(--danger)' : 'var(--warning)'
+    html += '<div style="padding:8px 10px;border-bottom:1px solid #f5f5f5;font-size:12px;display:flex;align-items:flex-start;gap:6px">' +
+      '<span style="flex-shrink:0">' + sevIcon + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:2px">' +
+        '<span style="font-size:10px;color:var(--text-ter)">' + esc(log.time || '') + '</span>' +
+        '<span style="font-size:10px;color:' + sevColor + ';font-weight:500">' + esc(log.app || '') + '</span>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text);word-break:break-all">' + esc(log.message || '') + '</div></div></div>'
+  }
+  html += '</div>'
+  body.innerHTML = html
+}
+
+// ============ Tab switching for crash analysis ============
+function switchCrashTab(el, tab){
+  document.querySelectorAll('.crash-tab').forEach(function(t){
+    t.classList.remove('active')
+    t.style.borderBottomColor = 'transparent'
+    t.style.color = 'var(--text-sec)'
+    t.style.fontWeight = '500'
+  })
+  el.classList.add('active')
+  el.style.borderBottomColor = 'var(--primary)'
+  el.style.color = 'var(--primary)'
+  el.style.fontWeight = '600'
+  
+  var body = document.getElementById('crashCoredumps')
+  if (!body) return
+  
+  if (tab === 'coredumps') {
+    var data = window._crashData && window._crashData.coredumps
+    if (data && data.length) {
+      displayCoredumps(data)
+    } else {
+      body.innerHTML = noDataHtml('系统未检测到崩溃记录', '点击上方"查看崩溃记录"按钮进行检测')
+    }
+  } else if (tab === 'logs') {
+    var data = window._crashData && window._crashData.logs
+    if (data && data.length) {
+      displayCrashLogs(data)
+    } else {
+      body.innerHTML = noDataHtml('系统日志中无错误记录', '点击上方"查看错误日志"按钮加载')
+    }
+  } else if (tab === 'charts') {
+    var data = window._crashData && window._crashData.coredumps
+    if (data && data.length) {
+      renderCrashCharts(data)
+    } else {
+      body.innerHTML = noDataHtml('暂无数据生成统计图表', '请先点击"查看崩溃记录"获取数据')
+    }
+  } else if (tab === 'suggest') {
+    renderCrashSuggestions()
+  }
+}
+
+// ============ Crash Statistics Charts ============
+function renderCrashCharts(coredumps){
+  var body = document.getElementById('crashCoredumps')
+  if (!body) return
+  if (!coredumps || coredumps.length === 0) {
+    body.innerHTML = noDataHtml('暂无崩溃数据', '请先获取崩溃记录')
+    return
+  }
+  
+  var signalCount = {}
+  var appCount = {}
+  var total = coredumps.length
+  for (var i = 0; i < total; i++) {
+    var c = coredumps[i]
+    var sig = c.signal || '未知'
+    signalCount[sig] = (signalCount[sig] || 0) + 1
+    var app = c.package || c.exe || '未知'
+    appCount[app] = (appCount[app] || 0) + 1
+  }
+  
+  var signalSorted = Object.keys(signalCount).sort(function(a,b){ return signalCount[b] - signalCount[a] })
+  var appSorted = Object.keys(appCount).sort(function(a,b){ return appCount[b] - appCount[a] })
+  var maxSigCount = Math.max.apply(null, Object.values(signalCount))
+  var maxAppCount = Math.max.apply(null, Object.values(appCount))
+  
+  var sigColors = { 'SIGSEGV':'var(--danger)','SIGABRT':'var(--warning)','SIGFPE':'#e65100','SIGILL':'#9c27b0','SIGBUS':'#ff6f00','11':'var(--danger)','6':'var(--warning)','8':'#e65100','4':'#9c27b0','7':'#ff6f00' }
+  function getSigColor(s){ return sigColors[s] || 'var(--primary)' }
+  
+  var html = '<div style="font-size:13px;color:var(--text-sec);margin-bottom:12px">基于 <strong style="color:var(--primary)">' + total + '</strong> 条崩溃记录生成</div>'
+  
+  // Signal distribution
+  html += '<div style="background:var(--card-bg);border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid var(--border-light)">' +
+    '<div style="font-weight:600;font-size:14px;margin-bottom:10px">📊 信号类型分布</div>'
+  for (var i = 0; i < signalSorted.length; i++) {
+    var s = signalSorted[i]
+    var cnt = signalCount[s]
+    var pct = Math.round(cnt / total * 100)
+    var color = getSigColor(s)
+    html += '<div style="margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px">' +
+        '<span style="font-weight:500;color:' + color + '">' + esc(s) + '</span>' +
+        '<span>' + cnt + ' (' + pct + '%)</span>' +
+      '</div>' +
+      '<div style="background:#f0f0f0;border-radius:4px;height:18px;overflow:hidden">' +
+        '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:4px;transition:width 0.3s"></div>' +
+      '</div></div>'
+  }
+  html += '</div>'
+  
+  // App crash ranking
+  var topN = Math.min(appSorted.length, 10)
+  html += '<div style="background:var(--card-bg);border-radius:8px;padding:14px;border:1px solid var(--border-light)">' +
+    '<div style="font-weight:600;font-size:14px;margin-bottom:10px">🏆 应用崩溃排行 (Top ' + topN + ')</div>'
+  var topApps = appSorted.slice(0, 10)
+  var rankColors = ['#e53935','#ff7043','#ffa726','#ffca28','#9ccc65','#66bb6a','#26a69a','#42a5f5','#ab47bc','#8d6e63']
+  for (var i = 0; i < topApps.length; i++) {
+    var a = topApps[i]
+    var cnt = appCount[a]
+    var pct = Math.round(cnt / total * 100)
+    var barW = Math.round(cnt / maxAppCount * 100)
+    html += '<div style="display:flex;align-items:center;margin-bottom:6px;gap:8px">' +
+      '<span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:' + rankColors[i] + ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">' + (i + 1) + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:12px;font-weight:500;margin-bottom:1px">' + esc(a) + '</div>' +
+        '<div style="background:#f0f0f0;border-radius:3px;height:14px;overflow:hidden">' +
+          '<div style="height:100%;width:' + barW + '%;background:' + rankColors[i] + ';border-radius:3px;transition:width 0.3s"></div>' +
+        '</div></div>' +
+      '<span style="font-size:12px;font-weight:500;color:var(--text)">' + cnt + '</span></div>'
+  }
+  html += '</div>'
+  
+  // Summary stats
+  html += '<div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap">' +
+    '<div style="flex:1;min-width:120px;background:var(--card-bg);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border-light)">' +
+      '<div style="font-size:11px;color:var(--text-sec)">崩溃总数</div>' +
+      '<div style="font-size:24px;font-weight:700;color:var(--danger)">' + total + '</div></div>' +
+    '<div style="flex:1;min-width:120px;background:var(--card-bg);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border-light)">' +
+      '<div style="font-size:11px;color:var(--text-sec)">受影响应用</div>' +
+      '<div style="font-size:24px;font-weight:700;color:var(--warning)">' + appSorted.length + '</div></div>' +
+    '<div style="flex:1;min-width:120px;background:var(--card-bg);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border-light)">' +
+      '<div style="font-size:11px;color:var(--text-sec)">信号类型数</div>' +
+      '<div style="font-size:24px;font-weight:700;color:var(--primary)">' + signalSorted.length + '</div></div></div>'
+  
+  body.innerHTML = html
+}
+
+// ============ Crash Suggestions Panel ============
+function renderCrashSuggestions(){
+  var body = document.getElementById('crashCoredumps')
+  if (!body) return
+  var coredumps = window._crashData && window._crashData.coredumps
+  
+  if (!coredumps || coredumps.length === 0) {
+    body.innerHTML = noDataHtml('暂无崩溃数据', '请先获取崩溃记录以获取针对性建议')
+    return
+  }
+  
+  var latest = coredumps[0]
+  var signal = latest.signal || ''
+  var pkg = latest.package || latest.exe || ''
+  var exe = latest.exe || ''
+  
+  body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在生成建议...</div>'
+  
+  if (window.crashAPI && window.crashAPI.getSuggestions) {
+    window.crashAPI.getSuggestions(signal, pkg, exe).then(function(s){
+      var html = ''
+      if (s && s.success && s.recommendations && s.recommendations.length) {
+        html += '<div style="font-size:12px;color:var(--text-sec);margin-bottom:10px">基于最新崩溃记录 (<strong>' + esc(signal) + '</strong>, ' + esc(pkg || exe) + ') 的解决方案</div>'
+        var icons = ['🔧','🛠️','📦','⚙️','🔄','🧹','💾','🔒']
+        for (var i = 0; i < s.recommendations.length; i++) {
+          var rec = s.recommendations[i]
+          html += '<div style="padding:12px 14px;margin-bottom:8px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border-light);border-left:3px solid var(--primary)">' +
+            '<div style="display:flex;align-items:flex-start;gap:8px">' +
+              '<span style="font-size:16px;flex-shrink:0">' + icons[i % icons.length] + '</span>' +
+              '<div style="flex:1">' +
+                '<div style="font-weight:600;font-size:13px;margin-bottom:2px">' + esc(rec.title) + '</div>' +
+                '<div style="font-size:12px;color:var(--text-sec);line-height:1.5">' + esc(rec.desc) + '</div>'
+          if (rec.command) {
+            html += '<div style="margin-top:6px;background:#2d2d2d;border-radius:4px;padding:6px 10px;font-size:11px;font-family:monospace;color:#e8e8e8;overflow-x:auto;white-space:nowrap">$ ' + esc(rec.command) + '</div>'
+          }
+          html += '</div></div></div>'
+        }
+      } else {
+        html = renderGeneralSuggestions(signal, pkg || exe)
+      }
+      body.innerHTML = html
+    }).catch(function(){
+      body.innerHTML = renderGeneralSuggestions(signal, pkg || exe)
+    })
+  } else {
+    body.innerHTML = renderGeneralSuggestions(signal, pkg || exe)
+  }
+}
+
+function renderGeneralSuggestions(signal, appName){
+  var escApp = esc(appName || '')
+  var sigTips = {
+    'SIGSEGV': { title:'内存访问越界 (Segfault)', desc:'应用试图访问未分配或已释放的内存地址，通常由指针错误或缓冲区溢出引起。建议更新应用到最新版本，或查看是否有已知的内存泄漏问题。', cmd:'sudo apt update && sudo apt upgrade ' + escApp },
+    'SIGABRT': { title:'进程主动终止 (Abort)', desc:'应用调用了 abort() 主动终止，通常由内部断言失败或检测到致命错误引起。建议查看应用日志获取详细错误信息。', cmd:'journalctl -u ' + escApp + ' --since "1 hour ago" | tail -50' },
+    'SIGFPE': { title:'算术运算异常', desc:'除零或浮点运算溢出等算术错误。建议检查应用输入数据是否合法，或更新应用版本。', cmd:'' },
+    'SIGILL': { title:'非法指令', desc:'CPU 试图执行非法指令，可能是二进制文件损坏、CPU 不兼容或内存损坏。建议重新安装应用。', cmd:'sudo apt reinstall ' + escApp },
+    'SIGBUS': { title:'总线错误', desc:'内存对齐错误或访问无效内存映射。建议检查系统内存健康状况。', cmd:'sudo memtester 256M 1' }
+  }
+  var tip = sigTips[signal] || { title:'系统崩溃', desc:'应用意外终止，可能原因包括：内存不足、资源耗尽、应用缺陷或系统环境问题。建议执行以下操作排查。', cmd:'dmesg | tail -20' }
+  
+  return '<div style="font-size:12px;color:var(--text-sec);margin-bottom:10px">基于信号类型 ' + esc(signal) + ' 的通用建议</div>' +
+    '<div style="padding:12px 14px;margin-bottom:8px;background:var(--card-bg);border-radius:8px;border:1px solid var(--border-light);border-left:3px solid var(--primary)">' +
+      '<div style="display:flex;align-items:flex-start;gap:8px">' +
+        '<span style="font-size:16px;flex-shrink:0">💡</span>' +
+        '<div style="flex:1">' +
+          '<div style="font-weight:600;font-size:13px;margin-bottom:2px">' + esc(tip.title) + '</div>' +
+          '<div style="font-size:12px;color:var(--text-sec);line-height:1.5">' + esc(tip.desc) + '</div>' +
+          (tip.command ? '<div style="margin-top:6px;background:#2d2d2d;border-radius:4px;padding:6px 10px;font-size:11px;font-family:monospace;color:#e8e8e8;overflow-x:auto;white-space:nowrap">$ ' + tip.command + '</div>' : '') +
+        '</div></div></div>'
+}
+
+function noDataHtml(title, sub){
+  return '<div style="text-align:center;padding:30px;font-size:13px;color:var(--text-sec)">' +
+    '<div style="font-size:40px;margin-bottom:10px">📭</div>' +
+    '<div>' + esc(title) + '</div>' +
+    (sub ? '<div style="font-size:11px;margin-top:4px">' + esc(sub) + '</div>' : '') +
+  '</div>'
+}
+// ============ 文件搜索 ============// ============ 文件搜索 ============
 async function startFileSearch() {
   const kw = document.getElementById('searchKeyword')
   const resultDiv = document.getElementById('searchResult')
@@ -3836,7 +4443,7 @@ async function startFileSearch() {
         html += '<div style="flex:1;min-width:0"><div style="font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.name + '</div>'
         html += '<div style="font-size:10px;color:var(--text-ter);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.path + '</div>'
         html += '<div style="font-size:10px;color:var(--text-ter);margin-top:1px">' + typeLabel + ' · ' + (f.sizeStr || '') + ' · ' + (f.dateStr || '') + '</div></div>'
-        html += '<button class="btn" style="font-size:10px;padding:3px 8px;flex-shrink:0" onclick="openFileLocation(\'' + f.path.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">📂 打开位置</button>'
+        html += '<button class="btn" style="font-size:10px;padding:3px 8px;flex-shrink:0" onclick="openFileLocation(\'' + f.path.replace(/\\/g,'\\\\').replace(/\x27/g,"\\" + String.fromCharCode(39)) + '\')">📂 打开位置</button>'
         html += '</div>'
       }
       html += '</div>'
@@ -3863,13 +4470,1633 @@ async function openFileLocation(filePath) {
     await window.toolAPI.execute('open-file-path', filePath)
   } catch (e) {
     try {
-      await window.toolAPI.invoke('shell:openPath', filePath.replace(/\\/[^\\/]+$/,''))
+      await window.toolAPI.invoke('shell:openPath', filePath.replace(/\/[^\/]+$/,''))
     } catch (e2) {
       console.error('无法打开文件位置:', e2)
     }
   }
 }
 
+
+
+
+// ============ Phase 2: 更多实用功能 ============
+const PHASE2_ITEMS = [
+  {id:'startup-mgr',ico:'\U0001f680',name:'系统启动项管理',desc:'查看和管理开机自启动程序，启用/禁用自启动项，添加自定义启动项'},
+  {id:'file-search',ico:'\U0001f50d',name:'文件快速搜索',desc:'快速搜索系统中的文件，支持按文件名、类型、大小、日期过滤，支持打开文件所在目录'},
+  {id:'health-check',ico:'\u2764\ufe0f',name:'系统健康检查',desc:'一键检查系统关键指标（磁盘、内存、CPU、服务状态），生成健康检查报告'},
+  {id:'usb-maker',ico:'\U0001f4bf',name:'USB启动盘制作',desc:'选择ISO镜像文件和目标USB设备，一键制作启动盘（使用dd命令）'},
+  {id:'benchmark',ico:'\U0001f4ca',name:'性能基准测试',desc:'CPU性能测试、磁盘读写速度测试、内存带宽测试、网络延迟测试'},
+  {id:'sys-backup',ico:'\U0001f4be',name:'系统备份与还原',desc:'备份系统关键配置（网络、源、壁纸等），一键还原备份，导出/导入备份文件'},
+  {id:'driver-mgr',ico:'\U0001f5a5\ufe0f',name:'驱动管理',desc:'查看已安装驱动模块、检测缺失驱动，查看硬件信息'},
+  {id:'remote-desktop',ico:'\U0001f5a5\ufe0f',name:'远程桌面',desc:'集成VNC/RDP客户端，输入远程地址和端口，一键连接远程桌面'}
+]
+
+
+// ========== 打印机管理 ==========
+async function renderPrinterPage(el){
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 \u6b63\u5728\u83b7\u53d6\u6253\u5370\u673a\u4fe1\u606f...</div>'
+  try {
+    var r = await window.printerAPI.listPrinters()
+    if (!r || !r.success) {
+      el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c \u83b7\u53d6\u6253\u5370\u673a\u5217\u8868\u5931\u8d25: ' + (r && r.error ? esc(r.error) : '\u672a\u77e5\u9519\u8bef') + '</div>'
+      return
+    }
+    var printers = r.printers || []
+    var html = '<div style="max-width:900px;margin:0 auto">'
+    html += '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
+    html += '<button class="btn" onclick="printerRefresh()" style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">\ud83d\udd04 \u5237\u65b0</button>'
+    html += '<button class="btn" onclick="printerShowAdd()" style="padding:8px 18px;background:var(--success);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">\u2795 \u6dfb\u52a0\u6253\u5370\u673a</button>'
+    html += '</div>'
+    html += '<div style="background:var(--card-bg);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow)">'
+    html += '<div style="font-size:14px;font-weight:600;margin-bottom:8px">\ud83d\udda8\ufe0f \u6253\u5370\u673a\u5217\u8868</div>'
+    if (printers.length === 0) {
+      html += '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u672a\u5b89\u88c5\u6253\u5370\u673a</div>'
+    } else {
+      html += '<div style="overflow-x:auto"><table class="monitor-table" style="font-size:12px;width:100%"><thead><tr>'
+      html += '<th>\u6253\u5370\u673a\u540d\u79f0</th><th style="width:100px">\u72b6\u6001</th><th style="width:280px">\u64cd\u4f5c</th></tr></thead><tbody>'
+      for (var i = 0; i < printers.length; i++) {
+        var p = printers[i]
+        var statusColor = p.status === 'idle' ? 'var(--success)' : (p.status === 'disabled' ? 'var(--danger)' : 'var(--warning)')
+        var statusText = p.status === 'idle' ? '\u2705 \u5c31\u7eea' : (p.status === 'disabled' ? '\u26d4 \u5df2\u7981\u7528' : '\u26a0\ufe0f \u6d3b\u8dc3')
+        html += '<tr>'
+        html += '<td><strong>' + esc(p.name) + '</strong></td>'
+        html += '<td><span style="color:' + statusColor + ';font-weight:500">' + statusText + '</span></td>'
+        html += '<td>'
+        html += '<button class="btn btn-sm" onclick="printerPrintTest(\'' + esc(p.name) + '\')" style="color:var(--primary);margin-right:4px">\ud83d\udda8\ufe0f \u6253\u5370\u6d4b\u8bd5\u9875</button>'
+        html += '<button class="btn btn-sm" onclick="printerShowQueue(\'' + esc(p.name) + '\')" style="color:var(--warning);margin-right:4px">\ud83d\udccb \u6253\u5370\u961f\u5217</button>'
+        html += '<button class="btn btn-sm" onclick="printerRemove(\'' + esc(p.name) + '\')" style="color:var(--danger)">\ud83d\uddd1\ufe0f \u5220\u9664</button>'
+        html += '</td></tr>'
+      }
+      html += '</tbody></table></div>'
+    }
+    html += '</div>'
+    html += '<div style="background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow)">'
+    html += '<div style="font-size:14px;font-weight:600;margin-bottom:8px">\u26a1 \u5feb\u901f\u64cd\u4f5c</div>'
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    html += '<button class="btn btn-outline" onclick="printerCheckCups()" style="padding:6px 14px;font-size:12px">\ud83d\udd0d \u68c0\u67e5 CUPS \u670d\u52a1</button>'
+    html += '<button class="btn btn-outline" onclick="printerRestartCups()" style="padding:6px 14px;font-size:12px">\ud83d\udd04 \u91cd\u542f\u6253\u5370\u670d\u52a1</button>'
+    html += '</div></div>'
+    html += '</div>'
+    el.innerHTML = html
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c \u5f02\u5e38: ' + esc(e.message) + '</div>'
+  }
+}
+
+async function printerRefresh() {
+  var el = document.getElementById('pageContent')
+  if (el) renderPrinterPage(el)
+}
+
+async function printerShowAdd() {
+  document.getElementById('modalOverlay').classList.add('show')
+  document.getElementById('modalContent').innerHTML = '<button class="close-btn" onclick="closeModal()">\u2715</button>' +
+    '<h2>\u2795 \u6dfb\u52a0\u6253\u5370\u673a</h2><div class="sub">\u8bf7\u8f93\u5165\u6253\u5370\u673a\u4fe1\u606f</div>' +
+    '<div style="margin-top:12px">' +
+    '<div style="margin-bottom:10px"><label style="font-size:12px;color:#888;display:block;margin-bottom:4px">\u6253\u5370\u673a\u540d\u79f0</label>' +
+    '<input id="printerNameInput" placeholder="\u5982: HP_LaserJet" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;box-sizing:border-box"></div>' +
+    '<div style="margin-bottom:10px"><label style="font-size:12px;color:#888;display:block;margin-bottom:4px">\u8bbe\u5907 URI\uff08\u53ef\u9009\uff09</label>' +
+    '<input id="printerDeviceInput" placeholder="\u5982: usb://HP/LaserJet?serial=12345" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;box-sizing:border-box"></div>' +
+    '<div style="margin-bottom:10px"><label style="font-size:12px;color:#888;display:block;margin-bottom:4px">PPD \u6587\u4ef6\uff08\u53ef\u9009\uff09</label>' +
+    '<div style="display:flex;gap:8px"><input id="printerPpdInput" placeholder="\u9009\u62e9 PPD \u9a71\u52a8\u6587\u4ef6" readonly style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;background:#f9f9f9">' +
+    '<button class="btn" onclick="printerSelectPpd()" style="padding:8px 14px;font-size:12px">\u9009\u62e9\u6587\u4ef6</button></div></div>' +
+    '<button class="btn" onclick="printerDoAdd()" style="padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;width:100%">\u786e\u5b9a\u6dfb\u52a0</button></div>' +
+    '<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">\u53d6\u6d88</button></div>'
+}
+
+var _printerPpdPath = null
+async function printerSelectPpd() {
+  var fp = await window.fileAPI.selectFile({ filters: [{ name: 'PPD \u6587\u4ef6', extensions: ['ppd', 'ppd.gz'] }, { name: '\u6240\u6709\u6587\u4ef6', extensions: ['*'] }], multiSelections: false })
+  if (fp) {
+    _printerPpdPath = fp
+    var input = document.getElementById('printerPpdInput')
+    if (input) input.value = fp.split('/').pop()
+  }
+}
+
+async function printerDoAdd() {
+  var nameInput = document.getElementById('printerNameInput')
+  if (!nameInput) return
+  var name = nameInput.value.trim()
+  if (!name) { alert('\u8bf7\u8f93\u5165\u6253\u5370\u673a\u540d\u79f0'); return }
+  var deviceInput = document.getElementById('printerDeviceInput')
+  var device = deviceInput ? deviceInput.value.trim() : ''
+  var options = {}
+  if (device) options.device = device
+  if (_printerPpdPath) options.ppd = _printerPpdPath
+  try {
+    var r = await window.printerAPI.addPrinter(name, options)
+    if (r && r.success) {
+      _printerPpdPath = null; closeModal(); printerRefresh()
+    } else {
+      alert('\u6dfb\u52a0\u5931\u8d25: ' + (r && r.error ? r.error : '\u672a\u77e5\u9519\u8bef'))
+    }
+  } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
+}
+
+async function printerRemove(name) {
+  if (!confirm('\u786e\u5b9a\u8981\u5220\u9664\u6253\u5370\u673a "' + name + '" \u5417\uff1f')) return
+  try {
+    var r = await window.printerAPI.removePrinter(name)
+    if (r && r.success) { printerRefresh() }
+    else { alert('\u5220\u9664\u5931\u8d25: ' + (r && r.error ? r.error : '\u672a\u77e5\u9519\u8bef')) }
+  } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
+}
+
+async function printerPrintTest(name) {
+  try {
+    var r = await window.printerAPI.printTestPage(name)
+    if (r && r.success) { alert('\u2705 \u6d4b\u8bd5\u9875\u5df2\u53d1\u9001\u5230\u6253\u5370\u673a "' + name + '"') }
+    else { alert('\u53d1\u9001\u5931\u8d25: ' + (r && r.error ? r.error : '\u672a\u77e5\u9519\u8bef')) }
+  } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
+}
+
+async function printerShowQueue(name) {
+  document.getElementById('modalOverlay').classList.add('show')
+  document.getElementById('modalContent').innerHTML = '<button class="close-btn" onclick="closeModal()">\u2715</button>' +
+    '<h2>\ud83d\udccb \u6253\u5370\u961f\u5217 - ' + esc(name) + '</h2>' +
+    '<div style="margin-top:12px" id="printerQueueContent"><div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 \u6b63\u5728\u83b7\u53d6\u961f\u5217...</div></div>' +
+    '<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">\u5173\u95ed</button></div>'
+  try {
+    var r = await window.printerAPI.getPrintQueue(name)
+    var qEl = document.getElementById('printerQueueContent')
+    if (r && r.success) {
+      var jobs = r.jobs || []
+      if (jobs.length === 0) { qEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-sec)">\ud83d\udced \u6253\u5370\u961f\u5217\u4e3a\u7a7a</div>' }
+      else {
+        var html = '<div style="overflow-x:auto"><table class="monitor-table" style="font-size:12px;width:100%"><thead><tr><th>#</th><th>\u4efb\u52a1\u4fe1\u606f</th></tr></thead><tbody>'
+        for (var i = 0; i < jobs.length; i++) { html += '<tr><td>' + (i + 1) + '</td><td style="font-family:monospace;font-size:11px">' + esc(jobs[i].raw || String(jobs[i])) + '</td></tr>' }
+        html += '</tbody></table></div>'
+        html += '<div style="margin-top:8px"><button class="btn" onclick="printerCancelAllJobs(\'' + esc(name) + '\')" style="padding:6px 14px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">\ud83d\uddd1\ufe0f \u53d6\u6d88\u6240\u6709\u4efb\u52a1</button></div>'
+        qEl.innerHTML = html
+      }
+    } else { qEl.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c \u83b7\u53d6\u961f\u5217\u5931\u8d25: ' + (r && r.error ? esc(r.error) : '') + '</div>' }
+  } catch(e) {
+    var qEl2 = document.getElementById('printerQueueContent')
+    if (qEl2) qEl2.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c \u5f02\u5e38: ' + esc(e.message) + '</div>'
+  }
+}
+
+async function printerCancelAllJobs(name) {
+  if (!confirm('\u786e\u5b9a\u8981\u53d6\u6d88 "' + name + '" \u7684\u6240\u6709\u6253\u5370\u4efb\u52a1\u5417\uff1f')) return
+  try {
+    var r = await window.printerAPI.cancelAllJobs(name)
+    if (r && r.success) { alert('\u2705 \u5df2\u53d6\u6d88\u6240\u6709\u4efb\u52a1') }
+    else { alert('\u64cd\u4f5c\u5931\u8d25: ' + (r && r.error ? r.error : '\u672a\u77e5\u9519\u8bef')) }
+  } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
+}
+
+async function printerCheckCups() {
+  try {
+    var r = await window.printerAPI.checkCups()
+    document.getElementById('modalOverlay').classList.add('show')
+    var content = '<button class="close-btn" onclick="closeModal()">\u2715</button><h2>\ud83d\udd0d CUPS \u670d\u52a1\u72b6\u6001</h2>'
+    if (r && r.success) { content += '<div style="margin-top:12px;background:var(--card-bg);padding:16px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:400px;overflow-y:auto">' + esc(r.output || '\u6b63\u5e38\u8fd0\u884c') + '</div>' }
+    else { content += '<div style="margin-top:12px;color:var(--danger)">\u67e5\u8be2\u5931\u8d25: ' + (r && r.error ? esc(r.error) : '') + '</div>' }
+    content += '<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">\u5173\u95ed</button></div>'
+    document.getElementById('modalContent').innerHTML = content
+  } catch(e) {
+    document.getElementById('modalOverlay').classList.add('show')
+    document.getElementById('modalContent').innerHTML = '<button class="close-btn" onclick="closeModal()">\u2715</button><h2>\ud83d\udd0d CUPS \u670d\u52a1\u72b6\u6001</h2><div style="color:var(--danger);padding:20px">\u5f02\u5e38: ' + esc(e.message) + '</div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">\u5173\u95ed</button></div>'
+  }
+}
+
+async function printerRestartCups() {
+  if (!confirm('\u786e\u5b9a\u8981\u91cd\u542f\u6253\u5370\u670d\u52a1 (CUPS) \u5417\uff1f')) return
+  try {
+    var r = await window.printerAPI.restartCups()
+    if (r && r.success) { alert('\u2705 \u6253\u5370\u670d\u52a1\u5df2\u91cd\u542f') }
+    else { alert('\u91cd\u542f\u5931\u8d25: ' + (r && r.error ? r.error : '\u672a\u77e5\u9519\u8bef')) }
+  } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
+}
+
+async function renderPhase2Page(el){
+  el.innerHTML = '<p style="margin-bottom:16px;color:var(--text-sec);font-size:13px">\U0001f6e0\ufe0f 更多实用功能 · 点击工具卡片使用</p>' +
+    '<div class="card-grid">' +
+    PHASE2_ITEMS.map(function(item){ return '<div class="card" onclick="openPhase2Tool(\'' + item.id + '\')">' +
+      '<div class="ico" style="font-size:28px;margin-bottom:8px">' + item.ico + '</div>' +
+      '<h3>' + item.name + '</h3>' +
+      '<p>' + item.desc + '</p></div>' }).join('') +
+    '</div>'
+}
+
+async function openPhase2Tool(id){
+  document.getElementById('modalOverlay').classList.add('show')
+  var item = PHASE2_ITEMS.find(function(i){ return i.id === id })
+  document.getElementById('modalContent').innerHTML = '<button class="close-btn" onclick="closeModal()">\u2715</button>' +
+    '<h2>' + (item ? item.ico : '') + ' ' + (item ? item.name : '') + '</h2>' +
+    '<div class="sub">' + (item ? item.desc : '') + '</div>' +
+    '<div style="margin-top:12px" id="phase2ToolContent"><div style="text-align:center;padding:40px;color:var(--text-sec)">\u23f3 正在加载...</div></div>' +
+    '<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>'
+  setTimeout(function(){ loadPhase2Tool(id) }, 100)
+}
+
+function esc(str){
+  if(typeof str !== 'string') return ''
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\x27/g,'&#39;')
+}
+
+async function loadPhase2Tool(id){
+  var el = document.getElementById('phase2ToolContent')
+  if(!el) return
+
+  // === 1. 系统启动项管理 ===
+  if(id === 'startup-mgr'){
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 正在获取启动项列表...</div>'
+    try{
+      var r = await window.phase2API.startup('list')
+      if(r && r.success){
+        var html = '<div style="display:flex;gap:8px;margin-bottom:12px"><button class="btn" onclick="addStartupItem()" style="padding:8px 18px;font-size:12px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">\u2795 添加启动项</button><button class="btn btn-outline" onclick="closeModal();loadPhase2Tool(\'startup-mgr\')" style="padding:8px 18px;font-size:12px">\U0001f504 刷新</button></div>'
+        if(r.items && r.items.length > 0){
+          html += '<div style="background:var(--card-bg);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)"><table class="monitor-table" style="font-size:12px;width:100%"><thead><tr><th style="width:60px">状态</th><th>名称</th><th style="width:180px">文件</th><th style="width:80px">操作</th></tr></thead><tbody>'
+          for(var i = 0; i < r.items.length; i++){
+            var item2 = r.items[i]
+            var name = esc(item2.name)
+            var file = esc(item2.file.split('/').pop())
+            var enabled = item2.enabled ? '\u2705' : '\u274c'
+            html += '<tr><td style="text-align:center;font-size:14px">' + enabled + '</td><td>' + name + '</td><td style="font-size:11px;color:#888">' + file + '</td><td>'
+            if(item2.enabled){
+              html += '<button class="btn btn-sm" onclick="toggleStartup(\'' + esc(item2.file) + '\',\'disable\')" style="color:var(--danger)">禁用</button>'
+            } else {
+              html += '<button class="btn btn-sm" onclick="toggleStartup(\'' + esc(item2.file) + '\',\'enable\')" style="color:var(--success)">启用</button>'
+            }
+            html += '</td></tr>'
+          }
+          html += '</tbody></table></div>'
+        } else {
+          html += '<div style="text-align:center;padding:30px;color:var(--text-sec)">暂无自启动项</div>'
+        }
+        el.innerHTML = html
+      } else {
+        el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c 获取失败: ' + (r && r.error ? r.error : '未知错误') + '</div>'
+      }
+    } catch(e){
+      el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c 异常: ' + esc(e.message) + '</div>'
+    }
+    return
+  }
+
+  // === 2. 文件搜索 ===
+  if(id === 'file-search'){
+    el.innerHTML = '<div style="background:var(--card-bg);padding:16px;border-radius:8px;box-shadow:var(--shadow)">' +
+      '<div style="display:flex;gap:8px;margin-bottom:10px">' +
+        '<input id="fsKeyword" placeholder="搜索关键词" style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box" onkeydown="if(event.key===\'Enter\')doFileSearch()">' +
+        '<button class="btn" onclick="doFileSearch()" style="padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">\U0001f50d 搜索</button></div>' +
+      '<div style="margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap">' +
+        '<select id="fsType" style="padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:11px;outline:none"><option value="">所有类型</option><option value="f">文件</option><option value="d">目录</option></select>' +
+        '<input id="fsMinSize" placeholder="最小大小(KB)" style="width:100px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box">' +
+        '<input id="fsMaxSize" placeholder="最大大小(KB)" style="width:100px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box">' +
+        '<input id="fsDays" placeholder="N天内修改" style="width:90px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box"></div>' +
+      '<div id="fsResult" style="margin-top:8px;font-size:12px;max-height:350px;overflow-y:auto">输入关键词后点击搜索</div></div>'
+    return
+  }
+
+  // === 3. 系统健康检查 ===
+  if(id === 'health-check'){
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 正在检查系统健康状态...</div>'
+    try{
+      var r2 = await window.phase2API.health()
+      if(r2 && r2.success){
+        var html2 = '<div style="display:flex;gap:8px;margin-bottom:12px"><button class="btn btn-outline" onclick="closeModal();loadPhase2Tool(\'health-check\')" style="padding:8px 18px;font-size:12px">\U0001f504 重新检查</button></div>'
+        var report = r2.report || ''
+        html2 += '<div style="background:var(--card-bg);padding:16px;border-radius:8px;box-shadow:var(--shadow);font-size:12px;line-height:1.6;white-space:pre-wrap;font-family:monospace;max-height:400px;overflow-y:auto">' + esc(report) + '</div>'
+        el.innerHTML = html2
+      } else {
+        el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c 检查失败: ' + (r2 && r2.error ? r2.error : '') + '</div>'
+      }
+    } catch(e){
+      el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c 异常: ' + esc(e.message) + '</div>'
+    }
+    return
+  }
+
+  // === 4. USB启动盘制作 ===
+  if(id === 'usb-maker'){
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 正在检测USB设备...</div>'
+    try{
+      var r3 = await window.phase2API.usb('list')
+      var html3 = '<div style="background:var(--card-bg);padding:16px;border-radius:8px;box-shadow:var(--shadow)">'
+      html3 += '<div style="font-size:13px;font-weight:500;margin-bottom:12px">\U0001f4bf USB启动盘制作</div>'
+      if(r3 && r3.success && r3.devices && r3.devices.length > 0){
+        html3 += '<div style="margin-bottom:10px"><label style="font-size:12px;color:#888">选择USB设备: </label>'
+        html3 += '<select id="usbDevice" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none">'
+        for(var j = 0; j < r3.devices.length; j++){
+          var d = r3.devices[j]
+          html3 += '<option value="' + esc(d.device) + '">' + esc(d.device + ' - ' + d.model + ' (' + (d.size||'') + ')') + '</option>'
+        }
+        html3 += '</select></div>'
+      } else {
+        html3 += '<div style="color:var(--danger);margin-bottom:10px;font-size:12px">\u26a0\ufe0f 未检测到USB设备或需要管理员权限</div>'
+        html3 += '<select id="usbDevice" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none"><option value="/dev/sdb">/dev/sdb (手动指定)</option></select>'
+      }
+      html3 += '<div style="margin-bottom:10px"><label style="font-size:12px;color:#888">选择ISO镜像: </label><br>' +
+        '<div style="display:flex;gap:8px"><input id="usbIso" placeholder="点击选择ISO文件..." style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box" readonly>' +
+        '<button class="btn" onclick="selectUsbIso()" style="padding:8px 16px;background:#fff;color:#333;border:1px solid #ddd;border-radius:6px;cursor:pointer">\U0001f4c2 选择</button></div></div>'
+      html3 += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">' +
+        '<input id="usbConfirm" type="checkbox"> <label for="usbConfirm" style="font-size:12px;color:var(--danger)">我确认将覆盖所选设备的所有数据</label></div>'
+      html3 += '<button class="btn" onclick="doUsbCreate()" style="padding:8px 18px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer">\u26a0\ufe0f 开始制作启动盘</button>'
+      html3 += '<div id="usbResult" style="margin-top:10px;font-size:12px"></div></div>'
+      el.innerHTML = html3
+    } catch(e){
+      el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c 异常: ' + esc(e.message) + '</div>'
+    }
+    return
+  }
+
+  // === 5. 性能基准测试 ===
+  if(id === 'benchmark'){
+    el.innerHTML = '<div style="background:var(--card-bg);padding:16px;border-radius:8px;box-shadow:var(--shadow)">' +
+      '<div style="font-size:13px;font-weight:500;margin-bottom:12px">\U0001f4ca 性能基准测试</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
+        '<button class="btn" onclick="runBenchmark(\'cpu\')" style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">\U0001f5a5 CPU测试</button>' +
+        '<button class="btn" onclick="runBenchmark(\'disk\')" style="padding:8px 18px;background:#fff;color:#333;border:1px solid #ddd;border-radius:6px;cursor:pointer">\U0001f4be 磁盘测试</button>' +
+        '<button class="btn" onclick="runBenchmark(\'memory\')" style="padding:8px 18px;background:#fff;color:#333;border:1px solid #ddd;border-radius:6px;cursor:pointer">\U0001f9e0 内存测试</button>' +
+        '<button class="btn" onclick="runBenchmark(\'network\')" style="padding:8px 18px;background:#fff;color:#333;border:1px solid #ddd;border-radius:6px;cursor:pointer">\U0001f310 网络测试</button></div>' +
+      '<div id="benchResult" style="font-size:12px;line-height:1.6;white-space:pre-wrap;font-family:monospace;background:#f5f5f5;padding:12px;border-radius:6px;min-height:40px;max-height:350px;overflow-y:auto;color:var(--text-sec)">点击按钮开始测试</div></div>'
+    return
+  }
+
+  // === 6. 系统备份与还原 ===
+  if(id === 'sys-backup'){
+    el.innerHTML = '<div style="background:var(--card-bg);padding:16px;border-radius:8px;box-shadow:var(--shadow)">' +
+      '<div style="font-size:13px;font-weight:500;margin-bottom:12px">\U0001f4be 系统备份与还原</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
+        '<button class="btn" onclick="doBackup(\'backup\')" style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">\U0001f4be 一键备份</button>' +
+        '<button class="btn" onclick="doBackup(\'restore\')" style="padding:8px 18px;background:var(--warning);color:#fff;border:none;border-radius:6px;cursor:pointer">\u21a9\ufe0f 一键还原</button>' +
+        '<button class="btn" onclick="doBackup(\'export\')" style="padding:8px 18px;background:#fff;color:#333;border:1px solid #ddd;border-radius:6px;cursor:pointer">\U0001f4e4 导出备份</button>' +
+        '<button class="btn" onclick="doBackup(\'import\')" style="padding:8px 18px;background:#fff;color:#333;border:1px solid #ddd;border-radius:6px;cursor:pointer">\U0001f4e5 导入备份</button></div>' +
+      '<div id="backupResult" style="font-size:12px;line-height:1.6;white-space:pre-wrap;font-family:monospace;background:#f5f5f5;padding:12px;border-radius:6px;min-height:40px;max-height:300px;overflow-y:auto;color:var(--text-sec)">选择操作开始...</div></div>'
+    return
+  }
+
+  // === 7. 驱动管理 ===
+  if(id === 'driver-mgr'){
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 正在获取驱动信息...</div>'
+    try{
+      var r4 = await window.phase2API.driver('list')
+      if(r4 && r4.success){
+        el.innerHTML = '<div style="background:var(--card-bg);padding:16px;border-radius:8px;box-shadow:var(--shadow);font-size:12px;line-height:1.6;white-space:pre-wrap;font-family:monospace;max-height:400px;overflow-y:auto">' + esc(r4.output) + '</div>'
+      } else {
+        el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c 获取失败: ' + (r4 && r4.error ? r4.error : '') + '</div>'
+      }
+    } catch(e){
+      el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c 异常: ' + esc(e.message) + '</div>'
+    }
+    return
+  }
+
+  // === 8. 远程桌面 ===
+  if(id === 'remote-desktop'){
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 正在检查远程桌面工具...</div>'
+    try{
+      var r5 = await window.phase2API.remote('check')
+      var html5 = '<div style="background:var(--card-bg);padding:16px;border-radius:8px;box-shadow:var(--shadow)">'
+      html5 += '<div style="font-size:13px;font-weight:500;margin-bottom:12px">\U0001f5a5\ufe0f 远程桌面连接</div>'
+      if(r5 && r5.success){
+        html5 += '<div style="font-size:12px;line-height:1.6;white-space:pre-wrap;font-family:monospace;margin-bottom:12px;background:#f5f5f5;padding:10px;border-radius:6px">' + esc(r5.output) + '</div>'
+      }
+      html5 += '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">地址: </label><br>'
+      html5 += '<input id="rdHost" placeholder="192.168.1.100" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>'
+      html5 += '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">端口: </label><br>'
+      html5 += '<input id="rdPort" placeholder="5900" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>'
+      html5 += '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      html5 += '<button class="btn" onclick="doRemoteConnect(\'vnc\')" style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">\U0001f50c VNC连接</button>'
+      html5 += '<button class="btn" onclick="doRemoteConnect(\'rdp\')" style="padding:8px 18px;background:#fff;color:#333;border:1px solid #ddd;border-radius:6px;cursor:pointer">\U0001f50c RDP连接</button></div>'
+      html5 += '<div id="remoteResult" style="margin-top:10px;font-size:12px"></div></div>'
+      el.innerHTML = html5
+    } catch(e){
+      el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c ' + esc(e.message) + '</div>'
+    }
+    return
+  }
+}
+
+// === Phase 2 工具辅助函数 ===
+
+async function toggleStartup(file, action){
+  var el = document.getElementById('phase2ToolContent')
+  if(!el) return
+  try{
+    var r = await window.phase2API.startup(action, { file: file })
+    if(r && r.success){
+      loadPhase2Tool('startup-mgr')
+    } else {
+      el.innerHTML = '<div style="color:var(--danger);padding:10px;text-align:center">\u274c 操作失败: ' + (r && r.error ? r.error : '') + '</div>'
+    }
+  } catch(e){
+    el.innerHTML = '<div style="color:var(--danger);padding:10px;text-align:center">\u274c 异常: ' + esc(e.message) + '</div>'
+  }
+}
+
+async function addStartupItem(){
+  var el = document.getElementById('phase2ToolContent')
+  if(!el) return
+  el.innerHTML = '<div style="background:var(--card-bg);padding:16px;border-radius:8px;box-shadow:var(--shadow)">' +
+    '<div style="font-size:13px;font-weight:500;margin-bottom:12px">\u2795 添加自启动项</div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">名称: </label><br>' +
+    '<input id="addStartupName" placeholder="程序名称" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>' +
+    '<div style="margin-bottom:8px"><label style="font-size:12px;color:#888">命令路径: </label><br>' +
+    '<input id="addStartupExec" placeholder="/usr/bin/xxx" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box"></div>' +
+    '<button class="btn" onclick="doAddStartup()" style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">\u2705 确认添加</button> ' +
+    '<button class="btn btn-outline" onclick="loadPhase2Tool(\'startup-mgr\')" style="padding:8px 18px">\u21a9 返回</button></div>'
+}
+
+async function doAddStartup(){
+  var name = document.getElementById('addStartupName') ? document.getElementById('addStartupName').value.trim() : ''
+  var execPath = document.getElementById('addStartupExec') ? document.getElementById('addStartupExec').value.trim() : ''
+  if(!name || !execPath) return alert('请填写完整信息')
+  var r = await window.phase2API.startup('add', { name: name, exec: execPath, desc: name })
+  if(r && r.success){
+    loadPhase2Tool('startup-mgr')
+  } else {
+    alert('添加失败: ' + (r && r.error ? r.error : '未知错误'))
+  }
+}
+
+async function doFileSearch(){
+  var el = document.getElementById('fsResult')
+  var keyword = document.getElementById('fsKeyword') ? document.getElementById('fsKeyword').value.trim() : ''
+  if(!el || !keyword) return
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 正在搜索...</div>'
+  var type = document.getElementById('fsType') ? document.getElementById('fsType').value : ''
+  var minSize = document.getElementById('fsMinSize') ? document.getElementById('fsMinSize').value : ''
+  var maxSize = document.getElementById('fsMaxSize') ? document.getElementById('fsMaxSize').value : ''
+  var days = document.getElementById('fsDays') ? document.getElementById('fsDays').value : ''
+  try{
+    var r = await window.phase2API.search({ keyword: keyword, type: type, minSize: minSize, maxSize: maxSize, days: days })
+    if(r && r.success && r.files && r.files.length > 0){
+      var html = '<div style="color:var(--text-sec);margin-bottom:8px">找到 <b>' + r.files.length + '</b> 个文件</div>'
+      var limit = Math.min(r.files.length, 100)
+      for(var k = 0; k < limit; k++){
+        var f = r.files[k]
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid #f0f0f0">'
+        html += '<div style="flex:1;min-width:0"><div style="font-size:12px">' + esc(f.name) + '</div><div style="font-size:10px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(f.path) + '</div></div>'
+        html += '<div style="flex-shrink:0;display:flex;gap:6px;align-items:center"><span style="font-size:10px;color:#999">' + esc(f.size || '') + '</span>'
+        html += '<button class="btn btn-sm" onclick="window.shell.openPath(\'' + esc(f.path).replace(/\x27/g,'\\\'') + '\')" style="padding:2px 8px;font-size:10px">\U0001f4c2 打开</button></div></div>'
+      }
+      if(r.files.length > 100){
+        html += '<div style="text-align:center;padding:8px;color:var(--text-sec);font-size:11px">... 仅显示前 100 个结果</div>'
+      }
+      el.innerHTML = html
+    } else {
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">未找到匹配的文件</div>'
+    }
+  } catch(e){
+    el.innerHTML = '<div style="color:var(--danger);padding:10px;text-align:center">\u274c 搜索异常: ' + esc(e.message) + '</div>'
+  }
+}
+
+async function selectUsbIso(){
+  try{
+    var r = await window.fileAPI.selectFile([{name:'ISO镜像',extensions:['iso']}])
+    if(r && !r.canceled && r.filePaths && r.filePaths[0]){
+      var inp = document.getElementById('usbIso')
+      if(inp) inp.value = r.filePaths[0]
+    }
+  } catch(e){
+    alert('选择文件失败: ' + e.message)
+  }
+}
+
+async function doUsbCreate(){
+  var device = document.getElementById('usbDevice') ? document.getElementById('usbDevice').value : ''
+  var iso = document.getElementById('usbIso') ? document.getElementById('usbIso').value : ''
+  var confirmed = document.getElementById('usbConfirm') ? document.getElementById('usbConfirm').checked : false
+  var resultEl = document.getElementById('usbResult')
+  if(!device || !iso){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">请选择USB设备和ISO镜像文件</span>'
+    return
+  }
+  if(!confirmed){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">请确认已了解数据覆盖风险</span>'
+    return
+  }
+  if(resultEl) resultEl.innerHTML = '<span style="color:var(--warning)">\u23f3 正在制作启动盘，这可能需要几分钟...</span>'
+  try{
+    var r = await window.phase2API.usb('create', { device: device, iso: iso })
+    if(r && r.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">\u2705 启动盘制作成功!</span>'
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">\u274c 制作失败: ' + (r && r.error ? r.error : '') + '</span>'
+    }
+  } catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">\u274c 异常: ' + esc(e.message) + '</span>'
+  }
+}
+
+async function runBenchmark(type){
+  var el = document.getElementById('benchResult')
+  if(!el) return
+  el.innerHTML = '<span style="color:var(--warning)">\u23f3 正在执行 ' + type + ' 测试...</span>'
+  try{
+    var r = await window.phase2API.benchmark(type)
+    if(r && r.success){
+      el.innerHTML = '<span style="color:var(--success)">\u2705 测试完成</span><br><pre style="margin-top:8px">' + esc(r.output||'') + '</pre>'
+    } else {
+      el.innerHTML = '<span style="color:var(--danger)">\u274c 测试失败: ' + (r && r.error ? r.error : '') + '</span>'
+    }
+  } catch(e){
+    el.innerHTML = '<span style="color:var(--danger)">\u274c 异常: ' + esc(e.message) + '</span>'
+  }
+}
+
+async function doBackup(action){
+  var el = document.getElementById('backupResult')
+  if(!el) return
+  var actionNames = {backup:'备份', restore:'还原', export:'导出', import:'导入'}
+  el.innerHTML = '<span style="color:var(--warning)">\u23f3 正在执行' + (actionNames[action]||action) + '...</span>'
+  try{
+    var params = {}
+    if(action === 'export'){
+      var savePath = await window.fileAPI.selectDirectory()
+      if(!savePath || savePath.canceled) return
+      params.path = savePath.filePaths[0]
+    }
+    if(action === 'import'){
+      var file = await window.fileAPI.selectFile([{name:'备份文件',extensions:['tar.gz','tgz']}])
+      if(!file || file.canceled || !file.filePaths[0]) return
+      params.file = file.filePaths[0]
+    }
+    var r = await window.phase2API.backup(action, params)
+    if(r && r.success){
+      el.innerHTML = '<span style="color:var(--success)">\u2705 ' + (actionNames[action]||action) + '成功!</span><br><pre style="margin-top:8px">' + esc(r.output||'') + '</pre>'
+    } else {
+      el.innerHTML = '<span style="color:var(--danger)">\u274c ' + (actionNames[action]||action) + '失败: ' + (r && r.error ? r.error : '') + '</span>'
+    }
+  } catch(e){
+    el.innerHTML = '<span style="color:var(--danger)">\u274c 异常: ' + esc(e.message) + '</span>'
+  }
+}
+
+async function doRemoteConnect(type){
+  var host = document.getElementById('rdHost') ? document.getElementById('rdHost').value.trim() : ''
+  var port = document.getElementById('rdPort') ? document.getElementById('rdPort').value.trim() : ''
+  var resultEl = document.getElementById('remoteResult')
+  if(!host){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">请输入远程地址</span>'
+    return
+  }
+  if(resultEl) resultEl.innerHTML = '<span style="color:var(--warning)">\u23f3 正在连接 ' + host + ':' + (port || '默认端口') + '...</span>'
+  try{
+    var r = await window.phase2API.remote('connect', { type: type||'vnc', host: host, port: port||'' })
+    if(r && r.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">\u2705 连接命令已执行</span><br><pre style="margin-top:8px">' + esc(r.output||'') + '</pre>'
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">\u274c 连接失败: ' + (r && r.error ? r.error : '') + '</span>'
+    }
+  } catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">\u274c 异常: ' + esc(e.message) + '</span>'
+  }
+
+async function renderShortcutMgr(el){
+  el.innerHTML = '<div style="max-width:1000px;margin:0 auto">' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">' +
+      '<button class="btn btn-primary" onclick="loadShortcuts()">📋 加载快捷键列表</button>' +
+      '<button class="btn btn-success" onclick="showAddShortcutDialog()">➕ 添加快捷键</button>' +
+      '<button class="btn btn-warning" onclick="exportShortcuts()">📤 导出配置</button>' +
+      '<button class="btn btn-outline" onclick="importShortcuts()">📥 导入配置</button>' +
+      '<button class="btn btn-danger" onclick="resetShortcutsConfirm()">🔄 重置为默认</button>' +
+    '</div>' +
+    '<div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">' +
+      '<input type="text" id="shortcutSearch" placeholder="搜索快捷键名称或按键..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px" oninput="filterShortcuts(this.value)">' +
+      '<span id="shortcutCount" style="font-size:12px;color:var(--text-sec);white-space:nowrap"></span>' +
+    '</div>' +
+    '<div id="shortcutTableWrap" style="background:var(--card-bg);border-radius:10px;box-shadow:var(--shadow);overflow:hidden">' +
+      '<table class="monitor-table" id="shortcutTable"><thead><tr><th style="width:40%">功能名称</th><th style="width:35%">快捷键</th><th style="width:25%">操作</th></tr></thead><tbody id="shortcutBody"><tr><td colspan="3" style="text-align:center;padding:40px;color:var(--text-sec)">点击"加载快捷键列表"查看系统快捷键</td></tr></tbody></table>' +
+    '</div>' +
+    '<div id="shortcutResult" style="margin-top:12px;padding:10px 14px;border-radius:6px;font-size:12px;line-height:1.6;display:none"></div>' +
+    '</div>'
+  window._allShortcuts = []
+}
+
+function escHtml(s){
+  if(!s) return ''
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+async function loadShortcuts(){
+  const tbody = document.getElementById('shortcutBody')
+  const resultEl = document.getElementById('shortcutResult')
+  if(!tbody) return
+  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在加载...</td></tr>'
+  try{
+    const res = await window.hotkeyAPI.listShortcuts()
+    if(!res || !res.success){
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--danger)">❌ ' + escHtml(res?.error || '获取快捷键列表失败') + '</td></tr>'
+      return
+    }
+    const shortcuts = res.shortcuts || []
+    window._allShortcuts = shortcuts
+    renderShortcutTable(shortcuts)
+    if(resultEl){
+      resultEl.style.display = 'block'
+      resultEl.innerHTML = '<span style="color:var(--success)">✅ 共找到 ' + shortcuts.length + ' 个快捷键</span>'
+    }
+    const countEl = document.getElementById('shortcutCount')
+    if(countEl) countEl.textContent = '共 ' + shortcuts.length + ' 项'
+  }catch(e){
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--danger)">❌ 加载失败: ' + escHtml(e.message) + '</td></tr>'
+  }
+}
+
+function renderShortcutTable(shortcuts){
+  const tbody = document.getElementById('shortcutBody')
+  const searchVal = (document.getElementById('shortcutSearch')?.value || '').toLowerCase()
+  if(!tbody) return
+  if(!shortcuts || shortcuts.length === 0){
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-sec)">未找到快捷键（或系统不支持 gsettings）</td></tr>'
+    return
+  }
+  const filtered = searchVal ? shortcuts.filter(s => (s.key || '').toLowerCase().includes(searchVal) || (s.value || '').toLowerCase().includes(searchVal)) : shortcuts
+  if(filtered.length === 0){
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-sec)">未匹配到快捷键</td></tr>'
+    return
+  }
+  tbody.innerHTML = filtered.map((s, idx) => {
+    // 美化按键名称
+    const keyName = s.key || '-'
+    const keyVal = s.value || ''
+    let displayVal = keyVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    if(displayVal === "['']" || displayVal === "disabled" || displayVal === "@as []") displayVal = '<span style="color:var(--text-ter)">未设置</span>'
+    return '<tr style="cursor:pointer" onclick="editShortcut(\'' + escHtml(keyName) + '\',\'' + escHtml(keyVal).replace(/'/g,"\\'") + '\')">' +
+      '<td style="font-weight:500">' + escHtml(keyName.replace(/_/g,' ').replace(/-/g,' ').replace(/^./,c=>c.toUpperCase())) + '</td>' +
+      '<td><code style="background:var(--primary-light);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--primary)">' + displayVal + '</code></td>' +
+      '<td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editShortcut(\'' + escHtml(keyName).replace(/'/g,"\\'") + '\',\'' + escHtml(keyVal).replace(/'/g,"\\'") + '\')">✏️ 编辑</button></td>' +
+    '</tr>'
+  }).join('')
+  const countEl = document.getElementById('shortcutCount')
+  if(countEl) countEl.textContent = '共 ' + shortcuts.length + ' 项' + (searchVal ? ' (匹配 ' + filtered.length + ' 项)' : '')
+}
+
+function filterShortcuts(val){
+  renderShortcutTable(window._allShortcuts || [])
+}
+
+function showAddShortcutDialog(){
+  const overlay = document.getElementById('modalOverlay')
+  overlay.classList.add('show')
+  document.getElementById('modalContent').innerHTML =
+    '<button class="close-btn" onclick="closeModal()">✕</button>' +
+    '<h2>➕ 自定义快捷键</h2>' +
+    '<div class="sub">设置自定义快捷键组合和执行命令</div>' +
+    '<div style="margin:12px 0">' +
+      '<label style="display:block;font-size:12px;color:var(--text-sec);margin-bottom:4px">快捷键组合（如 &lt;Primary&gt;&lt;Alt&gt;t 或 &lt;Super&gt;e）</label>' +
+      '<input type="text" id="editShortcutKey" placeholder="例如: <Primary><Alt>t" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">' +
+    '</div>' +
+    '<div style="margin:12px 0">' +
+      '<label style="display:block;font-size:12px;color:var(--text-sec);margin-bottom:4px">执行的命令</label>' +
+      '<input type="text" id="editShortcutCmd" placeholder="例如: x-terminal-emulator" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">' +
+    '</div>' +
+    '<div id="addShortcutResult" style="margin-top:8px;font-size:12px;display:none"></div>' +
+    '<div class="modal-footer" style="margin-top:16px">' +
+      '<button class="btn btn-primary" onclick="doAddShortcut()">✅ 添加</button>' +
+      '<button class="btn btn-outline" onclick="closeModal()" style="margin-left:8px">取消</button>' +
+    '</div>'
+}
+
+async function doAddShortcut(){
+  const key = document.getElementById('editShortcutKey')?.value.trim()
+  const cmd = document.getElementById('editShortcutCmd')?.value.trim()
+  const resultEl = document.getElementById('addShortcutResult')
+  if(!key || !cmd){
+    if(resultEl){
+      resultEl.style.display = 'block'
+      resultEl.innerHTML = '<span style="color:var(--danger)">❌ 请填写快捷键和命令</span>'
+    }
+    return
+  }
+  if(resultEl){
+    resultEl.style.display = 'block'
+    resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 正在设置...</span>'
+  }
+  try{
+    const res = await window.hotkeyAPI.setShortcut(key, cmd)
+    if(res && res.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 快捷键已设置</span>'
+      setTimeout(() => { closeModal(); loadShortcuts() }, 800)
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(res?.error || '设置失败') + '</span>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
+  }
+}
+
+function editShortcut(key, val){
+  const displayKey = key.replace(/_/g,' ').replace(/-/g,' ').replace(/^./,c=>c.toUpperCase())
+  const overlay = document.getElementById('modalOverlay')
+  overlay.classList.add('show')
+  document.getElementById('modalContent').innerHTML =
+    '<button class="close-btn" onclick="closeModal()">✕</button>' +
+    '<h2>✏️ 编辑快捷键</h2>' +
+    '<div class="sub">' + escHtml(displayKey) + '</div>' +
+    '<div style="margin:12px 0">' +
+      '<label style="display:block;font-size:12px;color:var(--text-sec);margin-bottom:4px">快捷键组合</label>' +
+      '<input type="text" id="editExistingKey" value="' + escHtml(val).replace(/"/g,'&quot;') + '" placeholder="例如: <Primary><Alt>t" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">' +
+    '</div>' +
+    '<div id="editShortcutResult" style="margin-top:8px;font-size:12px;display:none"></div>' +
+    '<div class="modal-footer" style="margin-top:16px">' +
+      '<button class="btn btn-primary" onclick="doEditShortcut(\'' + escHtml(key).replace(/'/g,"\\'") + '\')">✅ 保存</button>' +
+      '<button class="btn btn-outline" onclick="closeModal()" style="margin-left:8px">取消</button>' +
+    '</div>'
+}
+
+async function doEditShortcut(key){
+  const newVal = document.getElementById('editExistingKey')?.value.trim()
+  const resultEl = document.getElementById('editShortcutResult')
+  if(!newVal){
+    if(resultEl){
+      resultEl.style.display = 'block'
+      resultEl.innerHTML = '<span style="color:var(--danger)">❌ 请输入快捷键</span>'
+    }
+    return
+  }
+  if(resultEl){
+    resultEl.style.display = 'block'
+    resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 正在设置...</span>'
+  }
+  try{
+    const res = await window.hotkeyAPI.setShortcut(key, newVal)
+    if(res && res.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 快捷键已更新</span>'
+      setTimeout(() => { closeModal(); loadShortcuts() }, 800)
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(res?.error || '设置失败') + '</span>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
+  }
+}
+
+async function exportShortcuts(){
+  const resultEl = document.getElementById('shortcutResult')
+  if(resultEl){
+    resultEl.style.display = 'block'
+    resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 正在导出...</span>'
+  }
+  try{
+    const res = await window.hotkeyAPI.exportShortcuts()
+    if(res && res.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 快捷键配置已导出到: <code>' + escHtml(res.file || '') + '</code></span>'
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(res?.error || '导出失败') + '</span>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
+  }
+}
+
+async function importShortcuts(){
+  const resultEl = document.getElementById('shortcutResult')
+  if(resultEl){
+    resultEl.style.display = 'block'
+    resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 请选择配置文件...</span>'
+  }
+  try{
+    const filePath = await window.fileAPI.selectFile({ filters: [{ name: '快捷键配置', extensions: ['dconf','txt','conf'] }] })
+    if(!filePath) {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--text-sec)">已取消导入</span>'
+      return
+    }
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 正在导入 ' + escHtml(filePath) + ' ...</span>'
+    const res = await window.hotkeyAPI.importShortcuts(filePath)
+    if(res && res.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 快捷键配置已导入</span>'
+      setTimeout(() => loadShortcuts(), 500)
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(res?.error || '导入失败') + '</span>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
+  }
+}
+
+function resetShortcutsConfirm(){
+  const overlay = document.getElementById('modalOverlay')
+  overlay.classList.add('show')
+  document.getElementById('modalContent').innerHTML =
+    '<button class="close-btn" onclick="closeModal()">✕</button>' +
+    '<h2>🔄 重置为默认</h2>' +
+    '<div class="warning-msg" style="background:#fff0f0;border-color:#ffcdd2;color:#c62828">⚠️ 此操作将重置所有快捷键为系统默认值，不可撤销！</div>' +
+    '<div class="modal-footer">' +
+      '<button class="btn btn-danger" onclick="doResetShortcuts()">⚠️ 确认重置</button>' +
+      '<button class="btn btn-outline" onclick="closeModal()" style="margin-left:8px">取消</button>' +
+    '</div>'
+}
+
+async function doResetShortcuts(){
+  const overlay = document.getElementById('modalOverlay')
+  const resultEl = document.getElementById('shortcutResult')
+  if(resultEl){
+    resultEl.style.display = 'block'
+    resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 正在重置为默认...</span>'
+  }
+  overlay.classList.remove('show')
+  try{
+    const res = await window.hotkeyAPI.resetDefault()
+    if(res && res.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 已重置为默认快捷键配置</span>'
+      setTimeout(() => loadShortcuts(), 500)
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(res?.error || '重置失败') + '</span>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
+  }
+}
+
+}
+// ============ VPN 管理 ============
+async function renderVpnPage(el) {
+  el.innerHTML = '<div style="max-width:800px;margin:0 auto;padding:24px 16px">' +
+    '<div style="text-align:center;margin-bottom:24px">' +
+    '<div style="font-size:48px;margin-bottom:8px">🔒</div>' +
+    '<h3 style="font-size:18px;font-weight:600;margin:0 0 4px">VPN 管理</h3>' +
+    '<p style="color:var(--text-sec);font-size:13px;margin:0">L2TP / IPsec / OpenVPN · 配置导入导出 · 连接状态监控 · 自动重连</p>' +
+    '</div>' +
+    '<div id="vpnContent"><p style="text-align:center;color:var(--text-ter)">⏳ 正在获取 VPN 连接列表...</p></div>' +
+    '<div id="vpnDetail" style="display:none"></div>' +
+    '</div>'
+  refreshVpnList()
+}
+
+// ============ Stage 4: Docker 容器管理 ============
+async function renderDockerPage(el) {
+  el.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:24px 16px">' +
+    '<div style="text-align:center;margin-bottom:24px">' +
+    '<div style="font-size:48px;margin-bottom:8px">\U0001f433</div>' +
+    '<h3 style="font-size:18px;font-weight:600;margin:0 0 4px">Docker 容器管理</h3>' +
+    '<p style="color:var(--text-sec);font-size:13px;margin:0">容器/镜像管理 · 启动/停止/删除 · 日志查看 · 镜像拉取/删除</p>' +
+    '</div>' +
+    '<div id="dockerContent"><p style="text-align:center;color:var(--text-ter)">\u23f3 正在获取 Docker 状态...</p></div>' +
+    '</div>'
+  refreshDocker()
+}
+
+async function refreshDocker() {
+  const el = document.getElementById('dockerContent')
+  if (!el) return
+  el.innerHTML = '<p style="text-align:center;color:var(--text-ter)">\u23f3 正在获取 Docker 状态...</p>'
+  try {
+    if (!window.dockerAPI) {
+      el.innerHTML = '<p style="text-align:center;color:var(--danger)">\u274c Docker API \u4e0d\u53ef\u7528</p>'
+      return
+    }
+    const status = await window.dockerAPI.getStatus()
+    if (!status || !status.success) {
+      el.innerHTML = '<div class="card" style="padding:24px;text-align:center"><div style="font-size:40px;margin-bottom:8px">\U0001f433</div><div style="font-weight:500;font-size:15px;color:var(--text-sec)">Docker \u672a\u5b89\u88c5\u6216\u672a\u8fd0\u884c</div><p style="font-size:12px;color:var(--text-ter);margin:8px 0">\u8bf7\u5148\u5b89\u88c5 Docker \u5e76\u542f\u52a8 Docker \u670d\u52a1</p></div>'
+      return
+    }
+    
+    const containersRes = await window.dockerAPI.listContainers()
+    const imagesRes = await window.dockerAPI.listImages()
+    
+    const containers = (containersRes && containersRes.success) ? (containersRes.containers || []) : []
+    const images = (imagesRes && imagesRes.success) ? (imagesRes.images || []) : []
+    const running = containers.filter(function(c) { return c.status && c.status.toLowerCase().includes('up') }).length
+    
+    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">' +
+      '<div class="card" style="padding:16px;text-align:center"><div style="font-size:24px;font-weight:600;color:var(--primary)">' + containers.length + '</div><div style="font-size:12px;color:var(--text-sec)">\u603b\u5bb9\u5668</div></div>' +
+      '<div class="card" style="padding:16px;text-align:center"><div style="font-size:24px;font-weight:600;color:var(--success)">' + running + '</div><div style="font-size:12px;color:var(--text-sec)">\u8fd0\u884c\u4e2d</div></div>' +
+      '<div class="card" style="padding:16px;text-align:center"><div style="font-size:24px;font-weight:600;color:var(--primary)">' + images.length + '</div><div style="font-size:12px;color:var(--text-sec)">\u955c\u50cf\u6570</div></div>' +
+      '<div class="card" style="padding:16px;text-align:center"><div style="font-size:24px;font-weight:600;color:var(--text)">' + (status.version || '-') + '</div><div style="font-size:12px;color:var(--text-sec)">Docker \u7248\u672c</div></div>' +
+      '</div>'
+    
+    html += '<div class="card" style="padding:16px;margin-bottom:12px">'
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    html += '<div style="font-weight:500;font-size:14px">\U0001f4e6 \u5bb9\u5668\u5217\u8868</div>'
+    html += '<button class="btn btn-sm btn-outline" onclick="refreshDocker()" style="padding:3px 10px">\U0001f504 \u5237\u65b0</button>'
+    html += '</div>'
+    if (containers.length === 0) {
+      html += '<div style="text-align:center;padding:20px;color:var(--text-ter);font-size:13px">\u6682\u65e0\u5bb9\u5668</div>'
+    } else {
+      html += '<div style="display:grid;gap:6px">'
+      for (var i = 0; i < containers.length; i++) {
+        var c = containers[i]
+        var isRunning = c.status && c.status.toLowerCase().includes('up')
+        html += '<div class="card" style="padding:10px 12px;border-left:3px solid ' + (isRunning ? 'var(--success)' : 'var(--border)') + '">'
+        html += '<div style="display:flex;justify-content:space-between;align-items:center">'
+        html += '<div style="flex:1;min-width:0">'
+        html += '<div style="font-weight:500;font-size:13px">' + escHtml(c.name || c.id || '') + '</div>'
+        html += '<div style="font-size:11px;color:var(--text-ter);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">\u955c\u50cf: ' + escHtml(c.image || '') + ' | ID: ' + escHtml((c.id||'').substring(0,12)) + '</div>'
+        html += '</div>'
+        html += '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0">'
+        html += '<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:' + (isRunning ? '#e8f5e9;color:#2e7d32' : '#f5f5f5;color:#999') + '">' + escHtml(c.status || '') + '</span>'
+        if (isRunning) {
+          html += '<button class="btn btn-sm" style="background:var(--warning);color:#fff;border:none;padding:1px 8px;border-radius:3px;font-size:11px;cursor:pointer" onclick="dockerStop(\'' + c.id + '\')">\u23f9</button>'
+        } else {
+          html += '<button class="btn btn-sm" style="background:var(--success);color:#fff;border:none;padding:1px 8px;border-radius:3px;font-size:11px;cursor:pointer" onclick="dockerStart(\'' + c.id + '\')">\u25b6</button>'
+        }
+        html += '<button class="btn btn-sm" style="background:var(--primary);color:#fff;border:none;padding:1px 8px;border-radius:3px;font-size:11px;cursor:pointer" onclick="dockerLogs(\'' + c.id + '\')">\U0001f4cb</button>'
+        html += '<button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none;padding:1px 8px;border-radius:3px;font-size:11px;cursor:pointer" onclick="if(confirm(\'\u786e\u8ba4\u5220\u9664\u5bb9\u5668 ' + escHtml(c.name||c.id) + '?\'))dockerRemove(\'' + c.id + '\')">\U0001f5d1</button>'
+        html += '</div></div></div>'
+      }
+      html += '</div>'
+    }
+    html += '</div>'
+    
+    html += '<div class="card" style="padding:16px">'
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    html += '<div style="font-weight:500;font-size:14px">\U0001f5e5 \u955c\u50cf\u5217\u8868</div>'
+    html += '<div style="display:flex;gap:6px">'
+    html += '<input id="dockerPullInput" placeholder="\u955c\u50cf\u540d\u79f0 (\u5982 nginx:latest)" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;width:180px">'
+    html += '<button class="btn btn-sm btn-primary" onclick="dockerPull()" style="padding:3px 10px">\U0001f4e5 \u62c9\u53d6</button>'
+    html += '</div></div>'
+    if (images.length === 0) {
+      html += '<div style="text-align:center;padding:20px;color:var(--text-ter);font-size:13px">\u6682\u65e0\u955c\u50cf</div>'
+    } else {
+      html += '<div style="display:grid;gap:6px">'
+      for (var i = 0; i < images.length; i++) {
+        var img = images[i]
+        html += '<div class="card" style="padding:8px 12px">'
+        html += '<div style="display:flex;justify-content:space-between;align-items:center">'
+        html += '<div><span style="font-weight:500;font-size:13px">' + escHtml(img.repo || '') + '</span><span style="font-size:12px;color:var(--text-sec);margin-left:4px">:' + escHtml(img.tag || 'latest') + '</span><span style="font-size:11px;color:var(--text-ter);margin-left:8px">' + escHtml(img.id || '').substring(0,12) + '</span></div>'
+        html += '<div style="display:flex;gap:4px;align-items:center">'
+        html += '<span style="font-size:11px;color:var(--text-sec)">' + escHtml(img.size || '') + '</span>'
+        html += '<button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none;padding:1px 8px;border-radius:3px;font-size:11px;cursor:pointer" onclick="if(confirm(\'\u5220\u9664\u955c\u50cf ' + escHtml(img.repo||img.id) + '?\'))dockerRemoveImage(\'' + img.id + '\')">\U0001f5d1</button>'
+        html += '</div></div></div>'
+      }
+      html += '</div>'
+    }
+    html += '</div>'
+    
+    if (status.status) {
+      html += '<div class="card" style="padding:12px;margin-top:12px">'
+      html += '<div style="font-weight:500;font-size:13px;margin-bottom:6px">\u2139\ufe0f Docker \u670d\u52a1\u72b6\u6001</div>'
+      html += '<pre style="font-size:11px;color:var(--text-sec);background:#f8f9fa;padding:8px;border-radius:4px;max-height:120px;overflow:auto;margin:0">' + escHtml(status.status) + '</pre>'
+      html += '</div>'
+    }
+    
+    el.innerHTML = html
+  } catch(e) {
+    el.innerHTML = '<p style="text-align:center;color:var(--danger)">\u274c \u52a0\u8f7d\u5931\u8d25: ' + escHtml(e.message) + '</p>'
+  }
+}
+
+async function dockerStart(id) {
+  if (!window.dockerAPI) return
+  var res = await window.dockerAPI.startContainer(id)
+  if (res && res.success) { refreshDocker() }
+  else { alert('\u542f\u52a8\u5931\u8d25: ' + (res?.error || '\u672a\u77e5\u9519\u8bef')) }
+}
+
+async function dockerStop(id) {
+  if (!window.dockerAPI) return
+  var res = await window.dockerAPI.stopContainer(id)
+  if (res && res.success) { refreshDocker() }
+  else { alert('\u505c\u6b62\u5931\u8d25: ' + (res?.error || '\u672a\u77e5\u9519\u8bef')) }
+}
+
+async function dockerRemove(id) {
+  if (!window.dockerAPI) return
+  var res = await window.dockerAPI.removeContainer(id)
+  if (res && res.success) { refreshDocker() }
+  else { alert('\u5220\u9664\u5931\u8d25: ' + (res?.error || '\u672a\u77e5\u9519\u8bef')) }
+}
+
+async function dockerLogs(id) {
+  if (!window.dockerAPI) return
+  var res = await window.dockerAPI.getContainerLogs(id)
+  if (res && res.success) {
+    var logs = res.logs || '\u65e0\u65e5\u5fd7'
+    var el = document.getElementById('dockerContent')
+    var div = document.createElement('div')
+    div.className = 'card'
+    div.style.cssText = 'padding:12px;margin-top:12px;position:relative'
+    div.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-weight:500;font-size:13px">\U0001f4cb \u5bb9\u5668\u65e5\u5fd7</div><button class="btn btn-sm" style="background:var(--border);border:none;padding:2px 10px;border-radius:4px;cursor:pointer" onclick="this.parentElement.parentElement.remove()">\u2715 \u5173\u95ed</button></div><pre style="font-size:11px;color:var(--text);background:#1e1e1e;color:#d4d4d4;padding:10px;border-radius:4px;max-height:400px;overflow:auto;margin:0;white-space:pre-wrap;word-break:break-all">' + escHtml(logs) + '</pre>'
+    el.appendChild(div)
+  } else {
+    alert('\u83b7\u53d6\u65e5\u5fd7\u5931\u8d25: ' + (res?.error || '\u672a\u77e5\u9519\u8bef'))
+  }
+}
+
+async function dockerPull() {
+  var input = document.getElementById('dockerPullInput')
+  if (!input || !input.value.trim()) { alert('\u8bf7\u8f93\u5165\u955c\u50cf\u540d\u79f0'); return }
+  if (!window.dockerAPI) return
+  var name = input.value.trim()
+  input.disabled = true
+  input.value = '\u23f3 \u62c9\u53d6\u4e2d...'
+  var res = await window.dockerAPI.pullImage(name)
+  input.disabled = false
+  if (res && res.success) {
+    input.value = ''
+    refreshDocker()
+  } else {
+    input.value = name
+    alert('\u62c9\u53d6\u5931\u8d25: ' + (res?.error || '\u672a\u77e5\u9519\u8bef'))
+  }
+}
+
+async function dockerRemoveImage(id) {
+  if (!window.dockerAPI) return
+  var res = await window.dockerAPI.removeImage(id)
+  if (res && res.success) { refreshDocker() }
+  else { alert('\u5220\u9664\u5931\u8d25: ' + (res?.error || '\u672a\u77e5\u9519\u8bef')) }
+}
+
+// ============ Stage 4: \u7cfb\u7edf\u5347\u7ea7\u52a9\u624b ============
+async function renderUpgradePage(el) {
+  el.innerHTML = '<div style="max-width:800px;margin:0 auto;padding:24px 16px">' +
+    '<div style="text-align:center;margin-bottom:24px">' +
+    '<div style="font-size:48px;margin-bottom:8px">\u2b06\ufe0f</div>' +
+    '<h3 style="font-size:18px;font-weight:600;margin:0 0 4px">\u7cfb\u7edf\u5347\u7ea7\u52a9\u624b</h3>' +
+    '<p style="color:var(--text-sec);font-size:13px;margin:0">\u7248\u672c\u5347\u7ea7\u68c0\u67e5 \u00b7 \u5347\u7ea7\u524d\u68c0\u67e5 \u00b7 \u8fc7\u7a0b\u76d1\u63a7 \u00b7 \u5931\u8d25\u56de\u6eda</p>' +
+    '</div>' +
+    '<div id="upgradeContent"><p style="text-align:center;color:var(--text-ter)">\u23f3 \u6b63\u5728\u68c0\u67e5\u5347\u7ea7\u4fe1\u606f...</p></div>' +
+    '</div>'
+  refreshUpgrade()
+}
+
+async function refreshUpgrade() {
+  const el = document.getElementById('upgradeContent')
+  if (!el) return
+  el.innerHTML = '<p style="text-align:center;color:var(--text-ter)">\u23f3 \u6b63\u5728\u68c0\u67e5\u5347\u7ea7\u4fe1\u606f...</p>'
+  try {
+    if (!window.upgradeAPI) {
+      el.innerHTML = '<p style="text-align:center;color:var(--danger)">\u274c \u5347\u7ea7API\u4e0d\u53ef\u7528</p>'
+      return
+    }
+    const checkRes = await window.upgradeAPI.checkUpgrade()
+    const preflightRes = await window.upgradeAPI.preflightCheck()
+    
+    var html = ''
+    
+    html += '<div class="card" style="padding:20px;margin-bottom:12px">'
+    html += '<div style="font-size:16px;font-weight:600;margin-bottom:6px">\U0001f504 \u7cfb\u7edf\u5347\u7ea7\u68c0\u67e5</div>'
+    if (checkRes && checkRes.success) {
+      var currentVer = checkRes.currentVersion || checkRes.current_version || '\u672a\u77e5'
+      var availableVer = checkRes.availableVersion || checkRes.available_version || '\u672a\u77e5'
+      var upgradable = checkRes.upgradable === true || checkRes.can_upgrade === true
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0">'
+      html += '<div style="padding:12px;background:#f0f4ff;border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--text-sec)">\u5f53\u524d\u7248\u672c</div><div style="font-size:22px;font-weight:600;margin-top:4px;color:var(--text)">' + escHtml(currentVer) + '</div></div>'
+      html += '<div style="padding:12px;background:' + (upgradable ? '#fff3cd' : '#e8f5e9') + ';border-radius:8px;text-align:center"><div style="font-size:12px;color:var(--text-sec)">\u53ef\u5347\u7ea7\u7248\u672c</div><div style="font-size:22px;font-weight:600;margin-top:4px;color:' + (upgradable ? '#856404' : '#2e7d32') + '">' + (upgradable ? escHtml(availableVer) : '\u2713 \u5df2\u662f\u6700\u65b0') + '</div></div>'
+      html += '</div>'
+      if (upgradable) {
+        html += '<div style="text-align:center;margin-top:12px"><button class="btn btn-primary" style="padding:10px 24px;border-radius:6px;cursor:pointer;font-size:14px" onclick="startUpgradeDlg()">\u2b06\ufe0f \u5f00\u59cb\u5347\u7ea7</button></div>'
+      }
+    } else {
+      html += '<div style="text-align:center;padding:16px;color:var(--text-ter);font-size:13px">' + (checkRes?.error ? escHtml(checkRes.error) : '\u65e0\u6cd5\u83b7\u53d6\u5347\u7ea7\u4fe1\u606f') + '</div>'
+    }
+    html += '</div>'
+    
+    html += '<div class="card" style="padding:20px;margin-bottom:12px">'
+    html += '<div style="font-size:16px;font-weight:600;margin-bottom:6px">\u2705 \u5347\u7ea7\u524d\u68c0\u67e5</div>'
+    if (preflightRes && preflightRes.success) {
+      var checks = preflightRes.checks || preflightRes.items || []
+      if (checks.length === 0) {
+        html += '<div style="text-align:center;padding:12px;color:var(--text-ter);font-size:13px">\u672a\u6267\u884c\u68c0\u67e5</div>'
+      } else {
+        html += '<div style="display:grid;gap:6px">'
+        for (var i = 0; i < checks.length; i++) {
+          var ch = checks[i]
+          var passed = ch.passed || ch.status === 'ok'
+          html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:' + (passed ? '#f1f8e9' : '#fce4ec') + ';border-radius:6px;font-size:12px">'
+          html += '<span>' + (passed ? '\u2705' : '\u274c') + '</span>'
+          html += '<span style="flex:1">' + escHtml(ch.name || ch.check || ch.item || '') + '</span>'
+          if (ch.message) html += '<span style="color:var(--text-ter)">' + escHtml(ch.message) + '</span>'
+          html += '</div>'
+        }
+        html += '</div>'
+      }
+    } else {
+      html += '<div style="text-align:center;padding:12px;color:var(--text-ter);font-size:13px">' + (preflightRes?.error ? escHtml(preflightRes.error) : '\u65e0\u6cd5\u6267\u884c\u68c0\u67e5') + '</div>'
+    }
+    html += '</div>'
+    
+    html += '<div class="card" style="padding:20px">'
+    html += '<div style="font-size:16px;font-weight:600;margin-bottom:6px">\u21a9\ufe0f \u5347\u7ea7\u56de\u6eda</div>'
+    html += '<p style="font-size:12px;color:var(--text-sec);margin:0 0 12px">\u5982\u679c\u5347\u7ea7\u51fa\u73b0\u95ee\u9898\uff0c\u53ef\u4ee5\u56de\u6eda\u5230\u4e4b\u524d\u7684\u7cfb\u7edf\u7248\u672c</p>'
+    html += '<div style="display:flex;gap:8px;align-items:center">'
+    html += '<input id="rollbackPwd" type="password" placeholder="\u9700\u8981\u7ba1\u7406\u5458\u5bc6\u7801" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">'
+    html += '<button class="btn btn-primary" style="padding:8px 20px;border-radius:6px;cursor:pointer" onclick="rollbackUpgrade()">\u21a9\ufe0f \u6267\u884c\u56de\u6eda</button>'
+    html += '</div></div>'
+    
+    el.innerHTML = html
+  } catch(e) {
+    el.innerHTML = '<p style="text-align:center;color:var(--danger)">\u274c \u52a0\u8f7d\u5931\u8d25: ' + escHtml(e.message) + '</p>'
+  }
+}
+
+async function startUpgradeDlg() {
+  var overlay = document.getElementById('modalOverlay')
+  overlay.innerHTML = '<div style="padding:16px"><p style="font-size:14px;margin-bottom:12px">\u8bf7\u8f93\u5165\u7ba1\u7406\u5458\u5bc6\u7801\u5f00\u59cb\u7cfb\u7edf\u5347\u7ea7</p><input id="_upgradePwd" type="password" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px" placeholder="\u7ba1\u7406\u5458\u5bc6\u7801"><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primary" onclick="confirmUpgrade()" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u786e\u8ba4\u5347\u7ea7</button><button class="btn btn-outline" onclick="document.getElementById(\'modalOverlay\').classList.remove(\'show\')" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u53d6\u6d88</button></div></div>'
+  overlay.classList.add('show')
+}
+
+async function confirmUpgrade() {
+  var pwd = document.getElementById('_upgradePwd')?.value
+  if (!pwd) { alert('\u8bf7\u8f93\u5165\u5bc6\u7801'); return }
+  document.getElementById('modalOverlay').classList.remove('show')
+  if (!window.upgradeAPI) return
+  var el = document.getElementById('upgradeContent')
+  el.innerHTML = '<p style="text-align:center;color:var(--text-ter)">\u23f3 \u6b63\u5728\u6267\u884c\u5347\u7ea7\uff0c\u8bf7\u8010\u5fc3\u7b49\u5f85...</p>'
+  var res = await window.upgradeAPI.startUpgrade(pwd)
+  if (res && res.success) {
+    var monitorInterval = setInterval(async function() {
+      var prog = await window.upgradeAPI.getProgress()
+      if (prog && prog.success) {
+        var pct = prog.percent || prog.progress || 0
+        var msg = prog.message || prog.status || ''
+        el.innerHTML = '<div style="text-align:center;padding:20px"><div style="font-size:40px;margin-bottom:8px">\u2b06\ufe0f</div><div style="font-weight:500;font-size:15px;margin-bottom:8px">\u5347\u7ea7\u4e2d...</div><div style="width:100%;max-width:400px;margin:0 auto;background:#e0e0e0;border-radius:10px;height:20px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--primary);transition:width 0.5s;border-radius:10px"></div></div><div style="font-size:12px;color:var(--text-sec);margin-top:8px">' + escHtml(msg) + '</div></div>'
+      }
+      if (prog && (prog.finished || prog.done || prog.error)) {
+        clearInterval(monitorInterval)
+        var finalMsg = prog.error ? ('\u274c \u5347\u7ea7\u5931\u8d25: ' + escHtml(prog.error)) : '\u2705 \u5347\u7ea7\u5b8c\u6210\uff01'
+        el.innerHTML = '<div style="text-align:center;padding:20px"><div style="font-size:40px;' + (prog.error ? 'color:var(--danger)' : 'color:var(--success)') + ';margin-bottom:8px">' + (prog.error ? '\u274c' : '\u2705') + '</div><div style="font-weight:500;font-size:15px">' + finalMsg + '</div><button class="btn btn-primary" style="margin-top:12px;padding:8px 20px;border-radius:6px;cursor:pointer" onclick="refreshUpgrade()">\u8fd4\u56de</button></div>'
+      }
+    }, 2000)
+  } else {
+    el.innerHTML = '<p style="text-align:center;color:var(--danger)">\u274c \u5347\u7ea7\u542f\u52a8\u5931\u8d25: ' + escHtml(res?.error || '\u672a\u77e5\u9519\u8bef') + '</p>'
+  }
+}
+
+async function rollbackUpgrade() {
+  if (!window.upgradeAPI) return
+  var pwd = document.getElementById('rollbackPwd')?.value
+  if (!pwd) { alert('\u8bf7\u8f93\u5165\u7ba1\u7406\u5458\u5bc6\u7801'); return }
+  if (!confirm('\u786e\u8ba4\u8981\u6267\u884c\u7cfb\u7edf\u5347\u7ea7\u56de\u6eda\uff1f\u6b64\u64cd\u4f5c\u53ef\u80fd\u9700\u8981\u8f83\u957f\u65f6\u95f4')) return
+  var el = document.getElementById('upgradeContent')
+  el.innerHTML = '<p style="text-align:center;color:var(--text-ter)">\u23f3 \u6b63\u5728\u6267\u884c\u56de\u6eda...</p>'
+  var res = await window.upgradeAPI.rollback(pwd)
+  if (res && res.success) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--success)">\u2705 \u56de\u6eda\u5b8c\u6210\uff01' + (res.message ? '<br><span style="font-size:12px;color:var(--text-sec)">' + escHtml(res.message) + '</span>' : '') + '</div>'
+  } else {
+    el.innerHTML = '<p style="text-align:center;color:var(--danger)">\u274c \u56de\u6eda\u5931\u8d25: ' + escHtml(res?.error || '\u672a\u77e5\u9519\u8bef') + '</p>'
+  }
+}
+
+// ============ Stage 4: \u7cfb\u7edf\u8d44\u4ea7\u6e05\u5355 ============
+async function renderAssetPage(el) {
+  el.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:24px 16px">' +
+    '<div style="text-align:center;margin-bottom:24px">' +
+    '<div style="font-size:48px;margin-bottom:8px">\U0001f4cb</div>' +
+    '<h3 style="font-size:18px;font-weight:600;margin:0 0 4px">\u7cfb\u7edf\u8d44\u4ea7\u6e05\u5355</h3>' +
+    '<p style="color:var(--text-sec);font-size:13px;margin:0">\u81ea\u52a8\u626b\u63cf\u786c\u4ef6\u4fe1\u606f \u00b7 \u8f6f\u4ef6\u76d8\u70b9 \u00b7 \u8d44\u4ea7\u62a5\u544a \u00b7 \u5bfc\u51fa CSV/Excel</p>' +
+    '</div>' +
+    '<div id="assetContent"><p style="text-align:center;color:var(--text-ter)">\u23f3 \u6b63\u5728\u626b\u63cf\u8d44\u4ea7\u4fe1\u606f...</p></div>' +
+    '</div>'
+  refreshAsset()
+}
+
+async function refreshAsset() {
+  const el = document.getElementById('assetContent')
+  if (!el) return
+  el.innerHTML = '<p style="text-align:center;color:var(--text-ter)">\u23f3 \u6b63\u5728\u626b\u63cf\u8d44\u4ea7\u4fe1\u606f...</p>'
+  try {
+    if (!window.assetAPI) {
+      el.innerHTML = '<p style="text-align:center;color:var(--danger)">\u274c \u8d44\u4ea7 API \u4e0d\u53ef\u7528</p>'
+      return
+    }
+    const hwRes = await window.assetAPI.scanHardware()
+    const swRes = await window.assetAPI.scanSoftware()
+    const invRes = await window.assetAPI.getInventory()
+    
+    var hardware = (hwRes && hwRes.success) ? (hwRes.data || hwRes.hardware || {}) : {}
+    var software = (swRes && swRes.success) ? (swRes.data || swRes.software || []) : []
+    var inventory = (invRes && invRes.success) ? (invRes.data || invRes.inventory || {}) : {}
+    
+    var html = ''
+    
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">'
+    html += '<div class="card" style="padding:16px;text-align:center"><div style="font-size:20px;font-weight:600;color:var(--primary)">' + escHtml(String(hardware.cpu || hardware.model || hardware.cpu_model || '-')) + '</div><div style="font-size:11px;color:var(--text-sec);margin-top:4px">CPU</div></div>'
+    html += '<div class="card" style="padding:16px;text-align:center"><div style="font-size:20px;font-weight:600;color:var(--primary)">' + escHtml(String(hardware.memory_gb || hardware.memory || '-')).replace(/^(.+)$/, '$1 GB') + '</div><div style="font-size:11px;color:var(--text-sec);margin-top:4px">\u5185\u5b58</div></div>'
+    html += '<div class="card" style="padding:16px;text-align:center"><div style="font-size:20px;font-weight:600;color:var(--primary)">' + (software.length || '-') + '</div><div style="font-size:11px;color:var(--text-sec);margin-top:4px">\u5df2\u5b89\u88c5\u8f6f\u4ef6</div></div>'
+    html += '<div class="card" style="padding:16px;text-align:center"><div style="font-size:20px;font-weight:600;color:var(--primary)">' + escHtml(String(inventory.os || hardware.os || '-')) + '</div><div style="font-size:11px;color:var(--text-sec);margin-top:4px">\u64cd\u4f5c\u7cfb\u7edf</div></div>'
+    html += '</div>'
+    
+    html += '<div class="card" style="padding:16px;margin-bottom:12px">'
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    html += '<div style="font-weight:500;font-size:14px">\U0001f4bb \u786c\u4ef6\u4fe1\u606f</div>'
+    html += '<div style="display:flex;gap:6px">'
+    html += '<button class="btn btn-sm btn-outline" onclick="refreshAsset()" style="padding:3px 10px">\U0001f504 \u5237\u65b0</button>'
+    html += '<button class="btn btn-sm btn-primary" onclick="exportAssetCSV()" style="padding:3px 10px">\U0001f4e5 \u5bfc\u51fa CSV</button>'
+    html += '</div></div>'
+    
+    var hwItems = [
+      {label: 'CPU', value: String(hardware.cpu || hardware.model || hardware.cpu_model || '-')},
+      {label: 'CPU \u6838\u5fc3', value: String(hardware.cores || hardware.cpu_cores || '-')},
+      {label: '\u5185\u5b58\u603b\u91cf', value: String(hardware.memory_gb || hardware.memory || '-') + ' GB'},
+      {label: '\u78c1\u76d8', value: String(hardware.disk || hardware.storage || '-')},
+      {label: '\u4e3b\u677f', value: String(hardware.board || hardware.motherboard || '-')},
+      {label: 'BIOS', value: String(hardware.bios || hardware.bios_version || '-')},
+      {label: '\u663e\u5361', value: String(hardware.gpu || hardware.graphics || '-')},
+      {label: '\u7f51\u5361', value: String(hardware.network || hardware.nic || '-')},
+      {label: '\u5e8f\u5217\u53f7', value: String(hardware.serial || hardware.serial_number || '-')},
+      {label: '\u4e3b\u673a\u540d', value: String(inventory.hostname || hardware.hostname || '-')}
+    ]
+    html += '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+    for (var i = 0; i < hwItems.length; i++) {
+      html += '<tr><td style="padding:6px 8px;color:var(--text-sec);border-bottom:1px solid var(--border);width:100px">' + hwItems[i].label + '</td><td style="padding:6px 8px;border-bottom:1px solid var(--border)">' + escHtml(hwItems[i].value) + '</td></tr>'
+    }
+    html += '</table></div>'
+    
+    html += '<div class="card" style="padding:16px;margin-bottom:12px">'
+    html += '<div style="font-weight:500;font-size:14px;margin-bottom:10px">\U0001f4e6 \u5df2\u5b89\u88c5\u8f6f\u4ef6 (' + (Array.isArray(software) ? software.length : 0) + ')</div>'
+    if (Array.isArray(software) && software.length > 0) {
+      html += '<div style="max-height:300px;overflow-y:auto;font-size:12px">'
+      html += '<table style="width:100%;border-collapse:collapse">'
+      html += '<tr style="background:#f5f5f5"><th style="padding:6px 8px;text-align:left;font-weight:500">\u8f6f\u4ef6\u540d</th><th style="padding:6px 8px;text-align:left;font-weight:500">\u7248\u672c</th><th style="padding:6px 8px;text-align:left;font-weight:500">\u67b6\u6784</th></tr>'
+      for (var i = 0; i < Math.min(software.length, 100); i++) {
+        var s = software[i]
+        html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #f0f0f0">' + escHtml(s.name || s.package || '') + '</td><td style="padding:4px 8px;border-bottom:1px solid #f0f0f0">' + escHtml(s.version || '') + '</td><td style="padding:4px 8px;border-bottom:1px solid #f0f0f0">' + escHtml(s.arch || '') + '</td></tr>'
+      }
+      if (software.length > 100) {
+        html += '<tr><td colspan="3" style="padding:8px;text-align:center;color:var(--text-ter)">... \u4ec5\u663e\u793a\u524d 100 \u9879\uff0c\u5bfc\u51fa CSV \u83b7\u53d6\u5b8c\u6574\u6e05\u5355</td></tr>'
+      }
+      html += '</table></div>'
+    } else {
+      html += '<div style="text-align:center;padding:12px;color:var(--text-ter);font-size:13px">\u672a\u83b7\u53d6\u5230\u8f6f\u4ef6\u4fe1\u606f</div>'
+    }
+    html += '</div>'
+    
+    el.innerHTML = html
+  } catch(e) {
+    el.innerHTML = '<p style="text-align:center;color:var(--danger)">\u274c \u52a0\u8f7d\u5931\u8d25: ' + escHtml(e.message) + '</p>'
+  }
+}
+
+async function exportAssetCSV() {
+  if (!window.assetAPI) return
+  var res = await window.assetAPI.exportReport('csv')
+  if (res && res.success) {
+    alert('\u5bfc\u51fa\u6210\u529f\uff01' + (res.message ? '\n' + res.message : ''))
+    if (res.path) {
+      var path = res.path
+      var dir = path.substring(0, path.lastIndexOf('/'))
+      try {
+        await (window.toolAPI?.invoke || window.systemAPI?.invoke)('shell:openPath', dir)
+      } catch(e) {}
+    }
+  } else {
+    alert('\u5bfc\u51fa\u5931\u8d25: ' + (res?.error || '\u672a\u77e5\u9519\u8bef'))
+  }
+}
+
+// ============ Stage 4: \u8fdc\u7a0b\u7ba1\u7406\u5de5\u5177 ============
+async function renderRemotePage(el) {
+  el.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:24px 16px">' +
+    '<div style="text-align:center;margin-bottom:24px">' +
+    '<div style="font-size:48px;margin-bottom:8px">\U0001f310</div>' +
+    '<h3 style="font-size:18px;font-weight:600;margin:0 0 4px">\u8fdc\u7a0b\u7ba1\u7406\u5de5\u5177</h3>' +
+    '<p style="color:var(--text-sec);font-size:13px;margin:0">SSH \u5bc6\u94a5\u7ba1\u7406 \u00b7 \u6279\u91cf\u547d\u4ee4\u6267\u884c \u00b7 \u8fdc\u7a0b\u6587\u4ef6\u4f20\u8f93 \u00b7 \u8fdc\u7a0b\u76d1\u63a7</p>' +
+    '</div>' +
+    '<div id="remoteContent"><p style="text-align:center;color:var(--text-ter)">\u23f3 \u6b63\u5728\u52a0\u8f7d\u8fdc\u7a0b\u7ba1\u7406...</p></div>' +
+    '</div>'
+  refreshRemote()
+}
+
+async function refreshRemote() {
+  const el = document.getElementById('remoteContent')
+  if (!el) return
+  el.innerHTML = '<p style="text-align:center;color:var(--text-ter)">\u23f3 \u6b63\u5728\u52a0\u8f7d\u8fdc\u7a0b\u7ba1\u7406...</p>'
+  try {
+    if (!window.remoteAPI) {
+      el.innerHTML = '<p style="text-align:center;color:var(--danger)">\u274c \u8fdc\u7a0b\u7ba1\u7406 API \u4e0d\u53ef\u7528</p>'
+      return
+    }
+    
+    var html = ''
+    
+    var keysRes = await window.remoteAPI.listSSHKeys()
+    var keys = (keysRes && keysRes.success) ? (keysRes.keys || keysRes.data || []) : []
+    
+    html += '<div class="card" style="padding:16px;margin-bottom:12px">'
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    html += '<div style="font-weight:500;font-size:14px">\U0001f511 SSH \u5bc6\u94a5\u7ba1\u7406</div>'
+    html += '<button class="btn btn-sm btn-primary" onclick="showAddSSHKeyDialog()" style="padding:3px 10px">\u2795 \u6dfb\u52a0\u5bc6\u94a5</button>'
+    html += '</div>'
+    if (Array.isArray(keys) && keys.length > 0) {
+      html += '<div style="display:grid;gap:6px">'
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i]
+        html += '<div class="card" style="padding:8px 12px;display:flex;justify-content:space-between;align-items:center">'
+        html += '<div><span style="font-weight:500;font-size:13px">' + escHtml(k.name || k.title || '') + '</span>'
+        var fp = k.fingerprint || k.fingerprint_md5 || ''
+        if (fp) html += '<span style="font-size:11px;color:var(--text-ter);margin-left:8px">' + escHtml(fp) + '</span>'
+        html += '</div>'
+        html += '<button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none;padding:1px 8px;border-radius:3px;font-size:11px;cursor:pointer" onclick="if(confirm(\'\u786e\u8ba4\u5220\u9664\u5bc6\u94a5 ' + escHtml(k.name||k.title) + '?\'))removeSSHKey(\'' + escHtml(k.name||k.title) + '\')">\U0001f5d1</button>'
+        html += '</div>'
+      }
+      html += '</div>'
+    } else {
+      html += '<div style="text-align:center;padding:12px;color:var(--text-ter);font-size:13px">\u6682\u65e0 SSH \u5bc6\u94a5</div>'
+    }
+    html += '</div>'
+    
+    html += '<div class="card" style="padding:16px;margin-bottom:12px">'
+    html += '<div style="font-weight:500;font-size:14px;margin-bottom:10px">\U0001f4bb \u6279\u91cf\u547d\u4ee4\u6267\u884c</div>'
+    html += '<div style="display:grid;gap:8px">'
+    html += '<textarea id="batchHosts" placeholder="\u4e3b\u673a\u5730\u5740\u5217\u8868 (\u6bcf\u884c\u4e00\u4e2a, \u5982: 192.168.1.100)" style="width:100%;min-height:60px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;resize:vertical"></textarea>'
+    html += '<input id="batchCmd" placeholder="\u8981\u6267\u884c\u7684\u547d\u4ee4 (\u5982: uptime)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px">'
+    html += '<input id="batchPwd" type="password" placeholder="SSH \u5bc6\u7801 (\u5982\u9700)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px">'
+    html += '<button class="btn btn-primary" onclick="execBatchCmd()" style="padding:8px 20px;border-radius:6px;cursor:pointer;align-self:flex-start">\u25b6 \u6279\u91cf\u6267\u884c</button>'
+    html += '</div>'
+    html += '<div id="batchResult" style="margin-top:8px;font-size:12px;max-height:200px;overflow:auto;background:#1e1e1e;color:#d4d4d4;padding:8px;border-radius:4px;display:none"></div>'
+    html += '</div>'
+    
+    html += '<div class="card" style="padding:16px;margin-bottom:12px">'
+    html += '<div style="font-weight:500;font-size:14px;margin-bottom:10px">\U0001f4c1 \u8fdc\u7a0b\u6587\u4ef6\u4f20\u8f93</div>'
+    html += '<div style="display:grid;gap:8px">'
+    html += '<input id="transferHost" placeholder="\u76ee\u6807\u4e3b\u673a (\u5982: user@192.168.1.100)" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px">'
+    html += '<div style="display:flex;gap:8px">'
+    html += '<input id="transferLocalPath" placeholder="\u672c\u5730\u6587\u4ef6\u8def\u5f84" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px">'
+    html += '<input id="transferRemotePath" placeholder="\u8fdc\u7a0b\u8def\u5f84" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px">'
+    html += '</div>'
+    html += '<input id="transferPwd" type="password" placeholder="SSH \u5bc6\u7801" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px">'
+    html += '<button class="btn btn-primary" onclick="execTransfer()" style="padding:8px 20px;border-radius:6px;cursor:pointer;align-self:flex-start">\U0001f4e4 \u4e0a\u4f20\u6587\u4ef6</button>'
+    html += '</div>'
+    html += '<div id="transferResult" style="margin-top:8px;font-size:12px;display:none"></div>'
+    html += '</div>'
+    
+    el.innerHTML = html
+  } catch(e) {
+    el.innerHTML = '<p style="text-align:center;color:var(--danger)">\u274c \u52a0\u8f7d\u5931\u8d25: ' + escHtml(e.message) + '</p>'
+  }
+}
+
+async function showAddSSHKeyDialog() {
+  var overlay = document.getElementById('modalOverlay')
+  overlay.innerHTML = '<div style="padding:16px"><h4 style="margin:0 0 12px">\u6dfb\u52a0 SSH \u5bc6\u94a5</h4><input id="sshKeyName" placeholder="\u5bc6\u94a5\u540d\u79f0" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin-bottom:8px"><textarea id="sshKeyContent" placeholder="\u7c98\u8d34\u516c\u94a5\u5185\u5bb9 (ssh-rsa AAA...)" style="width:100%;min-height:100px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;resize:vertical;margin-bottom:12px"></textarea><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="confirmAddSSHKey()" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u6dfb\u52a0</button><button class="btn btn-outline" onclick="document.getElementById(\'modalOverlay\').classList.remove(\'show\')" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u53d6\u6d88</button></div></div>'
+  overlay.classList.add('show')
+}
+
+async function confirmAddSSHKey() {
+  var name = document.getElementById('sshKeyName')?.value
+  var key = document.getElementById('sshKeyContent')?.value
+  if (!name || !key) { alert('\u8bf7\u586b\u5199\u540d\u79f0\u548c\u516c\u94a5\u5185\u5bb9'); return }
+  document.getElementById('modalOverlay').classList.remove('show')
+  if (!window.remoteAPI) return
+  var res = await window.remoteAPI.addSSHKey(name, key)
+  if (res && res.success) {
+    refreshRemote()
+  } else {
+    alert('\u6dfb\u52a0\u5931\u8d25: ' + (res?.error || '\u672a\u77e5\u9519\u8bef'))
+  }
+}
+
+async function removeSSHKey(name) {
+  if (!window.remoteAPI) return
+  var res = await window.remoteAPI.removeSSHKey(name)
+  if (res && res.success) { refreshRemote() }
+  else { alert('\u5220\u9664\u5931\u8d25: ' + (res?.error || '\u672a\u77e5\u9519\u8bef')) }
+}
+
+async function execBatchCmd() {
+  var hostsText = document.getElementById('batchHosts')?.value
+  var cmd = document.getElementById('batchCmd')?.value
+  var pwd = document.getElementById('batchPwd')?.value
+  if (!hostsText || !cmd) { alert('\u8bf7\u586b\u5199\u4e3b\u673a\u5217\u8868\u548c\u547d\u4ee4'); return }
+  var hosts = hostsText.split('\n').map(function(h) { return h.trim() }).filter(function(h) { return h })
+  var resultEl = document.getElementById('batchResult')
+  if (!resultEl) return
+  resultEl.style.display = 'block'
+  resultEl.textContent = '\u23f3 \u6b63\u5728\u6267\u884c...'
+  if (!window.remoteAPI) return
+  var res = await window.remoteAPI.batchExec(hosts, cmd, pwd)
+  if (res && res.success) {
+    var output = res.output || res.results || ''
+    if (Array.isArray(output)) {
+      resultEl.textContent = output.map(function(o) {
+        return '[' + (o.host || '') + '] ' + (o.output || o.stdout || o.error || '')
+      }).join('\n---\n')
+    } else {
+      resultEl.textContent = String(output)
+    }
+  } else {
+    resultEl.textContent = '\u274c \u6267\u884c\u5931\u8d25: ' + (res?.error || '\u672a\u77e5\u9519\u8bef')
+  }
+}
+
+async function execTransfer() {
+  var host = document.getElementById('transferHost')?.value
+  var localPath = document.getElementById('transferLocalPath')?.value
+  var remotePath = document.getElementById('transferRemotePath')?.value
+  var pwd = document.getElementById('transferPwd')?.value
+  if (!host || !localPath || !remotePath) { alert('\u8bf7\u586b\u5199\u5b8c\u6574\u4fe1\u606f'); return }
+  var resultEl = document.getElementById('transferResult')
+  if (!resultEl) return
+  resultEl.style.display = 'block'
+  resultEl.innerHTML = '<p style="color:var(--text-ter)">\u23f3 \u6b63\u5728\u4f20\u8f93\u6587\u4ef6...</p>'
+  if (!window.remoteAPI) return
+  var res = await window.remoteAPI.transferFile(host, localPath, remotePath, pwd)
+  if (res && res.success) {
+    resultEl.innerHTML = '<p style="color:var(--success)">\u2705 \u6587\u4ef6\u4f20\u8f93\u6210\u529f' + (res.message ? '<br>' + escHtml(res.message) : '') + '</p>'
+  } else {
+    resultEl.innerHTML = '<p style="color:var(--danger)">\u274c \u4f20\u8f93\u5931\u8d25: ' + escHtml(res?.error || '\u672a\u77e5\u9519\u8bef') + '</p>'
+  }
+}
+
+
+async function refreshVpnList() {
+  const el = document.getElementById('vpnContent')
+  if (!el) return
+  el.innerHTML = '<p style="text-align:center;color:var(--text-ter)">⏳ 正在获取 VPN 连接列表...</p>'
+  try {
+    const res = window.vpnAPI ? await window.vpnAPI.listConnections() : null
+    if (!res || !res.success) {
+      el.innerHTML = '<p style="text-align:center;color:var(--danger)">❌ 获取失败: ' + escHtml(res?.error || '未知错误') + '</p>'
+      return
+    }
+    const conns = res.connections || []
+    const details = res.details || {}
+    var toolsHtml = ''
+    var toolsRes = window.vpnAPI ? await window.vpnAPI.checkTools() : null
+    if (toolsRes && toolsRes.success && toolsRes.missing && toolsRes.missing.length > 0) {
+      toolsHtml = '<div style="background:#fff3cd;color:#856404;padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:16px">⚠️ 部分 VPN 工具未安装: ' + toolsRes.missing.join(', ') + ' <button class="btn btn-sm" style="margin-left:8px;background:var(--primary);color:#fff;border:none;padding:2px 10px;border-radius:4px;cursor:pointer" onclick="installVpnTools()">📥 安装工具</button></div>'
+    }
+    var html = toolsHtml
+    html += '<div class="card" style="padding:16px">'
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+    html += '<div style="font-weight:500;font-size:14px">🔌 VPN 连接列表</div>'
+    html += '<div style="display:flex;gap:6px">'
+    html += '<button class="btn btn-sm btn-primary" onclick="showAddVpnDialog()">➕ 新建连接</button>'
+    html += '<button class="btn btn-sm btn-outline" onclick="showImportVpnDialog()">📥 导入配置</button>'
+    html += '<button class="btn btn-sm btn-outline" onclick="refreshVpnList()">🔄 刷新</button>'
+    html += '</div></div>'
+    if (conns.length === 0) {
+      html += '<div style="text-align:center;padding:24px;color:var(--text-ter);font-size:13px">暂无 VPN 连接，点击"新建连接"或"导入配置"添加</div>'
+    } else {
+      html += '<div style="display:grid;gap:8px">'
+      for (var i = 0; i < conns.length; i++) {
+        var c = conns[i]
+        var d = details[c.name] || {}
+        var isActive = c.active
+        var vpnType = d.vpnType || c.type || '未知'
+        var addr = d.address ? d.address.split('/')[0] : ''
+        var autoReconnect = d.autoReconnect
+        html += '<div class="card" style="padding:12px;border-left:4px solid ' + (isActive ? 'var(--success)' : 'var(--border)') + '">'
+        html += '<div style="display:flex;justify-content:space-between;align-items:center">'
+        html += '<div style="flex:1">'
+        html += '<div style="font-weight:500;font-size:14px">' + escHtml(c.name) + '</div>'
+        html += '<div style="font-size:11px;color:var(--text-sec);margin-top:2px">'
+        html += '类型: ' + escHtml(vpnType)
+        if (addr) html += ' · IP: ' + escHtml(addr)
+        if (autoReconnect) html += ' · 🔄 自动重连'
+        html += '</div></div>'
+        html += '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0">'
+        html += '<span style="font-size:11px;padding:2px 8px;border-radius:8px;background:' + (isActive ? '#e8f5e9;color:#2e7d32' : '#f5f5f5;color:#999') + '">' + (isActive ? '● 已连接' : '○ 已断开') + '</span>'
+        html += '<button class="btn btn-sm" style="background:' + (isActive ? 'var(--warning);color:#fff' : 'var(--success);color:#fff') + ';border:none;padding:2px 10px;border-radius:4px;cursor:pointer" onclick="' + (isActive ? "disconnectVpn('" + c.name + "')" : "connectVpn('" + c.name + "')") + '">' + (isActive ? '⏹ 断开' : '▶ 连接') + '</button>'
+        html += '<button class="btn btn-sm btn-outline" style="padding:2px 8px" onclick="showVpnDetail(\'' + c.name + '\')">📋 详情</button>'
+        html += '<button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer" onclick="if(confirm(\'确认删除 ' + c.name + '?\'))deleteVpn(\'' + c.name + '\')">🗑</button>'
+        html += '</div></div></div>'
+      }
+      html += '</div>'
+    }
+    html += '</div>'
+    if (conns.length > 0) {
+      html += '<div class="card" style="padding:16px;margin-top:12px">'
+      html += '<div style="font-weight:500;font-size:14px;margin-bottom:10px">⚙️ 批量管理</div>'
+      html += '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      html += '<select id="vpnBatchSelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:#fff">'
+      html += '<option value="">-- 选择连接 --</option>'
+      for (var i = 0; i < conns.length; i++) {
+        html += '<option value="' + escHtml(conns[i].name) + '">' + escHtml(conns[i].name) + '</option>'
+      }
+      html += '</select>'
+      html += '<button class="btn btn-sm btn-outline" onclick="exportVpnConfig()">📤 导出配置</button>'
+      html += '<button class="btn btn-sm btn-outline" onclick="toggleAutoReconnect()">🔄 切换自动重连</button>'
+      html += '</div></div>'
+    }
+    el.innerHTML = html
+  } catch(e) {
+    el.innerHTML = '<p style="text-align:center;color:var(--danger)">❌ 加载失败: ' + escHtml(e.message) + '</p>'
+  }
+}
+async function connectVpn(name) {
+  if (!window.vpnAPI) return
+  var res = await window.vpnAPI.connect(name)
+  if (res && res.success) { await refreshVpnList() }
+  else { alert('连接失败: ' + (res?.error || '未知错误')) }
+}
+async function disconnectVpn(name) {
+  if (!window.vpnAPI) return
+  var res = await window.vpnAPI.disconnect(name)
+  if (res && res.success) { await refreshVpnList() }
+  else { alert('断开失败: ' + (res?.error || '未知错误')) }
+}
+async function deleteVpn(name) {
+  if (!window.vpnAPI) return
+  var res = await window.vpnAPI.removeConnection(name)
+  if (res && res.success) {
+    document.getElementById('vpnDetail').style.display = 'none'
+    await refreshVpnList()
+  } else { alert('删除失败: ' + (res?.error || '未知错误')) }
+}
+async function showVpnDetail(name) {
+  if (!window.vpnAPI) return
+  var detailEl = document.getElementById('vpnDetail')
+  detailEl.style.display = 'block'
+  detailEl.innerHTML = '<p style="text-align:center;color:var(--text-ter)">⏳ 获取详情...</p>'
+  var res = await window.vpnAPI.getStatus(name)
+  if (!res || !res.success) {
+    detailEl.innerHTML = '<div class="card" style="padding:16px"><div style="color:var(--danger)">❌ ' + escHtml(res?.error || '获取失败') + '</div></div>'
+    return
+  }
+  var html = '<div class="card" style="padding:16px;margin-top:12px">'
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+  html += '<div style="font-weight:500;font-size:14px">📋 ' + escHtml(name) + ' 详情</div>'
+  html += '<button class="btn btn-sm" style="background:var(--border);border:none;padding:2px 10px;border-radius:4px;cursor:pointer" onclick="document.getElementById(\'vpnDetail\').style.display=\'none\'">✕ 关闭</button>'
+  html += '</div>'
+  html += '<div style="font-size:12px;line-height:1.8;white-space:pre-wrap;color:var(--text);background:#f8f9fa;padding:12px;border-radius:6px;max-height:300px;overflow:auto">' + escHtml(res.info || '') + '</div>'
+  if (res.device) {
+    html += '<div style="margin-top:8px;font-size:12px;color:var(--text-sec)">接口设备: ' + escHtml(res.device) + (res.ipAddress ? ' | IP: ' + escHtml(res.ipAddress) : '') + '</div>'
+  }
+  html += '</div>'
+  detailEl.innerHTML = html
+}
+function showAddVpnDialog() {
+  showModal(
+    '<h3 style="font-size:16px;font-weight:600;margin:0 0 12px">➕ 新建 VPN 连接</h3>' +
+    '<div style="margin-bottom:10px"><label style="font-size:12px;display:block;margin-bottom:4px;color:var(--text-sec)">连接名称</label>' +
+    '<input id="vpnNewName" value="My VPN" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;box-sizing:border-box"></div>' +
+    '<div style="margin-bottom:10px"><label style="font-size:12px;display:block;margin-bottom:4px;color:var(--text-sec)">VPN 类型</label>' +
+    '<select id="vpnNewType" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:#fff">' +
+    '<option value="l2tp">L2TP</option><option value="openvpn">OpenVPN</option><option value="pptp">PPTP</option><option value="strongswan">IPsec/StrongSwan</option></select></div>' +
+    '<div style="margin-bottom:10px"><label style="font-size:12px;display:block;margin-bottom:4px;color:var(--text-sec)">服务器地址 (可选)</label>' +
+    '<input id="vpnNewGateway" placeholder="例如 192.168.1.1" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;box-sizing:border-box"></div>' +
+    '<div style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end">' +
+    '<button class="btn btn-sec" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-primary" onclick="doAddVpn()">创建</button></div>'
+  )
+}
+async function doAddVpn() {
+  var name = document.getElementById('vpnNewName')?.value || 'My VPN'
+  var type = document.getElementById('vpnNewType')?.value || 'l2tp'
+  var gateway = document.getElementById('vpnNewGateway')?.value || ''
+  closeModal()
+  if (!window.vpnAPI) return
+  var res = await window.vpnAPI.addConnection({ name: name, type: type, gateway: gateway })
+  if (res && res.success) { await refreshVpnList() }
+  else { alert('创建失败: ' + (res?.error || '未知错误')) }
+}
+function showImportVpnDialog() {
+  showModal(
+    '<h3 style="font-size:16px;font-weight:600;margin:0 0 12px">📥 导入 VPN 配置</h3>' +
+    '<p style="font-size:12px;color:var(--text-sec);margin-bottom:12px">支持 .ovpn (OpenVPN)、.pcf (L2TP)、.conf 格式</p>' +
+    '<button class="btn btn-primary" onclick="doImportVpn()">📁 选择配置文件</button>' +
+    '<div id="importVpnResult" style="margin-top:12px;font-size:12px"></div>'
+  )
+}
+async function doImportVpn() {
+  var resultEl = document.getElementById('importVpnResult')
+  if (!resultEl) return
+  if (!window.fileAPI) { resultEl.textContent = '❌ 文件选择器不可用'; return }
+  var filePath = await window.fileAPI.selectFile([{name:'VPN配置',extensions:['ovpn','conf','pcf','txt']}])
+  if (!filePath) return
+  resultEl.textContent = '⏳ 正在导入...'
+  if (!window.vpnAPI) { resultEl.textContent = '❌ VPN API 不可用'; return }
+  var res = await window.vpnAPI.importConfig(filePath)
+  if (res && res.success) {
+    resultEl.textContent = '✅ ' + (res.message || '配置导入成功')
+    closeModal()
+    await refreshVpnList()
+  } else {
+    resultEl.textContent = '❌ 导入失败: ' + (res?.error || '未知错误')
+  }
+}
+async function exportVpnConfig() {
+  var select = document.getElementById('vpnBatchSelect')
+  if (!select || !select.value) { alert('请先选择要导出的连接'); return }
+  var name = select.value
+  if (!window.fileAPI) { alert('文件保存不可用'); return }
+  var savePath = await window.fileAPI.saveFileDialog(name + '.nmconnection', [{name:'NetworkManager配置',extensions:['nmconnection']}])
+  if (!savePath) return
+  if (!window.vpnAPI) return
+  var dir = savePath.substring(0, savePath.lastIndexOf('/'))
+  var res = await window.vpnAPI.exportConfig(name, dir)
+  if (res && res.success) {
+    alert('✅ 配置已导出到: ' + res.path)
+  } else {
+    alert('❌ 导出失败: ' + (res?.error || '未知错误'))
+  }
+}
+async function toggleAutoReconnect() {
+  var select = document.getElementById('vpnBatchSelect')
+  if (!select || !select.value) { alert('请先选择连接'); return }
+  var name = select.value
+  if (!window.vpnAPI) return
+  var listRes = await window.vpnAPI.listConnections()
+  if (!listRes || !listRes.success) return
+  var detail = listRes.details?.[name]
+  var newState = !(detail?.autoReconnect)
+  var res = await window.vpnAPI.setAutoReconnect(name, newState)
+  if (res && res.success) { await refreshVpnList() }
+  else { alert('设置失败: ' + (res?.error || '未知错误')) }
+}
+async function installVpnTools() {
+  if (!window.vpnAPI) return
+  var password = prompt('需要 sudo 权限安装 VPN 工具包，请输入密码:')
+  if (!password) return
+  var el = document.getElementById('vpnContent')
+  if (el) el.innerHTML = '<p style="text-align:center;color:var(--text-ter)">⏳ 正在安装 VPN 工具包...</p>'
+  var res = await window.vpnAPI.installTools(password)
+  if (res && res.success) { await refreshVpnList() }
+  else {
+    if (el) el.innerHTML = '<p style="text-align:center;color:var(--danger)">❌ 安装失败: ' + escHtml(res?.error || '未知错误') + '</p>'
+  }
+}
 </script>
 </body>
 </html>
