@@ -3080,14 +3080,28 @@ ipcMain.handle('capture-recording-status', async () => {
 ipcMain.handle('hotkey-list', async () => {
   const { execSync } = require('child_process')
   try {
-    const raw = execSync("gsettings list-recursively org.gnome.desktop.wm.keybindings 2>/dev/null | head -50", { timeout: 10000, encoding: 'utf-8' }).toString()
-    const lines = raw.split('\n').filter(l => l.trim()).map(l => {
-      const parts = l.split(' ');
-      const key = parts[0]||'';
-      const val = parts.slice(2).join(' ').replace(/'/g,'')||'';
-      return { key: key.split('.').pop(), value: val }
-    })
-    return { success: true, shortcuts: lines }
+    const schemas = ['org.gnome.desktop.wm.keybindings', 'com.deepin.dde.keybinding', 'org.gnome.settings-daemon.plugins.media-keys']
+    const allShortcuts = []
+    const seen = new Set()
+    for (const schema of schemas) {
+      try {
+        const raw = execSync("gsettings list-recursively " + schema + " 2>/dev/null | head -80", { timeout: 10000, encoding: 'utf-8' }).toString()
+        raw.split('\n').filter(l => l.trim()).forEach(l => {
+          const idx = l.indexOf(' ')
+          if (idx < 0) return
+          const keyPath = l.substring(0, idx).trim()
+          const val = l.substring(idx + 1).trim().replace(/'/g, '') || ''
+          const keyName = keyPath.split('.').pop() || ''
+          // deduplicate
+          const dedupKey = keyName + ':' + val
+          if (!seen.has(dedupKey) && keyName) {
+            seen.add(dedupKey)
+            allShortcuts.push({ key: keyName, value: val, source: schema })
+          }
+        })
+      } catch {}
+    }
+    return { success: true, shortcuts: allShortcuts }
   } catch(e) { return { success: false, error: e.message } }
 })
 ipcMain.handle('hotkey-set', async (_, key, cmd) => {
@@ -3105,12 +3119,17 @@ ipcMain.handle('hotkey-reset', async () => {
   } catch(e) { return { success: false, error: e.message } }
 })
 ipcMain.handle('hotkey-export', async () => {
-  const { execSync } = require('child_process'); const fs = require('fs'); const path = require('path')
+  const { execSync } = require('child_process'); const fs = require('fs'); const { dialog } = require('electron')
   try {
-    const raw = execSync("gsettings list-recursively org.gnome.desktop.wm.keybindings 2>/dev/null", { timeout: 10000, encoding: 'utf-8' }).toString()
-    const file = path.join(require('electron').app.getPath('desktop'), `shortcuts_export_${Date.now()}.dconf`)
-    fs.writeFileSync(file, raw, 'utf-8')
-    return { success: true, file }
+    const raw = execSync("gsettings list-recursively org.gnome.desktop.wm.keybindings 2>/dev/null && echo '---' && gsettings list-recursively com.deepin.dde.keybinding 2>/dev/null && echo '---' && gsettings list-recursively org.gnome.settings-daemon.plugins.media-keys 2>/dev/null", { timeout: 15000, encoding: 'utf-8' }).toString()
+    const win = require('electron').BrowserWindow.getAllWindows()[0]
+    const r = await dialog.showSaveDialog(win, {
+      defaultPath: 'uos_shortcuts_export.dconf',
+      filters: [{ name: '快捷键配置', extensions: ['dconf', 'txt'] }]
+    })
+    if (r.canceled || !r.filePath) return { success: false, error: '已取消' }
+    fs.writeFileSync(r.filePath, raw, 'utf-8')
+    return { success: true, file: r.filePath }
   } catch(e) { return { success: false, error: e.message } }
 })
 ipcMain.handle('hotkey-import', async (_, path) => {

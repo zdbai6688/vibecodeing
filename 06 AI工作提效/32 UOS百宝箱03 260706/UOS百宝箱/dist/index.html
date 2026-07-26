@@ -192,7 +192,8 @@ const NAV = [
   {id:'systemapps',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#e8f5e9;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:#2e7d32;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>`,label:'系统应用',desc:'系统能力调用与集成'}
 ,  // ===== 🛠️ 更多实用功能 =====
   {id:'phase2-more',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>`,label:'更多实用功能',desc:'启动项管理/文件搜索/健康检查/USB启动盘/基准测试/备份还原/驱动管理/远程桌面'},
-  {id:'crashanalyze',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>`,label:'崩溃分析',desc:'系统崩溃记录查看、分析诊断与解决方案推荐'}
+  {id:'crashanalyze',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>`,label:'崩溃分析',desc:'系统崩溃记录查看、分析诊断与解决方案推荐'},
+  {id:'shortcut-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="6" y1="12" x2="6.01" y2="12"/><line x1="10" y1="12" x2="10.01" y2="12"/><line x1="14" y1="12" x2="14.01" y2="12"/><line x1="18" y1="12" x2="18.01" y2="12"/></svg></span>`,label:'快捷键管理',desc:'查看和配置系统快捷键'},
 ]
 const MONITOR_SUB = [
   {group:'进程资源类',items:[{id:'top-cpu',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,label:'CPU 消耗排行'},{id:'top-mem',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,label:'内存消耗排行'},{id:'zombie',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="8" y1="9" x2="8.01" y2="9"/><line x1="16" y1="9" x2="16.01" y2="9"/><path d="M16 15a4 4 0 0 1-8 0"/></svg>`,label:'僵尸进程检测'}]},
@@ -350,7 +351,9 @@ function switchPage(id){
   else if(id==='compliance') renderCompliance(el)
   else if(id==='about') renderAbout(el)
   else if(id==='systemapps') renderSystemApps(el)
+  else if(id==='shortcut-mgr') renderShortcutMgr(el)
     else if(id==='crashanalyze') renderCrashAnalyze(el)
+    else if(id==='printer') renderPrinterPage(el)
 else if(id==='phase2-more') renderPhase2Page(el)
 }
 
@@ -2741,7 +2744,7 @@ function toggleLicenseKey(){
 }
 
 function fmtMB(mb){if(!mb&&mb!==0)return '-';if(mb>=1024)return (mb/1024).toFixed(1)+' GB';return mb+' MB'}
-function esc(t){if(!t)return '';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function esc(t){if(!t)return '';return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\x27/g,'&#39;')}
 function stripAnsi(s){if(!s)return '';return s.replace(/\x1b\[[0-9;]*m/g,'')}
 
 function renderSystemApps(el){
@@ -3174,7 +3177,7 @@ async function generateComplianceReport(){
         '<div style="font-size:40px;margin-bottom:10px">📋</div>' +
         '<div style="font-weight:500">合规报告已生成</div>' +
         '<div style="color:var(--text-sec);margin:6px 0">' + esc(r.file) + '</div>' +
-        '<button class="btn btn-primary" onclick="window.fileAPI.openPath(\'' + esc(r.file).replace(/'/g,"\\'") + '\')">📂 打开文件位置</button>' +
+        '<button class="btn btn-primary" onclick="window.fileAPI.openPath(\'' + esc(r.file).replace(/\x27/g,"\\" + String.fromCharCode(39)) + '\')">📂 打开文件位置</button>' +
         '<button class="btn btn-sec" style="margin-left:8px" onclick="runComplianceCheck()">🔄 返回</button>' +
       '</div>'
     } else {
@@ -3949,7 +3952,7 @@ async function searchRollbackPkg(){
           if(v.isCurrent){
             html += '<span style="color:var(--success);font-size:11px;font-weight:500">✓ 当前版本</span>'
           } else {
-            html += '<button class="btn btn-sm btn-warning" onclick="executeRollback(\x27" + escHtml(pkgName) + "\x27,\x27" + escHtml(v.version).replace(/'/g,"\\'") + "\x27)" style="padding:3px 10px;font-size:11px">↩ 回滚到此版本</button>'
+            html += '<button class="btn btn-sm btn-warning" onclick="executeRollback(\x27" + escHtml(pkgName) + "\x27,\x27" + escHtml(v.version).replace(/\x27/g,"\\" + String.fromCharCode(39)) + "\x27)" style="padding:3px 10px;font-size:11px">↩ 回滚到此版本</button>'
           }
           html += '</div>'
         }
@@ -3968,9 +3971,7 @@ async function searchRollbackPkg(){
 }
 
 async function executeRollback(pkgName, targetVersion){
-  if(!confirm('确认要将 ' + pkgName + ' 回滚到 ' + targetVersion + ' 版本？
-
-此操作可能需要 sudo 密码。')) return
+  if(!confirm(确认要将 ' + pkgName + ' 回滚到 ' + targetVersion + ' 版本？\n\n此操作可能需要 sudo 密码。'))) return
   
   const password = prompt('请输入 sudo 密码（留空则尝试无密码执行）:')
   if(password === null) return
@@ -4092,7 +4093,7 @@ function displayCoredumps(coredumps){
       '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5;color:' + sigColor + ';font-weight:500">' + signal + '</td>' +
       '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5;font-size:11px;color:var(--text-sec)">' + esc(c.pid || '') + '</td>' +
       '<td style="padding:8px 10px;border-bottom:1px solid #f5f5f5">' +
-      '<button class="btn btn-sm" onclick="analyzeCoredump('' + esc(c.pid || '').replace(/'/g,"\\'") + '','' + esc(c.signal || '').replace(/'/g,"\\'") + '','' + esc(c.package || c.exe || '').replace(/'/g,"\\'") + '','' + esc(c.exe || '').replace(/'/g,"\\'") + '')" style="padding:2px 8px;font-size:10px">🔍 分析</button></td></tr>'
+      '<button class="btn btn-sm" onclick="analyzeCoredump('' + esc(c.pid || '').replace(/\x27/g,"\\" + String.fromCharCode(39)) + '','' + esc(c.signal || '').replace(/\x27/g,"\\" + String.fromCharCode(39)) + '','' + esc(c.package || c.exe || '').replace(/\x27/g,"\\" + String.fromCharCode(39)) + '','' + esc(c.exe || '').replace(/\x27/g,"\\" + String.fromCharCode(39)) + '')" style="padding:2px 8px;font-size:10px">🔍 分析</button></td></tr>'
   }
   html += '</tbody></table></div>'
   body.innerHTML = html
@@ -4430,7 +4431,7 @@ async function startFileSearch() {
         html += '<div style="flex:1;min-width:0"><div style="font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.name + '</div>'
         html += '<div style="font-size:10px;color:var(--text-ter);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + f.path + '</div>'
         html += '<div style="font-size:10px;color:var(--text-ter);margin-top:1px">' + typeLabel + ' · ' + (f.sizeStr || '') + ' · ' + (f.dateStr || '') + '</div></div>'
-        html += '<button class="btn" style="font-size:10px;padding:3px 8px;flex-shrink:0" onclick="openFileLocation(\'' + f.path.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">📂 打开位置</button>'
+        html += '<button class="btn" style="font-size:10px;padding:3px 8px;flex-shrink:0" onclick="openFileLocation(\'' + f.path.replace(/\\/g,'\\\\').replace(/\x27/g,"\\" + String.fromCharCode(39)) + '\')">📂 打开位置</button>'
         html += '</div>'
       }
       html += '</div>'
@@ -4479,6 +4480,185 @@ const PHASE2_ITEMS = [
   {id:'remote-desktop',ico:'\U0001f5a5\ufe0f',name:'远程桌面',desc:'集成VNC/RDP客户端，输入远程地址和端口，一键连接远程桌面'}
 ]
 
+
+// ========== 打印机管理 ==========
+async function renderPrinterPage(el){
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 \u6b63\u5728\u83b7\u53d6\u6253\u5370\u673a\u4fe1\u606f...</div>'
+  try {
+    var r = await window.printerAPI.listPrinters()
+    if (!r || !r.success) {
+      el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c \u83b7\u53d6\u6253\u5370\u673a\u5217\u8868\u5931\u8d25: ' + (r && r.error ? esc(r.error) : '\u672a\u77e5\u9519\u8bef') + '</div>'
+      return
+    }
+    var printers = r.printers || []
+    var html = '<div style="max-width:900px;margin:0 auto">'
+    html += '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
+    html += '<button class="btn" onclick="printerRefresh()" style="padding:8px 18px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">\ud83d\udd04 \u5237\u65b0</button>'
+    html += '<button class="btn" onclick="printerShowAdd()" style="padding:8px 18px;background:var(--success);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">\u2795 \u6dfb\u52a0\u6253\u5370\u673a</button>'
+    html += '</div>'
+    html += '<div style="background:var(--card-bg);border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow)">'
+    html += '<div style="font-size:14px;font-weight:600;margin-bottom:8px">\ud83d\udda8\ufe0f \u6253\u5370\u673a\u5217\u8868</div>'
+    if (printers.length === 0) {
+      html += '<div style="text-align:center;padding:20px;color:var(--text-sec)">\u672a\u5b89\u88c5\u6253\u5370\u673a</div>'
+    } else {
+      html += '<div style="overflow-x:auto"><table class="monitor-table" style="font-size:12px;width:100%"><thead><tr>'
+      html += '<th>\u6253\u5370\u673a\u540d\u79f0</th><th style="width:100px">\u72b6\u6001</th><th style="width:280px">\u64cd\u4f5c</th></tr></thead><tbody>'
+      for (var i = 0; i < printers.length; i++) {
+        var p = printers[i]
+        var statusColor = p.status === 'idle' ? 'var(--success)' : (p.status === 'disabled' ? 'var(--danger)' : 'var(--warning)')
+        var statusText = p.status === 'idle' ? '\u2705 \u5c31\u7eea' : (p.status === 'disabled' ? '\u26d4 \u5df2\u7981\u7528' : '\u26a0\ufe0f \u6d3b\u8dc3')
+        html += '<tr>'
+        html += '<td><strong>' + esc(p.name) + '</strong></td>'
+        html += '<td><span style="color:' + statusColor + ';font-weight:500">' + statusText + '</span></td>'
+        html += '<td>'
+        html += '<button class="btn btn-sm" onclick="printerPrintTest(\'' + esc(p.name) + '\')" style="color:var(--primary);margin-right:4px">\ud83d\udda8\ufe0f \u6253\u5370\u6d4b\u8bd5\u9875</button>'
+        html += '<button class="btn btn-sm" onclick="printerShowQueue(\'' + esc(p.name) + '\')" style="color:var(--warning);margin-right:4px">\ud83d\udccb \u6253\u5370\u961f\u5217</button>'
+        html += '<button class="btn btn-sm" onclick="printerRemove(\'' + esc(p.name) + '\')" style="color:var(--danger)">\ud83d\uddd1\ufe0f \u5220\u9664</button>'
+        html += '</td></tr>'
+      }
+      html += '</tbody></table></div>'
+    }
+    html += '</div>'
+    html += '<div style="background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow)">'
+    html += '<div style="font-size:14px;font-weight:600;margin-bottom:8px">\u26a1 \u5feb\u901f\u64cd\u4f5c</div>'
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    html += '<button class="btn btn-outline" onclick="printerCheckCups()" style="padding:6px 14px;font-size:12px">\ud83d\udd0d \u68c0\u67e5 CUPS \u670d\u52a1</button>'
+    html += '<button class="btn btn-outline" onclick="printerRestartCups()" style="padding:6px 14px;font-size:12px">\ud83d\udd04 \u91cd\u542f\u6253\u5370\u670d\u52a1</button>'
+    html += '</div></div>'
+    html += '</div>'
+    el.innerHTML = html
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c \u5f02\u5e38: ' + esc(e.message) + '</div>'
+  }
+}
+
+async function printerRefresh() {
+  var el = document.getElementById('pageContent')
+  if (el) renderPrinterPage(el)
+}
+
+async function printerShowAdd() {
+  document.getElementById('modalOverlay').classList.add('show')
+  document.getElementById('modalContent').innerHTML = '<button class="close-btn" onclick="closeModal()">\u2715</button>' +
+    '<h2>\u2795 \u6dfb\u52a0\u6253\u5370\u673a</h2><div class="sub">\u8bf7\u8f93\u5165\u6253\u5370\u673a\u4fe1\u606f</div>' +
+    '<div style="margin-top:12px">' +
+    '<div style="margin-bottom:10px"><label style="font-size:12px;color:#888;display:block;margin-bottom:4px">\u6253\u5370\u673a\u540d\u79f0</label>' +
+    '<input id="printerNameInput" placeholder="\u5982: HP_LaserJet" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;box-sizing:border-box"></div>' +
+    '<div style="margin-bottom:10px"><label style="font-size:12px;color:#888;display:block;margin-bottom:4px">\u8bbe\u5907 URI\uff08\u53ef\u9009\uff09</label>' +
+    '<input id="printerDeviceInput" placeholder="\u5982: usb://HP/LaserJet?serial=12345" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;box-sizing:border-box"></div>' +
+    '<div style="margin-bottom:10px"><label style="font-size:12px;color:#888;display:block;margin-bottom:4px">PPD \u6587\u4ef6\uff08\u53ef\u9009\uff09</label>' +
+    '<div style="display:flex;gap:8px"><input id="printerPpdInput" placeholder="\u9009\u62e9 PPD \u9a71\u52a8\u6587\u4ef6" readonly style="flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;background:#f9f9f9">' +
+    '<button class="btn" onclick="printerSelectPpd()" style="padding:8px 14px;font-size:12px">\u9009\u62e9\u6587\u4ef6</button></div></div>' +
+    '<button class="btn" onclick="printerDoAdd()" style="padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;width:100%">\u786e\u5b9a\u6dfb\u52a0</button></div>' +
+    '<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">\u53d6\u6d88</button></div>'
+}
+
+var _printerPpdPath = null
+async function printerSelectPpd() {
+  var fp = await window.fileAPI.selectFile({ filters: [{ name: 'PPD \u6587\u4ef6', extensions: ['ppd', 'ppd.gz'] }, { name: '\u6240\u6709\u6587\u4ef6', extensions: ['*'] }], multiSelections: false })
+  if (fp) {
+    _printerPpdPath = fp
+    var input = document.getElementById('printerPpdInput')
+    if (input) input.value = fp.split('/').pop()
+  }
+}
+
+async function printerDoAdd() {
+  var nameInput = document.getElementById('printerNameInput')
+  if (!nameInput) return
+  var name = nameInput.value.trim()
+  if (!name) { alert('\u8bf7\u8f93\u5165\u6253\u5370\u673a\u540d\u79f0'); return }
+  var deviceInput = document.getElementById('printerDeviceInput')
+  var device = deviceInput ? deviceInput.value.trim() : ''
+  var options = {}
+  if (device) options.device = device
+  if (_printerPpdPath) options.ppd = _printerPpdPath
+  try {
+    var r = await window.printerAPI.addPrinter(name, options)
+    if (r && r.success) {
+      _printerPpdPath = null; closeModal(); printerRefresh()
+    } else {
+      alert('\u6dfb\u52a0\u5931\u8d25: ' + (r && r.error ? r.error : '\u672a\u77e5\u9519\u8bef'))
+    }
+  } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
+}
+
+async function printerRemove(name) {
+  if (!confirm('\u786e\u5b9a\u8981\u5220\u9664\u6253\u5370\u673a "' + name + '" \u5417\uff1f')) return
+  try {
+    var r = await window.printerAPI.removePrinter(name)
+    if (r && r.success) { printerRefresh() }
+    else { alert('\u5220\u9664\u5931\u8d25: ' + (r && r.error ? r.error : '\u672a\u77e5\u9519\u8bef')) }
+  } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
+}
+
+async function printerPrintTest(name) {
+  try {
+    var r = await window.printerAPI.printTestPage(name)
+    if (r && r.success) { alert('\u2705 \u6d4b\u8bd5\u9875\u5df2\u53d1\u9001\u5230\u6253\u5370\u673a "' + name + '"') }
+    else { alert('\u53d1\u9001\u5931\u8d25: ' + (r && r.error ? r.error : '\u672a\u77e5\u9519\u8bef')) }
+  } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
+}
+
+async function printerShowQueue(name) {
+  document.getElementById('modalOverlay').classList.add('show')
+  document.getElementById('modalContent').innerHTML = '<button class="close-btn" onclick="closeModal()">\u2715</button>' +
+    '<h2>\ud83d\udccb \u6253\u5370\u961f\u5217 - ' + esc(name) + '</h2>' +
+    '<div style="margin-top:12px" id="printerQueueContent"><div style="text-align:center;padding:20px;color:var(--text-sec)">\u23f3 \u6b63\u5728\u83b7\u53d6\u961f\u5217...</div></div>' +
+    '<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">\u5173\u95ed</button></div>'
+  try {
+    var r = await window.printerAPI.getPrintQueue(name)
+    var qEl = document.getElementById('printerQueueContent')
+    if (r && r.success) {
+      var jobs = r.jobs || []
+      if (jobs.length === 0) { qEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-sec)">\ud83d\udced \u6253\u5370\u961f\u5217\u4e3a\u7a7a</div>' }
+      else {
+        var html = '<div style="overflow-x:auto"><table class="monitor-table" style="font-size:12px;width:100%"><thead><tr><th>#</th><th>\u4efb\u52a1\u4fe1\u606f</th></tr></thead><tbody>'
+        for (var i = 0; i < jobs.length; i++) { html += '<tr><td>' + (i + 1) + '</td><td style="font-family:monospace;font-size:11px">' + esc(jobs[i].raw || String(jobs[i])) + '</td></tr>' }
+        html += '</tbody></table></div>'
+        html += '<div style="margin-top:8px"><button class="btn" onclick="printerCancelAllJobs(\'' + esc(name) + '\')" style="padding:6px 14px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">\ud83d\uddd1\ufe0f \u53d6\u6d88\u6240\u6709\u4efb\u52a1</button></div>'
+        qEl.innerHTML = html
+      }
+    } else { qEl.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c \u83b7\u53d6\u961f\u5217\u5931\u8d25: ' + (r && r.error ? esc(r.error) : '') + '</div>' }
+  } catch(e) {
+    var qEl2 = document.getElementById('printerQueueContent')
+    if (qEl2) qEl2.innerHTML = '<div style="color:var(--danger);padding:20px;text-align:center">\u274c \u5f02\u5e38: ' + esc(e.message) + '</div>'
+  }
+}
+
+async function printerCancelAllJobs(name) {
+  if (!confirm('\u786e\u5b9a\u8981\u53d6\u6d88 "' + name + '" \u7684\u6240\u6709\u6253\u5370\u4efb\u52a1\u5417\uff1f')) return
+  try {
+    var r = await window.printerAPI.cancelAllJobs(name)
+    if (r && r.success) { alert('\u2705 \u5df2\u53d6\u6d88\u6240\u6709\u4efb\u52a1') }
+    else { alert('\u64cd\u4f5c\u5931\u8d25: ' + (r && r.error ? r.error : '\u672a\u77e5\u9519\u8bef')) }
+  } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
+}
+
+async function printerCheckCups() {
+  try {
+    var r = await window.printerAPI.checkCups()
+    document.getElementById('modalOverlay').classList.add('show')
+    var content = '<button class="close-btn" onclick="closeModal()">\u2715</button><h2>\ud83d\udd0d CUPS \u670d\u52a1\u72b6\u6001</h2>'
+    if (r && r.success) { content += '<div style="margin-top:12px;background:var(--card-bg);padding:16px;border-radius:8px;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:400px;overflow-y:auto">' + esc(r.output || '\u6b63\u5e38\u8fd0\u884c') + '</div>' }
+    else { content += '<div style="margin-top:12px;color:var(--danger)">\u67e5\u8be2\u5931\u8d25: ' + (r && r.error ? esc(r.error) : '') + '</div>' }
+    content += '<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">\u5173\u95ed</button></div>'
+    document.getElementById('modalContent').innerHTML = content
+  } catch(e) {
+    document.getElementById('modalOverlay').classList.add('show')
+    document.getElementById('modalContent').innerHTML = '<button class="close-btn" onclick="closeModal()">\u2715</button><h2>\ud83d\udd0d CUPS \u670d\u52a1\u72b6\u6001</h2><div style="color:var(--danger);padding:20px">\u5f02\u5e38: ' + esc(e.message) + '</div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">\u5173\u95ed</button></div>'
+  }
+}
+
+async function printerRestartCups() {
+  if (!confirm('\u786e\u5b9a\u8981\u91cd\u542f\u6253\u5370\u670d\u52a1 (CUPS) \u5417\uff1f')) return
+  try {
+    var r = await window.printerAPI.restartCups()
+    if (r && r.success) { alert('\u2705 \u6253\u5370\u670d\u52a1\u5df2\u91cd\u542f') }
+    else { alert('\u91cd\u542f\u5931\u8d25: ' + (r && r.error ? r.error : '\u672a\u77e5\u9519\u8bef')) }
+  } catch(e) { alert('\u5f02\u5e38: ' + e.message) }
+}
+
 async function renderPhase2Page(el){
   el.innerHTML = '<p style="margin-bottom:16px;color:var(--text-sec);font-size:13px">\U0001f6e0\ufe0f 更多实用功能 · 点击工具卡片使用</p>' +
     '<div class="card-grid">' +
@@ -4502,7 +4682,7 @@ async function openPhase2Tool(id){
 
 function esc(str){
   if(typeof str !== 'string') return ''
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\x27/g,'&#39;')
 }
 
 async function loadPhase2Tool(id){
@@ -4741,7 +4921,7 @@ async function doFileSearch(){
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid #f0f0f0">'
         html += '<div style="flex:1;min-width:0"><div style="font-size:12px">' + esc(f.name) + '</div><div style="font-size:10px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(f.path) + '</div></div>'
         html += '<div style="flex-shrink:0;display:flex;gap:6px;align-items:center"><span style="font-size:10px;color:#999">' + esc(f.size || '') + '</span>'
-        html += '<button class="btn btn-sm" onclick="window.shell.openPath(\'' + esc(f.path).replace(/'/g,'\\\'') + '\')" style="padding:2px 8px;font-size:10px">\U0001f4c2 打开</button></div></div>'
+        html += '<button class="btn btn-sm" onclick="window.shell.openPath(\'' + esc(f.path).replace(/\x27/g,'\\\'') + '\')" style="padding:2px 8px;font-size:10px">\U0001f4c2 打开</button></div></div>'
       }
       if(r.files.length > 100){
         html += '<div style="text-align:center;padding:8px;color:var(--text-sec);font-size:11px">... 仅显示前 100 个结果</div>'
@@ -4856,6 +5036,264 @@ async function doRemoteConnect(type){
   } catch(e){
     if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">\u274c 异常: ' + esc(e.message) + '</span>'
   }
+
+async function renderShortcutMgr(el){
+  el.innerHTML = '<div style="max-width:1000px;margin:0 auto">' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:center">' +
+      '<button class="btn btn-primary" onclick="loadShortcuts()">📋 加载快捷键列表</button>' +
+      '<button class="btn btn-success" onclick="showAddShortcutDialog()">➕ 添加快捷键</button>' +
+      '<button class="btn btn-warning" onclick="exportShortcuts()">📤 导出配置</button>' +
+      '<button class="btn btn-outline" onclick="importShortcuts()">📥 导入配置</button>' +
+      '<button class="btn btn-danger" onclick="resetShortcutsConfirm()">🔄 重置为默认</button>' +
+    '</div>' +
+    '<div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">' +
+      '<input type="text" id="shortcutSearch" placeholder="搜索快捷键名称或按键..." style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px" oninput="filterShortcuts(this.value)">' +
+      '<span id="shortcutCount" style="font-size:12px;color:var(--text-sec);white-space:nowrap"></span>' +
+    '</div>' +
+    '<div id="shortcutTableWrap" style="background:var(--card-bg);border-radius:10px;box-shadow:var(--shadow);overflow:hidden">' +
+      '<table class="monitor-table" id="shortcutTable"><thead><tr><th style="width:40%">功能名称</th><th style="width:35%">快捷键</th><th style="width:25%">操作</th></tr></thead><tbody id="shortcutBody"><tr><td colspan="3" style="text-align:center;padding:40px;color:var(--text-sec)">点击"加载快捷键列表"查看系统快捷键</td></tr></tbody></table>' +
+    '</div>' +
+    '<div id="shortcutResult" style="margin-top:12px;padding:10px 14px;border-radius:6px;font-size:12px;line-height:1.6;display:none"></div>' +
+    '</div>'
+  window._allShortcuts = []
+}
+
+function escHtml(s){
+  if(!s) return ''
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+async function loadShortcuts(){
+  const tbody = document.getElementById('shortcutBody')
+  const resultEl = document.getElementById('shortcutResult')
+  if(!tbody) return
+  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 正在加载...</td></tr>'
+  try{
+    const res = await window.hotkeyAPI.listShortcuts()
+    if(!res || !res.success){
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--danger)">❌ ' + escHtml(res?.error || '获取快捷键列表失败') + '</td></tr>'
+      return
+    }
+    const shortcuts = res.shortcuts || []
+    window._allShortcuts = shortcuts
+    renderShortcutTable(shortcuts)
+    if(resultEl){
+      resultEl.style.display = 'block'
+      resultEl.innerHTML = '<span style="color:var(--success)">✅ 共找到 ' + shortcuts.length + ' 个快捷键</span>'
+    }
+    const countEl = document.getElementById('shortcutCount')
+    if(countEl) countEl.textContent = '共 ' + shortcuts.length + ' 项'
+  }catch(e){
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--danger)">❌ 加载失败: ' + escHtml(e.message) + '</td></tr>'
+  }
+}
+
+function renderShortcutTable(shortcuts){
+  const tbody = document.getElementById('shortcutBody')
+  const searchVal = (document.getElementById('shortcutSearch')?.value || '').toLowerCase()
+  if(!tbody) return
+  if(!shortcuts || shortcuts.length === 0){
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-sec)">未找到快捷键（或系统不支持 gsettings）</td></tr>'
+    return
+  }
+  const filtered = searchVal ? shortcuts.filter(s => (s.key || '').toLowerCase().includes(searchVal) || (s.value || '').toLowerCase().includes(searchVal)) : shortcuts
+  if(filtered.length === 0){
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-sec)">未匹配到快捷键</td></tr>'
+    return
+  }
+  tbody.innerHTML = filtered.map((s, idx) => {
+    // 美化按键名称
+    const keyName = s.key || '-'
+    const keyVal = s.value || ''
+    let displayVal = keyVal.replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    if(displayVal === "['']" || displayVal === "disabled" || displayVal === "@as []") displayVal = '<span style="color:var(--text-ter)">未设置</span>'
+    return '<tr style="cursor:pointer" onclick="editShortcut(\'' + escHtml(keyName) + '\',\'' + escHtml(keyVal).replace(/'/g,"\\'") + '\')">' +
+      '<td style="font-weight:500">' + escHtml(keyName.replace(/_/g,' ').replace(/-/g,' ').replace(/^./,c=>c.toUpperCase())) + '</td>' +
+      '<td><code style="background:var(--primary-light);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--primary)">' + displayVal + '</code></td>' +
+      '<td><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();editShortcut(\'' + escHtml(keyName).replace(/'/g,"\\'") + '\',\'' + escHtml(keyVal).replace(/'/g,"\\'") + '\')">✏️ 编辑</button></td>' +
+    '</tr>'
+  }).join('')
+  const countEl = document.getElementById('shortcutCount')
+  if(countEl) countEl.textContent = '共 ' + shortcuts.length + ' 项' + (searchVal ? ' (匹配 ' + filtered.length + ' 项)' : '')
+}
+
+function filterShortcuts(val){
+  renderShortcutTable(window._allShortcuts || [])
+}
+
+function showAddShortcutDialog(){
+  const overlay = document.getElementById('modalOverlay')
+  overlay.classList.add('show')
+  document.getElementById('modalContent').innerHTML =
+    '<button class="close-btn" onclick="closeModal()">✕</button>' +
+    '<h2>➕ 自定义快捷键</h2>' +
+    '<div class="sub">设置自定义快捷键组合和执行命令</div>' +
+    '<div style="margin:12px 0">' +
+      '<label style="display:block;font-size:12px;color:var(--text-sec);margin-bottom:4px">快捷键组合（如 &lt;Primary&gt;&lt;Alt&gt;t 或 &lt;Super&gt;e）</label>' +
+      '<input type="text" id="editShortcutKey" placeholder="例如: <Primary><Alt>t" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">' +
+    '</div>' +
+    '<div style="margin:12px 0">' +
+      '<label style="display:block;font-size:12px;color:var(--text-sec);margin-bottom:4px">执行的命令</label>' +
+      '<input type="text" id="editShortcutCmd" placeholder="例如: x-terminal-emulator" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">' +
+    '</div>' +
+    '<div id="addShortcutResult" style="margin-top:8px;font-size:12px;display:none"></div>' +
+    '<div class="modal-footer" style="margin-top:16px">' +
+      '<button class="btn btn-primary" onclick="doAddShortcut()">✅ 添加</button>' +
+      '<button class="btn btn-outline" onclick="closeModal()" style="margin-left:8px">取消</button>' +
+    '</div>'
+}
+
+async function doAddShortcut(){
+  const key = document.getElementById('editShortcutKey')?.value.trim()
+  const cmd = document.getElementById('editShortcutCmd')?.value.trim()
+  const resultEl = document.getElementById('addShortcutResult')
+  if(!key || !cmd){
+    if(resultEl){
+      resultEl.style.display = 'block'
+      resultEl.innerHTML = '<span style="color:var(--danger)">❌ 请填写快捷键和命令</span>'
+    }
+    return
+  }
+  if(resultEl){
+    resultEl.style.display = 'block'
+    resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 正在设置...</span>'
+  }
+  try{
+    const res = await window.hotkeyAPI.setShortcut(key, cmd)
+    if(res && res.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 快捷键已设置</span>'
+      setTimeout(() => { closeModal(); loadShortcuts() }, 800)
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(res?.error || '设置失败') + '</span>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
+  }
+}
+
+function editShortcut(key, val){
+  const displayKey = key.replace(/_/g,' ').replace(/-/g,' ').replace(/^./,c=>c.toUpperCase())
+  const overlay = document.getElementById('modalOverlay')
+  overlay.classList.add('show')
+  document.getElementById('modalContent').innerHTML =
+    '<button class="close-btn" onclick="closeModal()">✕</button>' +
+    '<h2>✏️ 编辑快捷键</h2>' +
+    '<div class="sub">' + escHtml(displayKey) + '</div>' +
+    '<div style="margin:12px 0">' +
+      '<label style="display:block;font-size:12px;color:var(--text-sec);margin-bottom:4px">快捷键组合</label>' +
+      '<input type="text" id="editExistingKey" value="' + escHtml(val).replace(/"/g,'&quot;') + '" placeholder="例如: <Primary><Alt>t" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px">' +
+    '</div>' +
+    '<div id="editShortcutResult" style="margin-top:8px;font-size:12px;display:none"></div>' +
+    '<div class="modal-footer" style="margin-top:16px">' +
+      '<button class="btn btn-primary" onclick="doEditShortcut(\'' + escHtml(key).replace(/'/g,"\\'") + '\')">✅ 保存</button>' +
+      '<button class="btn btn-outline" onclick="closeModal()" style="margin-left:8px">取消</button>' +
+    '</div>'
+}
+
+async function doEditShortcut(key){
+  const newVal = document.getElementById('editExistingKey')?.value.trim()
+  const resultEl = document.getElementById('editShortcutResult')
+  if(!newVal){
+    if(resultEl){
+      resultEl.style.display = 'block'
+      resultEl.innerHTML = '<span style="color:var(--danger)">❌ 请输入快捷键</span>'
+    }
+    return
+  }
+  if(resultEl){
+    resultEl.style.display = 'block'
+    resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 正在设置...</span>'
+  }
+  try{
+    const res = await window.hotkeyAPI.setShortcut(key, newVal)
+    if(res && res.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 快捷键已更新</span>'
+      setTimeout(() => { closeModal(); loadShortcuts() }, 800)
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(res?.error || '设置失败') + '</span>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
+  }
+}
+
+async function exportShortcuts(){
+  const resultEl = document.getElementById('shortcutResult')
+  if(resultEl){
+    resultEl.style.display = 'block'
+    resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 正在导出...</span>'
+  }
+  try{
+    const res = await window.hotkeyAPI.exportShortcuts()
+    if(res && res.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 快捷键配置已导出到: <code>' + escHtml(res.file || '') + '</code></span>'
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(res?.error || '导出失败') + '</span>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
+  }
+}
+
+async function importShortcuts(){
+  const resultEl = document.getElementById('shortcutResult')
+  if(resultEl){
+    resultEl.style.display = 'block'
+    resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 请选择配置文件...</span>'
+  }
+  try{
+    const filePath = await window.fileAPI.selectFile({ filters: [{ name: '快捷键配置', extensions: ['dconf','txt','conf'] }] })
+    if(!filePath) {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--text-sec)">已取消导入</span>'
+      return
+    }
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 正在导入 ' + escHtml(filePath) + ' ...</span>'
+    const res = await window.hotkeyAPI.importShortcuts(filePath)
+    if(res && res.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 快捷键配置已导入</span>'
+      setTimeout(() => loadShortcuts(), 500)
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(res?.error || '导入失败') + '</span>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
+  }
+}
+
+function resetShortcutsConfirm(){
+  const overlay = document.getElementById('modalOverlay')
+  overlay.classList.add('show')
+  document.getElementById('modalContent').innerHTML =
+    '<button class="close-btn" onclick="closeModal()">✕</button>' +
+    '<h2>🔄 重置为默认</h2>' +
+    '<div class="warning-msg" style="background:#fff0f0;border-color:#ffcdd2;color:#c62828">⚠️ 此操作将重置所有快捷键为系统默认值，不可撤销！</div>' +
+    '<div class="modal-footer">' +
+      '<button class="btn btn-danger" onclick="doResetShortcuts()">⚠️ 确认重置</button>' +
+      '<button class="btn btn-outline" onclick="closeModal()" style="margin-left:8px">取消</button>' +
+    '</div>'
+}
+
+async function doResetShortcuts(){
+  const overlay = document.getElementById('modalOverlay')
+  const resultEl = document.getElementById('shortcutResult')
+  if(resultEl){
+    resultEl.style.display = 'block'
+    resultEl.innerHTML = '<span style="color:var(--warning)">⏳ 正在重置为默认...</span>'
+  }
+  overlay.classList.remove('show')
+  try{
+    const res = await window.hotkeyAPI.resetDefault()
+    if(res && res.success){
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--success)">✅ 已重置为默认快捷键配置</span>'
+      setTimeout(() => loadShortcuts(), 500)
+    } else {
+      if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(res?.error || '重置失败') + '</span>'
+    }
+  }catch(e){
+    if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
+  }
+}
+
 }
 
 </script>
