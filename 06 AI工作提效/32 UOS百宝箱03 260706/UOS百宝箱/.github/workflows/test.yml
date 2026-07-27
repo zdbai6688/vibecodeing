@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # 语法检查
+  syntax-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check main.cjs syntax
+        run: node --check dist-electron/main.cjs
+
+      - name: Check preload.mjs syntax
+        run: node --check dist-electron/preload.mjs
+
+      - name: Check index.html embedded JS syntax
+        run: |
+          node -e "
+            const fs=require('fs');
+            const h=fs.readFileSync('dist/index.html','utf-8');
+            const m=h.match(/<script>([\s\S]*?)<\/script>/);
+            if(!m) process.exit(1);
+            fs.writeFileSync('/tmp/check.js', m[1]);
+          "
+          node --check /tmp/check.js
+
+  # IPC 通道验证
+  ipc-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check duplicate IPC handlers
+        run: |
+          DUPES=$(grep -oP "ipcMain\.handle\('([^']+)" dist-electron/main.cjs | sort | uniq -d)
+          if [ -n "$DUPES" ]; then
+            echo "❌ 发现重复的 IPC 处理器:"
+            echo "$DUPES"
+            exit 1
+          fi
+          echo "✅ 无重复 IPC 注册"
+
+      - name: Check duplicate contextBridge exposures
+        run: |
+          DUPES=$(grep -oP "exposeInMainWorld\('([^']+)" dist-electron/preload.mjs | sort | uniq -d)
+          if [ -n "$DUPES" ]; then
+            echo "❌ 发现重复的 contextBridge 暴露:"
+            echo "$DUPES"
+            exit 1
+          fi
+          echo "✅ 无重复 contextBridge 暴露"
+
+  # 功能审计
+  feature-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run feature audit
+        run: bash test/feature_audit.sh
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Run coverage
+        run: npm run coverage
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Python unit tests
+        run: python3 -m unittest test/unit/test_tool_helper.py -v
+
+      - name: Check Python syntax
+        run: |
+          python3 -m py_compile resources/tool_helper.py
+          python3 -m py_compile resources/security_sync/security_sync_wrapper.py
+
+  shell-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install BATS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats
+
+      - name: Run shell script tests
+        run: bats test/shell/
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check shell scripts syntax
+        run: |
+          find resources/scripts -name "*.sh" -exec bash -n {} \;
+          echo "✅ 所有 Shell 脚本语法正确"
+
+      - name: Check for var usage in main.cjs
+        run: |
+          COUNT=$(grep -c '^\s*var ' dist-electron/main.cjs 2>/dev/null || echo 0)
+          if [ "$COUNT" -ge 5 ]; then
+            echo "⚠️  main.cjs 中使用 var 的变量数: $COUNT"
+          else
+            echo "✅ 代码风格检查通过"
+          fi
+
+  # 验证错误日志检查
+  error-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for pre-existing error log patterns
+        run: |
+          # 检查主进程中是否有未捕获异常日志输出
+          if grep -q "uncaughtException\|unhandledRejection\|未捕获的异常" dist-electron/main.cjs; then
+            echo "✅ 主程序包含异常处理"
+          else
+            echo "⚠️ 警告: 未发现未捕获异常处理"
+          fi
+
+  # 前端页面完整性检查
+  frontend-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check navigation items
+        run: |
+          COUNT=$(grep -c 'nav-item' dist/index.html 2>/dev/null || echo 0)
+          echo "侧边栏导航项数量: $COUNT"
+          if [ "$COUNT" -lt 6 ]; then
+            echo "❌ 导航项过少"
+            exit 1
+          fi
+          echo "✅ 导航项完整"
