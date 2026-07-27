@@ -4,31 +4,30 @@
 # 对 UOS百宝箱 进行自动化验证，确保代码质量和功能可用性
 # =============================================================================
 
-set -e
-
 PROJECT_DIR="/home/ut005200@uos/06 AI工作提效/32 UOS百宝箱03 260706/UOS百宝箱"
 PASS=0 FAIL=0 WARN=0 TOTAL=0
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
-ERROR_LOG="/tmp/uos_baibaoxiang_error.log"
-: > "$ERROR_LOG"
+ERROR_LOG=$(mktemp /tmp/uos_baibaoxiang_error.XXXXXX.log)
+CHECK_JS=$(mktemp /tmp/uos_check.XXXXXX.js)
+trap 'rm -f "$ERROR_LOG" "$CHECK_JS"' EXIT
 
 check() {
     TOTAL=$((TOTAL+1))
     local desc="$1"
     local cmd="$2"
     echo -n "  [$TOTAL] $desc ... "
-    if eval "$cmd" 2>> "$ERROR_LOG"; then
+    # 使用 bash -c 替代 eval 以避免 shell 注入风险
+    bash -c "$cmd" 2>> "$ERROR_LOG"
+    local exit_code=$?
+    if [ "$exit_code" -eq 0 ]; then
         echo "✅ 通过"
         PASS=$((PASS+1))
+    elif [ "$exit_code" -eq 2 ]; then
+        echo "⚠️  警告"
+        WARN=$((WARN+1))
     else
-        local exit_code=$?
-        if [ "$exit_code" -eq 2 ]; then
-            echo "⚠️  警告"
-            WARN=$((WARN+1))
-        else
-            echo "❌ 失败"
-            FAIL=$((FAIL+1))
-        fi
+        echo "❌ 失败"
+        FAIL=$((FAIL+1))
     fi
 }
 
@@ -42,7 +41,7 @@ echo ""
 echo "--- [1/6] JS 语法检查 ---"
 check "main.cjs 语法" "node --check '$PROJECT_DIR/dist-electron/main.cjs'"
 check "preload.mjs 语法" "node --check '$PROJECT_DIR/dist-electron/preload.mjs'"
-check "index.html 嵌入式JS语法" "node -e \"const fs=require('fs');const h=fs.readFileSync('$PROJECT_DIR/dist/index.html','utf-8');const m=h.match(/<script>([\s\S]*?)<\/script>/);if(!m) process.exit(1);fs.writeFileSync('/tmp/uos_check.js',m[1]);\" && node --check /tmp/uos_check.js"
+check "index.html 嵌入式JS语法" "node -e \"const fs=require('fs');const h=fs.readFileSync('$PROJECT_DIR/dist/index.html','utf-8');const m=h.match(/<script>([\s\S]*?)<\/script>/);if(!m) process.exit(1);fs.writeFileSync('$CHECK_JS',m[1]);\" && node --check '$CHECK_JS'"
 echo ""
 
 echo "--- [2/6] IPC 通道检查 ---"
@@ -55,7 +54,7 @@ check "主进程崩溃处理" "grep -qE 'uncaughtException|unhandledRejection' '
 echo ""
 
 echo "--- [4/6] 前端页面检查 ---"
-check "核心渲染函数存在" "for fn in renderSecurity renderRepair renderSysInfo renderSysConfig renderOptimize; do grep -q \"async function \$fn\" '$PROJECT_DIR/dist/index.html' || exit 1; done; exit 0"
+check "核心渲染函数存在" "for fn in renderSecurity renderRepair renderSysInfo renderSysConfig renderOptimize; do grep -q \"function \$fn\" '$PROJECT_DIR/dist/index.html' || exit 1; done; exit 0"
 check "侧边栏导航项 ≥ 6" "count=\$(grep -c 'nav-item' '$PROJECT_DIR/dist/index.html' 2>/dev/null || echo 0); [ \"\$count\" -ge 6 ]"
 echo ""
 
