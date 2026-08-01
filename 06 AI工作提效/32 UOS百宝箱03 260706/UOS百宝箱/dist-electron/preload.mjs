@@ -82,12 +82,10 @@ contextBridge.exposeInMainWorld('terminalAPI', {
   exec: (cmd) => ipcRenderer.invoke('terminal-exec', cmd)
 })
 
-
 // 实用工具 API
 contextBridge.exposeInMainWorld('toolAPI', {
   execute: (tool, params) => ipcRenderer.invoke('execute-tool', tool, params)
 })
-
 
 // 软件包管理器 API
 contextBridge.exposeInMainWorld('pkgAPI', {
@@ -118,7 +116,6 @@ contextBridge.exposeInMainWorld('shell', {
   openPath: (filePath) => ipcRenderer.invoke('shell-open-path', filePath),
   getResourcePath: () => ipcRenderer.invoke('get-resource-path')
 })
-
 
 // 局域网文件传输 API
 contextBridge.exposeInMainWorld('localsendAPI', {
@@ -267,7 +264,37 @@ contextBridge.exposeInMainWorld('printerAPI', {
   addPrinter: (name, options) => ipcRenderer.invoke('printer-add', name, options),
   removePrinter: (name) => ipcRenderer.invoke('printer-remove', name),
   printTestPage: (name) => ipcRenderer.invoke('printer-test-page', name),
-  getPrintQueue: (name) => ipcRenderer.invoke('printer-queue', name)
+  getPrintQueue: (name) => ipcRenderer.invoke('printer-queue', name),
+  cancelAllJobs: (name) => ipcRenderer.invoke('printer-cancel-all', name),
+  checkCups: () => ipcRenderer.invoke('printer-check-cups'),
+  restartCups: () => ipcRenderer.invoke('printer-restart-cups')
+})
+
+// 网络诊断 API
+contextBridge.exposeInMainWorld('netDiagAPI', {
+  run: (params) => ipcRenderer.invoke('netdiag', params)
+})
+
+// 服务管理 API
+contextBridge.exposeInMainWorld('svcAPI', {
+  list: (params) => ipcRenderer.invoke('svcmgr', 'list', params),
+  action: (params) => ipcRenderer.invoke('svcmgr', 'action', params)
+})
+
+// 用户管理 API
+contextBridge.exposeInMainWorld('userAPI', {
+  list: () => ipcRenderer.invoke('usermgr', 'list'),
+  add: (params) => ipcRenderer.invoke('usermgr', 'add', params),
+  changePwd: (params) => ipcRenderer.invoke('usermgr', 'change-pwd', params),
+  remove: (params) => ipcRenderer.invoke('usermgr', 'remove', params),
+  loginHistory: (params) => ipcRenderer.invoke('usermgr', 'login-history', params)
+})
+
+// Cron 管理 API
+contextBridge.exposeInMainWorld('cronAPI', {
+  list: () => ipcRenderer.invoke('cronmgr', 'list'),
+  add: (params) => ipcRenderer.invoke('cronmgr', 'add', params),
+  remove: (params) => ipcRenderer.invoke('cronmgr', 'remove', params)
 })
 
 // 网络共享管理 API
@@ -300,7 +327,11 @@ contextBridge.exposeInMainWorld('vpnAPI', {
   connect: (name) => ipcRenderer.invoke('vpn-connect', name),
   disconnect: (name) => ipcRenderer.invoke('vpn-disconnect', name),
   getStatus: (name) => ipcRenderer.invoke('vpn-status', name),
-  importConfig: (path) => ipcRenderer.invoke('vpn-import', path)
+  importConfig: (path) => ipcRenderer.invoke('vpn-import', path),
+  checkTools: () => ipcRenderer.invoke('vpn-check-tools'),
+  installTools: (password) => ipcRenderer.invoke('vpn-install-tools', password),
+  exportConfig: (name, dir) => ipcRenderer.invoke('vpn-export', name, dir),
+  setAutoReconnect: (name, enabled) => ipcRenderer.invoke('vpn-auto-reconnect', name, enabled)
 })
 
 // 系统升级助手 API
@@ -343,7 +374,6 @@ contextBridge.exposeInMainWorld('usbBootAPI', {
   create: (iso, device, password) => ipcRenderer.invoke('phase2-usb', 'create', { iso, device, password })
 })
 
-
 // 系统应用集成 API
 contextBridge.exposeInMainWorld('systemApp', {
   launchApp: (appName) => ipcRenderer.invoke('systemapp-launch', appName),
@@ -368,27 +398,6 @@ contextBridge.exposeInMainWorld('logAPI', {
   tail: () => ipcRenderer.invoke('syslog-viewer', 'tail')
 })
 
-
-// 远程桌面 API (Stage 4)
-contextBridge.exposeInMainWorld('remoteDesktopAPI', {
-  check: () => ipcRenderer.invoke('remote-desktop', 'check'),
-  connect: (params) => ipcRenderer.invoke('remote-desktop', 'connect', params),
-  listConnections: () => ipcRenderer.invoke('remote-desktop', 'list-connections'),
-  saveConnection: (params) => ipcRenderer.invoke('remote-desktop', 'save-connection', params),
-  deleteConnection: (name) => ipcRenderer.invoke('remote-desktop', 'delete-connection', { name: name }),
-})
-
-
-// 进程管理器 API
-contextBridge.exposeInMainWorld('processAPI', {
-  getProcessTree: () => ipcRenderer.invoke('process-tree'),
-  searchProcess: (query) => ipcRenderer.invoke('process-search', query),
-  killProcess: (pid, signal) => ipcRenderer.invoke('kill-process', pid, signal),
-  reniceProcess: (pid, priority) => ipcRenderer.invoke('renice-process', pid, priority),
-  getProcessDetail: (pid) => ipcRenderer.invoke('process-detail', pid)
-})
-
-
 // VPNa 管理 API
 
 // 性能基准测试 API (Stage 3)
@@ -402,35 +411,8 @@ contextBridge.exposeInMainWorld('phase2API', {
   startup: (action, params) => ipcRenderer.invoke('system-backup', action, params),
   health: () => ipcRenderer.invoke('system-backup', 'backup', {}),
   usb: (action, params) => ipcRenderer.invoke('system-backup', action, params),
-  driver: (action, params) => ipcRenderer.invoke('phase2-driver', action, params),
-  remote: (action, params) => ipcRenderer.invoke('remote-desktop', action, params || {}),
+  driver: (action, params) => ipcRenderer.invoke('system-backup', action, params),
+  remote: (action, params) => ipcRenderer.invoke('system-backup', action, params),
   search: (params) => ipcRenderer.invoke('system-backup', 'backup', params),
   benchmark: (type) => ipcRenderer.invoke('system-backup', 'backup', {})
-})
-
-// 网络诊断 API (Stage 4)
-contextBridge.exposeInMainWorld('netDiagAPI', {
-  run: (params) => ipcRenderer.invoke('net-diag', params)
-})
-
-// 服务管理 API (Stage 4)
-contextBridge.exposeInMainWorld('svcAPI', {
-  list: (opts) => ipcRenderer.invoke('svc-mgr', 'list', opts),
-  action: (opts) => ipcRenderer.invoke('svc-mgr', 'action', opts)
-})
-
-// 用户管理 API (Stage 4)
-contextBridge.exposeInMainWorld('userAPI', {
-  list: () => ipcRenderer.invoke('user-mgr', 'list'),
-  add: (opts) => ipcRenderer.invoke('user-mgr', 'add', opts),
-  remove: (opts) => ipcRenderer.invoke('user-mgr', 'remove', opts),
-  changePwd: (opts) => ipcRenderer.invoke('user-mgr', 'change-pwd', opts),
-  loginHistory: (opts) => ipcRenderer.invoke('user-mgr', 'login-history', opts)
-})
-
-// Cron 管理 API (Stage 4)
-contextBridge.exposeInMainWorld('cronAPI', {
-  list: () => ipcRenderer.invoke('cron-mgr', 'list'),
-  add: (opts) => ipcRenderer.invoke('cron-mgr', 'add', opts),
-  remove: (opts) => ipcRenderer.invoke('cron-mgr', 'remove', opts)
 })

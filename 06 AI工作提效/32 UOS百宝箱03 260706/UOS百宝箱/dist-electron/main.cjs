@@ -306,6 +306,9 @@ ipcMain.handle('list-scripts', (_, category) => {
 })
 
 ipcMain.handle('execute-script-direct', async (_, scriptContent) => {
+  // security: scan for dangerous patterns
+  const dangerous = [/rm\s+(-rf?\s+)?\//, /dd\s+if=\/dev/, /mkfs\./, /:>\(\)/, />\/dev\/sda/, /wget\s+.*\|\s*bash/, /curl\s+.*\|\s*bash/]
+  for (const re of dangerous) { if (re.test(scriptContent)) return { success: false, error: 'Script blocked: contains dangerous operation' } }
   // 将脚本内容写入临时文件并执行
   const tmpFile = '/tmp/.kun_custom_script_' + Date.now() + '.sh'
   try {
@@ -328,6 +331,9 @@ ipcMain.handle('read-script-content', (_, scriptPath) => {
 // ========== IPC 终端 ==========
 
 ipcMain.handle('terminal-exec', (_, command) => {
+  // security: block dangerous patterns
+  const dangerous = [/rm\s+(-rf?\s+)?\//, /dd\s+if=\/dev/, /mkfs\./, /shutdown\s/, /reboot\s/, /poweroff\s/, /halt\s/, /init\s+0/, /init\s+6/, /:>\(\)/, />\/dev\/sda/, /wget\s+.*\|\s*bash/, /curl\s+.*\|\s*bash/]
+  for (const re of dangerous) { if (re.test(command)) return { output: '[SECURITY] Command blocked: dangerous pattern detected\n', code: 1 } }
   return new Promise((resolve) => {
     const child = spawn('bash', ['-c', command], { stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, TERM: 'xterm-256color' } })
     let output = ''
@@ -392,7 +398,7 @@ ipcMain.handle('get-cache-size', () => {
 
 ipcMain.handle('clear-cache', () => {
   const cacheDir = app.getPath('cache')
-  try { const files = fs.readdirSync(cacheDir); for (const f of files) fs.rmSync(path.join(cacheDir, f), { recursive: true, force: true });
+  try { const files = fs.readdirSync(cacheDir); for (const f of files) fs.rmSync(path.join(cacheDir, f), { recursive: true, force: true }); return { success: true } } catch (e) { return { success: false, error: e.message } } })
 
 // ========== IPC 局域网文件传输 (LocalSend) ==========
 
@@ -572,8 +578,7 @@ ipcMain.handle('packmgr-uninstall', async (_, pkgName, password) => {
     return { success: false, error: e.message }
   }
 })
- return { success: true } } catch (e) { return { success: false, error: e.message } }
-})
+
 
 // ========== IPC 设置 ==========
 
@@ -592,19 +597,19 @@ ipcMain.handle('set-auto-start', (_, enable) => {
 
 // ========== 应用生命周期 ==========
 
-app.whenReady().then(() => {
-  createMainWindow()
-  createTray()
-  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createMainWindow(); else mainWindow?.show() })
-})
-
-app.on('window-all-closed', () => { if (closeBehavior === 'quit') app.quit() })
-
-// 单实例锁
+// 单实例锁（必须在 app.whenReady 之前调用）
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) { app.quit() } else {
   app.on('second-instance', () => { if (mainWindow) { if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.show(); mainWindow.focus() } })
 }
+
+app.whenReady().then(() => {
+  createMainWindow()
+  try { createTray() } catch(e) {}
+  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createMainWindow(); else mainWindow?.show() })
+})
+
+app.on('window-all-closed', () => { if (closeBehavior === 'quit') app.quit() })
 
 // ========== 辅助函数 ==========
 
@@ -1121,6 +1126,7 @@ ipcMain.handle('execute-optimization', async (_, type, action, value) => {
         return { success: true, output: out }
       } else if (action.startsWith('disable:')) {
         const svc = action.replace('disable:', '')
+        if (!/^[a-zA-Z0-9_\-]+$/.test(svc)) return { success: false, error: '无效的服务名: ' + svc }
         sudoExec(`systemctl stop ${svc}`, value)
         return { success: true, output: `服务 ${svc} 已停止并禁用开机自启` }
       }
@@ -1149,6 +1155,7 @@ ipcMain.handle('execute-optimization', async (_, type, action, value) => {
         return { success: !!r1, output: '✅ 已清理 7 天前的系统日志和应用日志' }
       } else if (action.startsWith('clean-days:')) {
         const days = action.replace('clean-days:', '')
+        if (!/^\d+$/.test(days)) return { success: false, error: '无效的天数: ' + days }
         const r1 = sudoExec('journalctl --vacuum-time=' + days + 'd && find /var/log -name "*.log" -mtime +' + days + ' -delete', value)
         return { success: !!r1, output: '✅ 已清理 ' + days + ' 天前的日志' }
       } else if (action === 'clean-buffer') {
@@ -3232,6 +3239,27 @@ ipcMain.handle('printer-queue', async (_, name) => {
     return { success: true, jobs }
   } catch(e) { return { success: false, error: e.message } }
 })
+ipcMain.handle('printer-cancel-all', async (_, name) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`lprm -P '${name}' - 2>/dev/null || cancel -a '${name}' 2>/dev/null`, { timeout: 10000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('printer-check-cups', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const status = execSync('lpstat -r 2>/dev/null || systemctl is-active cups 2>/dev/null || echo unknown', { timeout: 5000, encoding: 'utf-8' }).toString().trim()
+    return { success: true, status }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('printer-restart-cups', async () => {
+  const { execSync } = require('child_process')
+  try {
+    execSync('systemctl restart cups 2>/dev/null || cupsctl --restart-cups 2>/dev/null', { timeout: 15000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
 
 // ========== Phase 3: 网络共享管理 ==========
 ipcMain.handle('netshare-samba-status', async () => {
@@ -3381,6 +3409,40 @@ ipcMain.handle('vpn-import', async (_, path) => {
   const { execSync } = require('child_process')
   try {
     execSync(`nmcli connection import type openvpn file '${path}' 2>&1 || nmcli connection import type l2tp file '${path}' 2>&1`, { timeout: 15000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('vpn-check-tools', async () => {
+  const { execSync } = require('child_process')
+  try {
+    const nmcli = execSync('which nmcli 2>/dev/null && echo "found" || echo "not found"', { timeout: 5000, encoding: 'utf-8' }).toString().trim()
+    const openvpn = execSync('which openvpn 2>/dev/null && echo "found" || echo "not found"', { timeout: 5000, encoding: 'utf-8' }).toString().trim()
+    return { success: true, tools: { nmcli: nmcli === 'found', openvpn: openvpn === 'found' } }
+  } catch(e) { return { success: true, tools: { nmcli: false, openvpn: false } } }
+})
+ipcMain.handle('vpn-install-tools', async (_, password) => {
+  const { execSync } = require('child_process')
+  try {
+    if (password) {
+      execSync('echo ' + JSON.stringify(password) + ' | sudo -S apt-get install -y network-manager-openvpn network-manager-l2tp 2>&1', { timeout: 60000, encoding: 'utf-8' })
+    } else {
+      execSync('apt-get install -y network-manager-openvpn network-manager-l2tp 2>&1', { timeout: 60000, encoding: 'utf-8' })
+    }
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('vpn-export', async (_, name, dir) => {
+  const { execSync } = require('child_process')
+  try {
+    execSync(`nmcli connection export '${name}' '${dir}' 2>&1 || echo "Export not supported"`, { timeout: 10000 })
+    return { success: true }
+  } catch(e) { return { success: false, error: e.message } }
+})
+ipcMain.handle('vpn-auto-reconnect', async (_, name, enabled) => {
+  const { execSync } = require('child_process')
+  try {
+    const val = enabled ? 'yes' : 'no'
+    execSync(`nmcli connection modify '${name}' connection.autoconnect ${val} 2>&1`, { timeout: 10000 })
     return { success: true }
   } catch(e) { return { success: false, error: e.message } }
 })
@@ -3548,6 +3610,51 @@ ipcMain.handle('remote-transfer', async (_, host, filePath, remotePath, password
     const out = execSync(`scp -o StrictHostKeyChecking=no '${filePath}' ${host}:'${remotePath||'~/'}' 2>&1`, { timeout: 60000, encoding: 'utf-8' }).toString()
     return { success: true, output: out }
   } catch(e) { return { success: false, error: e.message } }
+})
+
+// ========== APT 更新历史 ==========
+ipcMain.handle('apt-history', async (_, action, params) => {
+  try {
+    if (action === 'list') {
+      const out = execSync('grep -E "^Start-Date|^Commandline:|^Install:|^Upgrade:|^Remove:" /var/log/apt/history.log 2>/dev/null | tail -200', { timeout: 10000, encoding: 'utf-8' }).toString()
+      const lines = out.trim().split('\n').filter(Boolean)
+      const entries = []
+      let current = null
+      for (const line of lines) {
+        if (line.startsWith('Start-Date:')) {
+          if (current) entries.push(current)
+          current = { date: line.replace('Start-Date: ', ''), commands: [], packages: [] }
+        } else if (line.startsWith('Commandline:')) {
+          if (current) current.commands.push(line.replace('Commandline: ', ''))
+        } else if (line.startsWith('Install:') || line.startsWith('Upgrade:') || line.startsWith('Remove:')) {
+          if (current) {
+            const pkgs = line.split(',').map(p => p.trim()).filter(Boolean)
+            current.packages.push(...pkgs)
+          }
+        }
+      }
+      if (current) entries.push(current)
+      return { success: true, entries }
+    }
+    if (action === 'rollback' && params) {
+      const { packageName, targetVersion, password } = params
+      if (!packageName || !targetVersion) return { success: false, error: '参数不完整' }
+      const cmd = 'apt-get install ' + packageName + '=' + targetVersion + ' -y --allow-downgrades 2>&1'
+      const fs = require('fs')
+      const tmpFile = '/tmp/.uos_apt_rollback_' + Date.now() + '.sh'
+      fs.writeFileSync(tmpFile, '#!/bin/bash\n' + cmd + '\n', { mode: 0o700 })
+      let result
+      if (password) {
+        result = execSync('sudo -S bash ' + tmpFile + ' 2>&1', { timeout: 120000, encoding: 'utf-8', input: password + '\n' }).toString()
+      } else {
+        result = execSync('sudo -n bash ' + tmpFile + ' 2>&1', { timeout: 120000, encoding: 'utf-8' }).toString()
+      }
+      try { fs.unlinkSync(tmpFile) } catch {}
+      return { success: true, output: result }
+    }
+    return { success: false, error: '未知操作: ' + action }
+  } catch(e) { return { success: false, error: e.message } }
+})
 
 // ========== USB 启动盘制作 ==========
 ipcMain.handle('phase2-usb', async (_, action, params) => {
@@ -3602,7 +3709,6 @@ ipcMain.handle('phase2-usb', async (_, action, params) => {
   } catch(e) { return { success: false, error: e.message } }
 })
 
-})
 
 // ========== 系统应用集成 IPC ==========
 
