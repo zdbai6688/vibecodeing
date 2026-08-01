@@ -238,22 +238,22 @@ ipcMain.handle('get-system-info', async () => {
 /** 异步采样 CPU 使用率（不阻塞事件循环） */
 async function sampleCpuUsage() {
   try {
-    const s1 = fs.readFileSync('/proc/stat', 'utf-8')
-    const c1 = s1.match(/^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)
+    const stat1 = await fs.promises.readFile('/proc/stat', 'utf-8')
+    const c1 = stat1.match(/^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)
     if (!c1) return 0
     const t1 = +c1[1] + +c1[2] + +c1[3] + +c1[4], i1 = +c1[4]
     await new Promise(r => setTimeout(r, 200))
-    const s2 = fs.readFileSync('/proc/stat', 'utf-8')
-    const c2 = s2.match(/^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)
+    const stat2 = await fs.promises.readFile('/proc/stat', 'utf-8')
+    const c2 = stat2.match(/^cpu\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/)
     if (!c2) return 0
     const t2 = +c2[1] + +c2[2] + +c2[3] + +c2[4], i2 = +c2[4]
     return (t2 - t1) > 0 ? Math.round((1 - (i2 - i1) / (t2 - t1)) * 1000) / 10 : 0
   } catch { return 0 }
 }
 
-function readMemoryPercent() {
+async function readMemoryPercent() {
   try {
-    const m = fs.readFileSync('/proc/meminfo', 'utf-8')
+    const m = await fs.promises.readFile('/proc/meminfo', 'utf-8')
     const mt = parseInt(m.match(/MemTotal:\s+(\d+)/)?.[1] || '0')
     const ma = parseInt(m.match(/MemAvailable:\s+(\d+)/)?.[1] || '0')
     return mt > 0 ? Math.round(((mt - ma) / mt) * 100) : 0
@@ -263,7 +263,7 @@ function readMemoryPercent() {
 ipcMain.handle('get-resource-monitor', async () => {
   const data = { cpu: 0, memory: 0 }
   data.cpu = await sampleCpuUsage()
-  data.memory = readMemoryPercent()
+  data.memory = await readMemoryPercent()
   return data
 })
 
@@ -3645,7 +3645,9 @@ ipcMain.handle('remote-batch-exec', async (_, hosts, cmd, password) => {
     const results = []
     for (const host of (hosts||[]).slice(0,5)) {
       try {
-        const out = execSync(`ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 ${host} '${cmd.replace(/'/g,"'\\''")}' 2>&1`, { timeout: 30000, encoding: 'utf-8' }).toString()
+        const safeHost = (host||'').replace(/[^a-zA-Z0-9_.@-]/g, '')
+        const safeCmd = (cmd||'').replace(/[<>`$(){}!;|&]/g, '')
+        const out = execSync(`ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 ${safeHost} '${safeCmd.replace(/'/g,"'\\''")}' 2>&1`, { timeout: 30000, encoding: 'utf-8' }).toString()
         results.push({ host, success: true, output: out })
       } catch(e) { results.push({ host, success: false, error: e.message }) }
     }
@@ -3655,7 +3657,10 @@ ipcMain.handle('remote-batch-exec', async (_, hosts, cmd, password) => {
 ipcMain.handle('remote-transfer', async (_, host, filePath, remotePath, password) => {
   const { execSync } = require('child_process')
   try {
-    const out = execSync(`scp -o StrictHostKeyChecking=no '${filePath}' ${host}:'${remotePath||'~/'}' 2>&1`, { timeout: 60000, encoding: 'utf-8' }).toString()
+    const safeHost = (host||'').replace(/[^a-zA-Z0-9_.@-]/g, '')
+    const safePath = (filePath||'').replace(/[^a-zA-Z0-9_./:@-]/g, '')
+    const safeRemote = (remotePath||'~/').replace(/[^a-zA-Z0-9_./:@-]/g, '')
+    const out = execSync(`scp -o StrictHostKeyChecking=no '${safePath}' ${safeHost}:'${safeRemote}' 2>&1`, { timeout: 60000, encoding: 'utf-8' }).toString()
     return { success: true, output: out }
   } catch(e) { return { success: false, error: e.message } }
 })

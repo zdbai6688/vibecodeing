@@ -147,7 +147,7 @@ body{font-family:-apple-system,"Noto Sans CJK SC","PingFang SC","Microsoft YaHei
 .sysinfo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .sysinfo-card{background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:100px}
 .sysinfo-card h3{font-size:13px;color:var(--text-sec);margin-bottom:8px;display:flex;align-items:center;gap:6px;font-weight:500}
-.sysinfo-card .val{font-size:18px;font-weight:600;color:#4A6CF7;margin-bottom:4px}
+.sysinfo-card .val{font-size:18px;font-weight:600;color:var(--primary);margin-bottom:4px}
 .sysinfo-card .sub{font-size:12px;color:var(--text-sec);line-height:1.5}
 .monitor-table{width:100%;border-collapse:collapse;background:var(--card-bg);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);font-size:12px}
 .monitor-table th{background:var(--hover-bg);padding:10px 12px;text-align:left;font-weight:500;color:var(--text-sec);border-bottom:1px solid var(--sidebar-border);white-space:nowrap}
@@ -183,6 +183,7 @@ body{font-family:-apple-system,"Noto Sans CJK SC","PingFang SC","Microsoft YaHei
 .btn-warning{background:var(--warning);color:#fff}
 .btn-warning:hover{background:#e6a800}
 .btn-sm{padding:5px 12px;font-size:11px}
+.btn-sec{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);font-size:13px;cursor:pointer;transition:all .15s}.btn-sec:hover{background:var(--hover-bg);border-color:var(--text-sec)}
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;display:none;align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
@@ -468,7 +469,7 @@ function clearErrorLogs() {
 }
 
 // ===== 分组导航结构 =====
-var NAV_GROUPS = [
+const NAV_GROUPS = [
   {group:'系统工具', icon:'🛠️', items:[
     {id:'sysinfo',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>`,label:'系统信息',desc:'查看系统硬件与软件信息'},
     {id:'monitor',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg></span>`,label:'系统监控',desc:'实时系统资源监控与诊断'},
@@ -498,7 +499,7 @@ var NAV_GROUPS = [
     {id:'remote-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15"/></svg></span>`,label:'远程管理',desc:'SSH 密钥管理 · 批量命令执行 · 远程文件传输 · 系统监控'},
   ]},
   {group:'系统应用', icon:'📱', items:[
-    {id:'systemapps',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#e8f5e9;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:#2e7d32;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>`,label:'系统应用',desc:'系统能力调用与集成'},
+    {id:'systemapps',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>`,label:'系统应用',desc:'系统能力调用与集成'},
   ]},
   {group:'其他', icon:'📌', items:[
     {id:'changelog',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>`,label:'更新日志',desc:'版本更新记录与变更说明'},
@@ -521,7 +522,7 @@ var NAV_GROUPS = [
 ];
 
 // ===== 扁平查找表 =====
-var NAV_ITEMS = {};
+const NAV_ITEMS = {};
 (function(){
   for(var g=0;g<NAV_GROUPS.length;g++){
     var grp=NAV_GROUPS[g];
@@ -541,7 +542,7 @@ var NAV_ITEMS = {};
 // ===== 系统修复脚本定义 =====
 
 // ============ 实用脚本列表 ============
-var SCRIPTS = {
+const SCRIPTS = {
   categories:[
     {cat:'UtilityScripts',name:'📜 通用脚本',items:[
       {id:'wechat_multi.sh',name:'微信多开',desc:'同时打开多个微信实例',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`},
@@ -569,7 +570,7 @@ var SCRIPTS = {
   ]
 }
 
-var REPAIR_SCRIPTS = [
+const REPAIR_SCRIPTS = [
   {id:'fix_app_crash.sh',name:'应用崩溃修复',desc:'清理应用缓存和配置，修复应用频繁崩溃、无响应的问题',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,danger:false,cat:'app',offline:true},
   {id:'fix_mouse.sh',name:'鼠标异常修复',desc:'修复鼠标滚轮异常、指针抖动、按键失灵问题',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="2" width="20" height="14" rx="2" ry="2"/><line x1="12" y1="2" x2="12" y2="16"/><line x1="8" y1="2" x2="16" y2="2"/></svg>`,danger:false,cat:'hardware',offline:true},
   {id:'fix_desktop_icons.sh',name:'桌面图标修复',desc:'修复桌面图标显示异常、排列错乱、图标丢失',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,danger:false,cat:'desktop',offline:true},
@@ -621,7 +622,7 @@ var REPAIR_SCRIPTS = [
 ]
 
 // ===== 系统优化功能定义 =====
-var OPTIMIZE = [
+const OPTIMIZE = [
   {id:'memory-tune',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,name:'内存使用优化',desc:'调整 Swappiness 和缓存参数，降低 Swap 依赖，提升高负载响应速度',type:'terminal',options:[{v:'tune',l:'开启内存优化模式',d:'swappiness=5, vfs_cache_pressure=50'},{v:'restore',l:'恢复默认配置',d:'恢复内核参数为系统初始值'}]},
   {id:'ssd-trim',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,name:'固态硬盘维护',desc:'fstrim 优化固态读写性能，配置定时自动修整',type:'terminal',options:[{v:'trim-now',l:'立即执行 fstrim',d:'对所有挂载点执行 TRIM'},{v:'enable-auto',l:'开启定时维护',d:'每周自动 TRIM'},{v:'disable-auto',l:'关闭定时任务',d:'停止自动 TRIM'}]},
   {id:'avahi',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`,name:'关闭网络邻居',desc:'停用 Avahi 守护进程，减少后台广播占用资源',type:'terminal',options:[{v:'disable',l:'禁用 Avahi 服务',d:'停止服务并禁用开机自启'},{v:'enable',l:'重新启用网络邻居',d:'重新启用 Avahi 服务'}]},
@@ -712,6 +713,7 @@ else if(id==='phase2-more') renderPhase2Page(el)
   else if(id==='svcmgr') renderSvcMgr(el)
   else if(id==='usermgr') renderUserMgr(el)
   else if(id==='cronmgr') renderCronMgr(el)
+}
 
 function switchMonitorSub(id){_currentSub=id;const p=NAV_ITEMS['monitor'];document.getElementById('pageTitle').innerHTML=p.ico+' '+p.label;document.getElementById('pageDesc').textContent=p.desc;renderSubNav(id);const el=document.getElementById('pageContent');if(id==='process-mgr')renderProcessManager(el);else renderMonitorDetail(el,id)}
 
@@ -1082,7 +1084,7 @@ async function renderMonitorDetail(el,type){
     const headerHtml=`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px"><div><div style="font-size:17px;font-weight:600">${info.ico} ${info.label}</div><div style="font-size:12px;color:var(--text-sec);margin-top:2px">${info.sub}</div></div><div style="text-align:right;font-size:11px;color:var(--text-ter);white-space:nowrap"><div>最后更新: ${timeStr}</div><button class="btn btn-sm btn-outline" onclick="renderMonitorDetail(document.getElementById('pageContent'),\''+type+'\')" style="margin-top:4px;font-size:11px">🔄 刷新</button></div></div>`
 
     if(type==='zombie'&&r.count===0){
-      el.innerHTML=headerHtml+'<div style="background:var(--card-bg);border-radius:8px;padding:20px;box-shadow:var(--shadow);text-align:center"><div style="font-size:48px;margin-bottom:10px">✅</div><div style="font-size:16px;color:var(--success);font-weight:500">无僵尸进程</div><div style="font-size:12px;color:var(--text-sec);margin-top:4px">系统运行正常，未检测到卡死或异常退出的僵尸进程</div></div>'
+      el.innerHTML=headerHtml+'<div class="empty-state"><div class="empty-icon" style="font-size:48px">✅</div><h4 style="color:var(--success)">无僵尸进程</h4><p>系统运行正常，未检测到卡死或异常退出的僵尸进程</p></div>'
       return
     }
 
@@ -1170,10 +1172,10 @@ async function renderMonitorDetail(el,type){
       const rows = top10.map((c,i)=>{
         const sent=c.bytes_sent||0, recv=c.bytes_received||0, tb=sent+recv
         const maxV=Math.max(...top10.map(x=>(x.bytes_sent||0)+(x.bytes_received||0)),1)
-        const pct=(tb/maxV*100).toFixed(1), bc=i<3?'#4A6CF7':i<6?'#34c759':'#ff9500'
+        const pct=(tb/maxV*100).toFixed(1), bc=i<3?'var(--primary)':i<6?'#34c759':'#ff9500'
         const rb=['#1','#2','#3','4','5','6','7','8','9','10'][i]
         const sv=c.service||'', rm=c.remote||''
-        return '<tr><td style="text-align:center;font-weight:600;font-size:12px">'+rb+'</td><td style="font-family:monospace;font-size:11px;word-break:break-all;max-width:200px" title="'+esc(rm)+'">'+esc(rm)+'</td><td><span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:#e8f5e9;color:#2e7d32">'+esc(sv)+'</span></td><td style="text-align:right;font-family:monospace;font-size:11px;color:#4A6CF7">'+fmtBytes(sent)+'</td><td style="text-align:right;font-family:monospace;font-size:11px;color:#34c759">'+fmtBytes(recv)+'</td><td style="text-align:right;font-family:monospace;font-size:11px;color:var(--text)">'+fmtBytes(tb)+'</td><td><div style="width:80px;height:6px;background:#eee;border-radius:3px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+bc+';border-radius:3px;transition:width .5s"></div></div></td><td style="text-align:center;font-size:11px;color:var(--text-sec)">'+(c.connections||1)+'</td></tr>'
+        return '<tr><td style="text-align:center;font-weight:600;font-size:12px">'+rb+'</td><td style="font-family:monospace;font-size:11px;word-break:break-all;max-width:200px" title="'+esc(rm)+'">'+esc(rm)+'</td><td><span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;background:var(--primary-light);color:var(--primary)">'+esc(sv)+'</span></td><td style="text-align:right;font-family:monospace;font-size:11px;color:var(--primary)">'+fmtBytes(sent)+'</td><td style="text-align:right;font-family:monospace;font-size:11px;color:#34c759">'+fmtBytes(recv)+'</td><td style="text-align:right;font-family:monospace;font-size:11px;color:var(--text)">'+fmtBytes(tb)+'</td><td><div style="width:80px;height:6px;background:#eee;border-radius:3px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+bc+';border-radius:3px;transition:width .5s"></div></div></td><td style="text-align:center;font-size:11px;color:var(--text-sec)">'+(c.connections||1)+'</td></tr>'
       }).join('')
       let chartData=[]
       try{chartData=JSON.parse(localStorage.getItem('_net_traffic_chart_')||'[]')}catch(e){}
@@ -1181,7 +1183,7 @@ async function renderMonitorDetail(el,type){
       chartData.push({ts:now,sent:total.bytes_sent,recv:total.bytes_received})
       if(chartData.length>60)chartData=chartData.slice(-60)
       try{localStorage.setItem('_net_traffic_chart_',JSON.stringify(chartData))}catch(e){}
-      const chartHtml='<div style="background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow);margin-top:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:14px;font-weight:500">[chart] 流量趋势 (最近 '+chartData.length+' 个点)</div><div style="display:flex;gap:16px;font-size:11px"><span style="color:#4A6CF7">o 发送</span><span style="color:#34c759">o 接收</span></div></div><canvas id="netTrafficChart" width="700" height="200"></canvas></div>'
+      const chartHtml='<div style="background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:var(--shadow);margin-top:14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="font-size:14px;font-weight:500">[chart] 流量趋势 (最近 '+chartData.length+' 个点)</div><div style="display:flex;gap:16px;font-size:11px"><span style="color:var(--primary)">o 发送</span><span style="color:#34c759">o 接收</span></div></div><canvas id="netTrafficChart" width="700" height="200"></canvas></div>'
       const sumHtml='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px"><div class="monitor-card" style="background:linear-gradient(135deg,#667eea,#764ba2)"><div style="font-size:22px;font-weight:700;color:#fff">'+fmtBytes(total.bytes_sent)+'</div><div style="font-size:11px;color:rgba(255,255,255,0.8)">[发] 总发送量</div></div><div class="monitor-card" style="background:linear-gradient(135deg,#11998e,#38ef7d)"><div style="font-size:22px;font-weight:700;color:#fff">'+fmtBytes(total.bytes_received)+'</div><div style="font-size:11px;color:rgba(255,255,255,0.8)">[收] 总接收量</div></div><div class="monitor-card" style="background:linear-gradient(135deg,#f093fb,#f5576c)"><div style="font-size:22px;font-weight:700;color:#fff">'+total.connections+'</div><div style="font-size:11px;color:rgba(255,255,255,0.8)">[连] 活跃连接</div></div></div>'
       el.innerHTML=headerHtml+sumHtml+'<div style="background:var(--card-bg);border-radius:8px;overflow:hidden;box-shadow:var(--shadow)"><div style="padding:10px 14px;border-bottom:1px solid #eee;font-size:13px;font-weight:500;color:var(--text)">流量排行 Top 10</div><div style="overflow-x:auto"><table class="monitor-table" style="font-size:12px;width:100%"><thead><tr><th style="width:36px;text-align:center">#</th><th style="min-width:140px;max-width:200px" title="远程地址:端口">目标地址</th><th style="width:60px">服务</th><th style="text-align:right;width:80px" title="从此机器发送到远程的数据量">发送</th><th style="text-align:right;width:80px" title="从远程接收的数据量">接收</th><th style="text-align:right;width:80px" title="发送+接收总量">总计</th><th style="width:100px" title="相对大小占比">占比</th><th style="width:50px;text-align:center" title="该目标的连接数">连接</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+chartHtml
       el.innerHTML+='<script>setTimeout(function(){var c=document.getElementById("netTrafficChart");if(!c)return;var ctx=c.getContext("2d");var w=c.width,h=c.height;ctx.clearRect(0,0,w,h);try{var d=JSON.parse(localStorage.getItem("_net_traffic_chart_")||"[]");if(d.length<2){ctx.fillStyle="#999";ctx.font="13px sans-serif";ctx.textAlign="center";ctx.fillText("等待更多数据...",w/2,h/2);return}var s=d.map(function(x){return x.sent});var r=d.map(function(x){return x.recv});var max=Math.max.apply(null,s.concat(r))||1;var pad=30,bw=w-pad*2,bh=h-40;function draw(v,c){ctx.beginPath();ctx.strokeStyle=c;ctx.lineWidth=2;for(var i=0;i<v.length;i++){var x=pad+(i/(v.length-1||1))*bw;var y=h-20-(v[i]/max)*bh;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)}ctx.stroke()}draw(s,"#4A6CF7");draw(r,"#34c759");ctx.fillStyle="#999";ctx.font="10px sans-serif";ctx.textAlign="right";for(var t=0;t<=100;t+=25){ctx.fillText(t+"%",pad-4,h-20-(t/100)*bh)}}catch(e){}},100)<\/script>'
@@ -1633,6 +1635,8 @@ async function sendTerminalInput(){
   }
 }
 function closeModal(){document.getElementById('modalOverlay').classList.remove('show');document.getElementById('modalContent').innerHTML=''}
+function showModal(html){const overlay=document.getElementById("modalOverlay");const content=document.getElementById("modalContent");if(!overlay||!content)return;content.innerHTML=html;overlay.style.display="flex"}
+function openModal(title,html){showModal('<div class=\"modal-header\"><h2>'+title+'</h2><span class=\"close-btn\" onclick=\"closeModal()\">\u2715</span></div><div class=\"modal-body\">'+html+'</div>')}
 
 
 
@@ -1700,7 +1704,7 @@ async function execSysAction(id,action){
     el.innerHTML=r?.success?'<div class="l success">✅ 执行成功</div><div style="margin-top:6px;white-space:pre-wrap;font-size:11px;color:var(--text-sec)">'+(r.output||'')+'</div>':'<div class="l error">❌ '+(r?.error||'需要管理员密码')+'</div>'
   }catch(e){el.innerHTML='<div class="l error">❌ '+esc(e.message)+'</div>'}
 }
-var SYSTEM_TOGGLES = [
+const SYSTEM_TOGGLES = [
   {id:'dev-mode',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`,name:'开发者模式',desc:'开启后可使用开发者功能、root终端等',cmd:'dev-mode',type:'toggle'},
   {id:'firewall',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,name:'防火墙',desc:'系统防火墙保护网络安全',cmd:'firewall',type:'toggle'},
   {id:'ssh',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/><polyline points="9 12 12 15 15 12"/></svg>`,name:'SSH 服务',desc:'远程安全登录管理服务',cmd:'ssh',type:'service'},
@@ -2130,7 +2134,7 @@ function removeCustomScript(id){
 // ============ 高效工具 ============
 
 
-var TOOLS = [
+const TOOLS = [
   {cat:'📄',name:'PDF/OFD/文档',items:[
     {id:'pdf-merge',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16 13 8 13"/><line x1="16 17 8 17"/></svg>`,name:'PDF 合并',desc:'合并多个 PDF 文件为一个'},
     {id:'pdf-split',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`,name:'PDF 拆分',desc:'按页拆分 PDF 文件'},
@@ -2409,7 +2413,7 @@ function diskAnalyzeDir(){
       const sizeStr = m[1], pathStr = m[2]
       const sizeVal = parseSize(sizeStr)
       const pct = maxVal > 0 ? (sizeVal / maxVal * 100) : 0
-      let color = '#4A6CF7'
+      let color = 'var(--primary)'
       if(pct > 80) color = '#ff3b30'
       else if(pct > 50) color = '#ff9500'
       html += '<div style="margin:3px 0"><div style="display:flex;justify-content:space-between"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+esc(pathStr)+'</span><span style="font-weight:500;color:'+color+'">'+sizeStr+'</span></div><div style="height:6px;background:#eee;border-radius:3px;overflow:hidden;margin-top:1px"><div style="height:100%;width:'+pct.toFixed(0)+'%;background:'+color+';border-radius:3px"></div></div></div>'
@@ -2574,7 +2578,7 @@ function showExamResult(){
 }
 
 // LiveTools 集成
-var LIVETOOLS = {
+const LIVETOOLS = {
   'ip-scanner':{bin:'ip-scanner-amd64',dir:'ip-scanner'},
   'subnetcalc':{bin:'SubnetCalc-amd64',dir:'SubnetCalc'},
   'ftp-client':{bin:'FtpClient-amd64',dir:'LightFTP-Client'},
@@ -2869,10 +2873,10 @@ let _secTab = 'apt'
 async function renderSecurity(el){
   el.innerHTML=`
     <div style="padding:0 20px">
-      <div style="display:flex;gap:0;border-bottom:1px solid #e8e8e8;padding:0">
-        <span class="sec-parent-tab" data-tab="apt" style="padding:12px 24px 10px;cursor:pointer;font-size:14px;border-bottom:2px solid var(--primary);color:#000;font-weight:600;background:#fafafa;margin-bottom:-1px;transition:all 0.2s">APT 安全更新</span>
-        <span class="sec-parent-tab" data-tab="patch" style="padding:12px 24px 10px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent;color:#999;font-weight:400;background:transparent;margin-bottom:-1px;transition:all 0.2s">补丁包管理</span>
-        <span class="sec-parent-tab" data-tab="advisory" style="padding:12px 24px 10px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent;color:#999;font-weight:400;background:transparent;margin-bottom:-1px;transition:all 0.2s">安全公告</span>
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);padding:0">
+        <span class="sec-parent-tab" data-tab="apt" style="padding:12px 24px 10px;cursor:pointer;font-size:14px;border-bottom:2px solid var(--primary);color:var(--text);font-weight:600;background:var(--hover-bg);margin-bottom:-1px;transition:all 0.2s">APT 安全更新</span>
+        <span class="sec-parent-tab" data-tab="patch" style="padding:12px 24px 10px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent;color:var(--text-ter);font-weight:400;background:transparent;margin-bottom:-1px;transition:all 0.2s">补丁包管理</span>
+        <span class="sec-parent-tab" data-tab="advisory" style="padding:12px 24px 10px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent;color:var(--text-ter);font-weight:400;background:transparent;margin-bottom:-1px;transition:all 0.2s">安全公告</span>
       </div>
       <div id="secContent" style="padding-top:20px"></div>
     </div>`
@@ -2886,16 +2890,16 @@ async function switchSecTab(tab){
   _secTab = tab
   document.querySelectorAll('.sec-parent-tab').forEach(t => {
     t.style.borderBottom = '2px solid transparent'
-    t.style.color = '#999'
+    t.style.color = 'var(--text-ter)'
     t.style.fontWeight = '400'
     t.style.background = 'transparent'
   })
   const active = document.querySelector('.sec-parent-tab[data-tab="'+tab+'"]')
   if(active){
     active.style.borderBottom = '2px solid var(--primary)'
-    active.style.color = '#000'
+    active.style.color = 'var(--text)'
     active.style.fontWeight = '600'
-    active.style.background = '#fafafa'
+    active.style.background = 'var(--hover-bg)'
   }
   const el = document.getElementById('secContent')
   if(!el)return
@@ -2915,34 +2919,34 @@ async function renderSecApt(el){
 
     el.innerHTML=`
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-        <div style="background:#fff;border-radius:12px;padding:20px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <div style="background:var(--card-bg);border-radius:12px;padding:20px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
           <div style="font-size:32px;font-weight:700;color:${updates.length?'#d32f2f':'#2e7d32'}">${updates.length}</div>
-          <div style="font-size:12px;color:#888;margin-top:4px">可用更新</div>
+          <div style="font-size:12px;color:var(--text-sec);margin-top:4px">可用更新</div>
           <div style="font-size:24px;margin-top:6px">${updates.length?'🔄':'✅'}</div>
         </div>
-        <div style="background:#fff;border-radius:12px;padding:20px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+        <div style="background:var(--card-bg);border-radius:12px;padding:20px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
           <div style="font-size:32px;font-weight:700;color:${secCount?'#e65100':'#2e7d32'}">${secCount}</div>
-          <div style="font-size:12px;color:#888;margin-top:4px">安全更新</div>
+          <div style="font-size:12px;color:var(--text-sec);margin-top:4px">安全更新</div>
           <div style="font-size:24px;margin-top:6px">${secCount?'🔴':'✅'}</div>
         </div>
-        <div style="background:#fff;border-radius:12px;padding:20px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
-          <div style="font-size:14px;font-weight:600;color:#333">${aptInfo?.lastCheck||'-'}</div>
-          <div style="font-size:12px;color:#888;margin-top:4px">上次检查</div>
+        <div style="background:var(--card-bg);border-radius:12px;padding:20px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.06)">
+          <div style="font-size:14px;font-weight:600;color:var(--text)">${aptInfo?.lastCheck||'-'}</div>
+          <div style="font-size:12px;color:var(--text-sec);margin-top:4px">上次检查</div>
           <div style="font-size:24px;margin-top:6px">🕐</div>
         </div>
       </div>
       <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
         <button class="btn" onclick="secAptCheck()" style="padding:10px 22px;border-radius:8px;font-size:13px;background:var(--primary);color:#fff;border:none;cursor:pointer">🔄 检查更新</button>
-        <button class="btn" onclick="secAptUpgrade()" style="padding:10px 22px;border-radius:8px;font-size:13px;background:#fff;color:#333;border:1px solid #ddd;cursor:pointer">⬇️ 安装全部更新</button>
-        <button class="btn" onclick="secAptSecOnly()" style="padding:10px 22px;border-radius:8px;font-size:13px;background:#fff;color:#333;border:1px solid #ddd;cursor:pointer">🛡️ 仅安全更新</button>
+        <button class="btn" onclick="secAptUpgrade()" style="padding:10px 22px;border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--text);border:1px solid var(--border);cursor:pointer">⬇️ 安装全部更新</button>
+        <button class="btn" onclick="secAptSecOnly()" style="padding:10px 22px;border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--text);border:1px solid var(--border);cursor:pointer">🛡️ 仅安全更新</button>
       </div>
       <div id="secAptResult" style="margin-bottom:16px;font-size:13px"></div>`
 
     if(updates.length > 0 || cves.length > 0){
-      let listHtml = '<div style="background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)"><h3 style="font-size:13px;margin:0 0 10px;color:#888">📋 更新列表</h3><div style="font-size:12px;max-height:250px;overflow-y:auto">'
+      let listHtml = '<div style="background:var(--card-bg);border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)"><h3 style="font-size:13px;margin:0 0 10px;color:var(--text-sec)">📋 更新列表</h3><div style="font-size:12px;max-height:250px;overflow-y:auto">'
       for(const u of updates){
         const isSec = cves.some(c => u.name && c.id && u.name.includes(c.id.split('/')[0]))
-        listHtml += '<div style="padding:6px 0;border-bottom:1px solid var(--sidebar-logo-border);display:flex;justify-content:space-between;font-size:12px"><span>'+(isSec?'🔴 ':'🔵 ')+esc(u.name||u)+'</span><span style="color:#888">'+(u.version||'')+'</span></div>'
+        listHtml += '<div style="padding:6px 0;border-bottom:1px solid var(--sidebar-logo-border);display:flex;justify-content:space-between;font-size:12px"><span>'+(isSec?'🔴 ':'🔵 ')+esc(u.name||u)+'</span><span style="color:var(--text-sec)">'+(u.version||'')+'</span></div>'
       }
       listHtml += '</div></div>'
       el.innerHTML += listHtml
@@ -4595,7 +4599,7 @@ async function uninstallPkg(name){
 
 async function showPkgDetail(name){
   const modal = document.getElementById('modalOverlay')
-  const body = document.getElementById('modalBody')
+  const body = document.getElementById('modalContent')
   if(!modal || !body) return
   modal.style.display = 'flex'
   body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-sec)">⏳ 加载详情...</div>'
@@ -6425,8 +6429,6 @@ async function doResetShortcuts(){
     if(resultEl) resultEl.innerHTML = '<span style="color:var(--danger)">❌ ' + escHtml(e.message) + '</span>'
   }
 }
-
-}
 // ============ VPN 管理 ============
 async function renderVpnPage(el) {
   el.innerHTML = '<div style="max-width:800px;margin:0 auto;padding:24px 16px">' +
@@ -6700,9 +6702,7 @@ async function refreshUpgrade() {
 }
 
 async function startUpgradeDlg() {
-  var overlay = document.getElementById('modalOverlay')
-  overlay.innerHTML = '<div style="padding:16px"><p style="font-size:14px;margin-bottom:12px">\u8bf7\u8f93\u5165\u7ba1\u7406\u5458\u5bc6\u7801\u5f00\u59cb\u7cfb\u7edf\u5347\u7ea7</p><input id="_upgradePwd" type="password" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px" placeholder="\u7ba1\u7406\u5458\u5bc6\u7801"><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primary" onclick="confirmUpgrade()" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u786e\u8ba4\u5347\u7ea7</button><button class="btn btn-outline" onclick="document.getElementById(\'modalOverlay\').classList.remove(\'show\')" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u53d6\u6d88</button></div></div>'
-  overlay.classList.add('show')
+  showModal('<div style="padding:16px"><p style="font-size:14px;margin-bottom:12px">\u8bf7\u8f93\u5165\u7ba1\u7406\u5458\u5bc6\u7801\u5f00\u59cb\u7cfb\u7edf\u5347\u7ea7</p><input id="_upgradePwd" type="password" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px" placeholder="\u7ba1\u7406\u5458\u5bc6\u7801"><div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primary" onclick="confirmUpgrade()" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u786e\u8ba4\u5347\u7ea7</button><button class="btn btn-outline" onclick="closeModal()" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u53d6\u6d88</button></div></div>')
 }
 
 async function confirmUpgrade() {
@@ -6937,9 +6937,7 @@ async function refreshRemote() {
 }
 
 async function showAddSSHKeyDialog() {
-  var overlay = document.getElementById('modalOverlay')
-  overlay.innerHTML = '<div style="padding:16px"><h4 style="margin:0 0 12px">\u6dfb\u52a0 SSH \u5bc6\u94a5</h4><input id="sshKeyName" placeholder="\u5bc6\u94a5\u540d\u79f0" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin-bottom:8px"><textarea id="sshKeyContent" placeholder="\u7c98\u8d34\u516c\u94a5\u5185\u5bb9 (ssh-rsa AAA...)" style="width:100%;min-height:100px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;resize:vertical;margin-bottom:12px"></textarea><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="confirmAddSSHKey()" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u6dfb\u52a0</button><button class="btn btn-outline" onclick="document.getElementById(\'modalOverlay\').classList.remove(\'show\')" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u53d6\u6d88</button></div></div>'
-  overlay.classList.add('show')
+  showModal('<div style="padding:16px"><h4 style="margin:0 0 12px">\u6dfb\u52a0 SSH \u5bc6\u94a5</h4><input id="sshKeyName" placeholder="\u5bc6\u94a5\u540d\u79f0" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin-bottom:8px"><textarea id="sshKeyContent" placeholder="\u7c98\u8d34\u516c\u94a5\u5185\u5bb9 (ssh-rsa AAA...)" style="width:100%;min-height:100px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:12px;resize:vertical;margin-bottom:12px"></textarea><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="confirmAddSSHKey()" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u6dfb\u52a0</button><button class="btn btn-outline" onclick="closeModal()" style="padding:8px 20px;border-radius:6px;cursor:pointer">\u53d6\u6d88</button></div></div>')
 }
 
 async function confirmAddSSHKey() {
@@ -7491,7 +7489,7 @@ async function benchmarkRunNetwork(){
   try{
     var res=await window.benchmarkAPI?.run('network')
     if(!res||!res.success){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--danger)">❌ 网络测试失败'+(res?': '+escHtml(res.error):'')+'</div>';return}
-    var html='<div class="card" style="margin-bottom:14px;border-left:4px solid #4A6CF7">'
+    var html='<div class="card" style="margin-bottom:14px;border-left:4px solid var(--primary)">'
     html+='<div style="font-size:16px;font-weight:600;margin-bottom:10px">🌐 网络速度测试结果</div>'
     if(res.results&&res.results.length>0){
       html+='<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px">'
@@ -7780,7 +7778,7 @@ async function refreshCronList(){
 
 function showAddCron(){
   openModal()
-  document.getElementById('modalContent').innerHTML='<button class="close-btn" onclick="closeModal()">X</button><h2>⏰ 添加定时任务</h2><div style="margin:16px 0"><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">Cron 表达式</label><div style="display:flex;gap:4px;flex-wrap:wrap"><input id="cronMin" placeholder="分" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronHour" placeholder="时" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronDay" placeholder="日" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronMonth" placeholder="月" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronWeek" placeholder="周" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"></div></div><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">执行命令</label><input id="cronCommand" type="text" placeholder="/usr/bin/command" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none"></div><div style="background:#f0f7ff;border-radius:6px;padding:10px;font-size:11px;line-height:1.6;color:#4A6CF7"><strong>💡 Cron 格式说明：</strong>分 时 日 月 周<br>每个字段可以输入数字、*（任意）、逗号分隔列表（如 1,3,5）或 */N 每 N 单位</div></div><div class="modal-output" id="addCronResult" style="display:none"></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="doAddCron()">添加任务</button></div>'
+  document.getElementById('modalContent').innerHTML='<button class="close-btn" onclick="closeModal()">X</button><h2>⏰ 添加定时任务</h2><div style="margin:16px 0"><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">Cron 表达式</label><div style="display:flex;gap:4px;flex-wrap:wrap"><input id="cronMin" placeholder="分" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronHour" placeholder="时" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronDay" placeholder="日" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronMonth" placeholder="月" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"><input id="cronWeek" placeholder="周" value="*" style="width:50px;padding:8px 6px;border:1px solid #ddd;border-radius:4px;font-size:13px;text-align:center;outline:none"></div></div><div style="margin-bottom:10px"><label style="font-size:12px;color:var(--text-sec);display:block;margin-bottom:4px">执行命令</label><input id="cronCommand" type="text" placeholder="/usr/bin/command" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none"></div><div style="background:#f0f7ff;border-radius:6px;padding:10px;font-size:11px;line-height:1.6;color:var(--primary)"><strong>💡 Cron 格式说明：</strong>分 时 日 月 周<br>每个字段可以输入数字、*（任意）、逗号分隔列表（如 1,3,5）或 */N 每 N 单位</div></div><div class="modal-output" id="addCronResult" style="display:none"></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="doAddCron()">添加任务</button></div>'
 }
 
 async function doAddCron(){
@@ -7813,5 +7811,6 @@ async function removeCronLine(lineNum){
 
 </script>
 <script src="init.js"></script>
+<div id="toastContainer" class="toast-container"></div>
 </body>
 </html>
