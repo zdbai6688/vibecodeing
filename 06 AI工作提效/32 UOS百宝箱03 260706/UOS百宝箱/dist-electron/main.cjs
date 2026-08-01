@@ -5,6 +5,27 @@
 // ============================================
 
 delete process.env.ELECTRON_RUN_AS_NODE
+// ========== 未捕获异常处理 ==========
+process.on('uncaughtException', (err) => {
+  console.error("[崩溃日志] 未捕获的异常:", err.message)
+  console.error(err.stack)
+  const __fs = require('fs')
+  const __path = require('path')
+  const logPath = __path.join(__dirname, '../uos_baibaoxiang_crash.log')
+  try {
+    __fs.appendFileSync(logPath, `[${new Date().toISOString()}] UNCAUGHT_EXCEPTION: ${err.stack}\n`)
+  } catch(e) {}
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error("[崩溃日志] 未处理的 Promise 拒绝:", reason)
+  const __fs2 = require('fs')
+  const __path2 = require('path')
+  const logPath = __path2.join(__dirname, '../uos_baibaoxiang_crash.log')
+  try {
+    __fs2.appendFileSync(logPath, `[${new Date().toISOString()}] UNHANDLED_REJECTION: ${reason}\n`)
+  } catch(e) {}
+})
 
 const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, dialog, shell } = require('electron')
 const path = require('path')

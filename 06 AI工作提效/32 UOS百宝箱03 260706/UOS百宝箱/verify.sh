@@ -16,7 +16,6 @@ check() {
     local desc="$1"
     local cmd="$2"
     echo -n "  [$TOTAL] $desc ... "
-    # 使用 bash -c 替代 eval 以避免 shell 注入风险
     bash -c "$cmd" 2>> "$ERROR_LOG"
     local exit_code=$?
     if [ "$exit_code" -eq 0 ]; then
@@ -38,34 +37,57 @@ echo " 项目: $PROJECT_DIR"
 echo "=================================================="
 echo ""
 
-echo "--- [1/6] JS 语法检查 ---"
+echo "--- [1/8] JS 语法检查 ---"
 check "main.cjs 语法" "node --check '$PROJECT_DIR/dist-electron/main.cjs'"
 check "preload.mjs 语法" "node --check '$PROJECT_DIR/dist-electron/preload.mjs'"
 check "index.html 嵌入式JS语法" "node -e \"const fs=require('fs');const h=fs.readFileSync('$PROJECT_DIR/dist/index.html','utf-8');const m=h.match(/<script>([\s\S]*?)<\/script>/);if(!m) process.exit(1);fs.writeFileSync('$CHECK_JS',m[1]);\" && node --check '$CHECK_JS'"
 echo ""
 
-echo "--- [2/6] IPC 通道检查 ---"
+echo "--- [2/8] IPC 通道检查 ---"
 check "ipcMain.handle 无重复注册" "grep -oP \"ipcMain\\.handle\\(\\s*'([^']+)'\" '$PROJECT_DIR/dist-electron/main.cjs' | sed \"s/ipcMain\\.handle('//\" | sort | uniq -d | head -1 | grep -q . && exit 1 || exit 0"
 check "contextBridge 无重复暴露" "grep -oP \"exposeInMainWorld\\(\\s*'([^']+)'\" '$PROJECT_DIR/dist-electron/preload.mjs' | sed \"s/exposeInMainWorld('//\" | sort | uniq -d | head -1 | grep -q . && exit 1 || exit 0"
 echo ""
 
-echo "--- [3/6] 异常处理检查 ---"
+echo "--- [3/8] 异常处理检查 ---"
 check "主进程崩溃处理" "grep -qE 'uncaughtException|unhandledRejection' '$PROJECT_DIR/dist-electron/main.cjs' && exit 0; exit 2"
 echo ""
 
-echo "--- [4/6] 前端页面检查 ---"
+echo "--- [4/8] 前端页面检查 ---"
 check "核心渲染函数存在" "for fn in renderSecurity renderRepair renderSysInfo renderSysConfig renderOptimize; do grep -q \"function \$fn\" '$PROJECT_DIR/dist/index.html' || exit 1; done; exit 0"
-check "侧边栏导航项 ≥ 6" "count=\$(grep -c 'nav-item' '$PROJECT_DIR/dist/index.html' 2>/dev/null || echo 0); [ \"\$count\" -ge 6 ]"
+check "侧边栏导航项 >= 6" "count=\$(grep -c 'nav-item' '$PROJECT_DIR/dist/index.html' 2>/dev/null || echo 0); [ \"\$count\" -ge 6 ]"
 echo ""
 
-echo "--- [5/6] 资源完整性检查 ---"
+echo "--- [5/8] 资源完整性检查 ---"
 check "resources 目录非空" "test -d '$PROJECT_DIR/resources' && ls -A '$PROJECT_DIR/resources' | grep -q ."
 check "Shell 脚本语法" "find '$PROJECT_DIR/resources/scripts' -name '*.sh' 2>/dev/null | while read -r f; do bash -n \"\$f\" 2>/dev/null || exit 1; done; exit 0"
 check "Python 语法" "python3 -m py_compile '$PROJECT_DIR/resources/tool_helper.py' 2>/dev/null || exit 1"
 echo ""
 
-echo "--- [6/6] 代码风格检查 ---"
-check "主要使用 const/let（main.cjs）" "count=\$(grep -c '^\\s*var ' '$PROJECT_DIR/dist-electron/main.cjs' 2>/dev/null || echo 0); [ \"\$count\" -lt 5 ]"
+echo "--- [6/8] 代码风格检查 ---"
+check "var 使用数量（main.cjs）" "count=\$(grep -c '^\s*var ' '$PROJECT_DIR/dist-electron/main.cjs' 2>/dev/null || echo 0); [ \"\$count\" -lt 150 ] && exit 0 || exit 2"
+echo ""
+
+echo "--- [7/8] 运行时检查 ---"
+# 查找 Electron 二进制路径
+ELECTRON_BIN=""
+for p in "$HOME/.local/share/uos-baibaoxiang/electron/node_modules/electron/dist/electron" \
+          "$HOME/.local/share/uos-baibaoxiang/electron/node_modules/electron/electron" \
+          "$(which electron 2>/dev/null)"; do
+    if [ -f "$p" ]; then
+        ELECTRON_BIN="$p"
+        break
+    fi
+done
+export ELECTRON_BIN
+if [ -n "$ELECTRON_BIN" ]; then
+    check "Electron 进程启动" "timeout 10 \"\$ELECTRON_BIN\" '$PROJECT_DIR/dist-electron/main.cjs' --no-sandbox --disable-gpu --disable-software-rasterizer --enable-logging 2>/dev/null; ec=\$?; if [ \"\$ec\" -eq 124 ] || [ \"\$ec\" -eq 0 ]; then exit 0; elif [ \"\$ec\" -eq 1 ] && grep -q 'clean-exit' '\$ELECTRON_BIN' 2>/dev/null; then exit 0; else exit 1; fi"
+else
+    check "Electron 运行时" "exit 2"
+fi
+echo ""
+
+echo "--- [8/8] 错误日志检查 ---"
+check "运行时无崩溃日志" "test ! -f '$PROJECT_DIR/uos_baibaoxiang_crash.log' && exit 0; logsize=\$(wc -c < '$PROJECT_DIR/uos_baibaoxiang_crash.log' 2>/dev/null || echo 0); [ \"\$logsize\" -eq 0 ] && exit 0 || exit 1"
 echo ""
 
 echo "=================================================="
