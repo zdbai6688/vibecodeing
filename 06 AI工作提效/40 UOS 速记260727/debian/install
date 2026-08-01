@@ -1,0 +1,7 @@
+usr/bin/uos-shorthand
+usr/bin/run.sh
+usr/share/applications/uos-shorthand.desktop
+usr/share/icons/hicolor/scalable/apps/uos-shorthand.svg
+usr/share/icons/hicolor/48x48/apps/uos-shorthand-48.svg
+usr/share/icons/hicolor/scalable/status/uos-shorthand-tray.svg
+usr/share/uos-shorthand/whisper/*

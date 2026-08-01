@@ -1,0 +1,16 @@
+[Desktop Entry]
+Categories=Office;
+Comment=轻量级办公信息中枢 — 笔记、待办、会议速记
+Comment[zh_CN]=UOS速记 — 轻量级办公信息中枢，支持笔记、待办、会议速记和AI摘要
+Exec=run.sh
+GenericName=UOS速记
+GenericName[zh_CN]=UOS速记
+Icon=uos-shorthand
+Name=UOS Shorthand
+Name[zh_CN]=UOS速记
+StartupNotify=true
+Terminal=false
+Type=Application
+X-Deepin-Vendor=user-custom
+Keywords=uos-shorthand;note;todo;meeting;transcription;
+Keywords[zh_CN]=速记;笔记;待办;会议;语音转写;

@@ -83,6 +83,7 @@ set(SOURCES
     src/services/globalshortcutmanager.cpp
     # Whisper 离线 ASR
     src/whisper/whisperasrengine.cpp
+    src/services/cryptoutil.cpp
     # 孤立源文件（恢复编译）
     src/ui/meeting/meetingview.cpp
     src/ui/settings/settingswidget.cpp
@@ -119,6 +120,8 @@ set(HEADERS
     src/services/screenshotmanager.h
     src/services/globalshortcutmanager.h
     src/whisper/whisperasrengine.h
+    src/globaldef.h
+    src/services/cryptoutil.h
     src/ui/meeting/meetingview.h
     src/ui/settings/settingswidget.h
 )

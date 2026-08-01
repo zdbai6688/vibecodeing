@@ -7,6 +7,11 @@
 #include <QDebug>
 #include <QProcess>
 #include <QRegularExpression>
+#include <QTextDocument>
+#include <QAbstractTextDocumentLayout>
+#include <QPrinter>
+#include <QPdfWriter>
+#include <QPainter>
 
 ExportService::ExportService(QObject *parent)
     : QObject(parent)
@@ -135,4 +140,46 @@ bool ExportService::exportMeeting(const MeetingData &meeting, const QString &dir
 
     file.close();
     return true;
+}
+bool ExportService::exportNoteToPdf(const NoteData &note, const QString &filePath)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    // 使用 QPdfWriter 生成 PDF（Qt >= 5.15）
+    QPdfWriter writer(filePath);
+    writer.setPageSize(QPageSize(QPageSize::A4));
+    writer.setTitle(note.title);
+    writer.setCreator(APP_NAME);
+
+    QTextDocument doc;
+    QString html;
+
+    // 构建 HTML 内容
+    html += "<h1>" + note.title.toHtmlEscaped() + "</h1>";
+    html += "<hr>";
+    html += "<p style=\"color:#999; font-size:10pt;\">";
+    html += QString::fromUtf8("æ¶é´: ") + note.createdAt().toString("yyyy-MM-dd hh:mm:ss");
+    if (!note.tag.isEmpty()) {
+        html += " | " + QString::fromUtf8("æ ç­¾: ") + note.tag.toHtmlEscaped();
+    }
+    html += "</p><hr>";
+
+    // 将 Markdown 内容转换为简单 HTML
+    QString body = note.content.toHtmlEscaped();
+    body.replace(QStringLiteral("\n"), "<br>");
+    html += QStringLiteral("<p>") + body + QStringLiteral("</p>");
+
+    doc.setHtml(html);
+    doc.setPageSize(QPageSize(QPageSize::A4).size(QPageSize::Point));
+
+    // 渲染到 PDF
+    doc.print(&writer);
+
+    qInfo() << "PDF å¯¼åºæå:" << filePath;
+    return true;
+#else
+    Q_UNUSED(note);
+    Q_UNUSED(filePath);
+    qWarning() << "PDF å¯¼åºä¸æ¯æå½å Qt çæ¬";
+    return false;
+#endif
 }

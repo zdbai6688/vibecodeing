@@ -1,0 +1,50 @@
+Source: uos-shorthand
+Section: office
+Priority: optional
+Maintainer: UnionTech Software Technology Co., Ltd. <packaging@uniontech.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake,
+               pkg-config,
+               qt6-base-dev (>= 6.6),
+               libdtk6widget-dev (>= 6.0),
+               libdtk6core-dev (>= 6.0),
+               libdtk6gui-dev (>= 6.0),
+               libdtk6log-dev (>= 6.0),
+               libsqlite3-dev,
+               libgstreamer1.0-dev,
+               libgstreamer-plugins-base1.0-dev
+Standards-Version: 4.6.2
+Homepage: https://www.uniontech.com
+Rules-Requires-Root: no
+
+Package: uos-shorthand
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         libqt6core6 (>= 6.6),
+         libqt6gui6 (>= 6.6),
+         libqt6widget6 (>= 6.6),
+         libqt6sql6 (>= 6.6),
+         libqt6sql6-sqlite (>= 6.6),
+         libqt6dbus6 (>= 6.6),
+         libqt6network6 (>= 6.6),
+         libqt6concurrent6 (>= 6.6),
+         libqt6xml6 (>= 6.6),
+         nodejs (>= 12),
+         libdtk6widget (>= 6.0),
+         libdtk6core (>= 6.0),
+         libdtk6gui (>= 6.0),
+         gstreamer1.0-plugins-base,
+         gstreamer1.0-plugins-good,
+         gstreamer1.0-plugins-ugly
+Description: UOS速记 — 轻量级办公信息中枢
+ UOS速记是统信UOS原生的办公信息中枢，集笔记管理、待办跟踪、
+ 语音速记、AI会议助手于一体。通过Alt+Space全局快捷键随时捕捉
+ 灵感，支持富文本/Markdown双模笔记、语音实时转文字、AI智能摘要。
+ .
+ 核心功能：
+  • 笔记管理：富文本/Markdown双模编辑，标签分类，快速搜索
+  • 待办管理：截止日期、优先级、完成状态，自动分组
+  • 语音速记：全局快捷键唤起，录音+转写
+  • 会议助手：录音转文字、AI摘要、待办提取
+  • 隐私优先：数据100%本地存储

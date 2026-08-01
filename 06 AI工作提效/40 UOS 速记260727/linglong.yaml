@@ -1,0 +1,46 @@
+package:
+  id: org.deepin.uos-shorthand
+  name: UOS速记
+  version: 1.0.0
+  kind: app
+  description: |
+    UOS速记 — 轻量级办公信息中枢
+    笔记、待办、会议速记、AI摘要四合一工具
+    支持全局快捷键快速录入、Markdown编辑器、语音录音、离线转写
+
+base:
+  id: org.deepin.base
+  version: 23.0.0
+
+runtime:
+  id: org.deepin.Runtime
+  version: 23.0.0
+
+command:
+  - /opt/apps/org.deepin.uos-shorthand/files/bin/run.sh
+
+sources:
+  - kind: local
+    path: .
+
+build: |
+  cmake -B build \
+    -DCMAKE_INSTALL_PREFIX=/opt/apps/org.deepin.uos-shorthand/files \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_TESTS=OFF
+  cmake --build build -j$(nproc)
+  cmake --install build
+
+permissions:
+  audio: true
+  network: true
+  notification: true
+  tray_icon: true
+  wayland: true
+  x11: true
+  dbus: true
+  home: true
+
+environments:
+  - QT_QPA_PLATFORM=wayland;xcb
+  - QT_QPA_PLATFORMTHEME=deepin
