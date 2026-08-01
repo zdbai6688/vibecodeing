@@ -228,6 +228,7 @@ QWidget *SettingsDialog::createAsrPage()
     engineRow->addWidget(new DLabel(tr("语音识别引擎"), this));
     engineRow->addStretch();
     m_asrEngineCombo = new QComboBox(this);
+    m_asrEngineCombo->addItem(tr("离线语音 (Whisper)"));
     m_asrEngineCombo->addItem(tr("百度语音"));
     m_asrEngineCombo->addItem(tr("讯飞语音"));
     m_asrEngineCombo->addItem(tr("阿里云语音"));
@@ -235,7 +236,13 @@ QWidget *SettingsDialog::createAsrPage()
     engineRow->addWidget(m_asrEngineCombo);
     layout->addLayout(engineRow);
 
-    auto addKeyRow = [this, layout](const QString &label, QLineEdit *&edit) {
+    // 在线引擎 API Key 配置区（离线时隐藏）
+    QWidget *credentialWidget = new QWidget(this);
+    QVBoxLayout *credLayout = new QVBoxLayout(credentialWidget);
+    credLayout->setContentsMargins(0, 0, 0, 0);
+    credLayout->setSpacing(8);
+
+    auto addKeyRow = [this, credLayout](const QString &label, QLineEdit *&edit) {
         QHBoxLayout *row = new QHBoxLayout();
         row->addWidget(new DLabel(label, this));
         row->addStretch();
@@ -243,25 +250,25 @@ QWidget *SettingsDialog::createAsrPage()
         edit->setEchoMode(QLineEdit::Password);
         edit->setFixedWidth(280);
         row->addWidget(edit);
-        layout->addLayout(row);
+        credLayout->addLayout(row);
     };
 
     QLabel *baiduTitle = new QLabel(tr("百度语音"), this);
     baiduTitle->setStyleSheet("font-weight:600; padding:4px 0;");
-    layout->addWidget(baiduTitle);
+    credLayout->addWidget(baiduTitle);
     addKeyRow(tr("API Key"), m_baiduAsrKey);
     addKeyRow(tr("Secret Key"), m_baiduAsrSecret);
 
     QLabel *xunfeiTitle = new QLabel(tr("讯飞语音"), this);
     xunfeiTitle->setStyleSheet("font-weight:600; padding:4px 0;");
-    layout->addWidget(xunfeiTitle);
+    credLayout->addWidget(xunfeiTitle);
     addKeyRow(tr("APP ID"), m_xunfeiAsrAppId);
     addKeyRow(tr("API Key"), m_xunfeiAsrKey);
     addKeyRow(tr("API Secret"), m_xunfeiAsrSecret);
 
     QLabel *aliTitle = new QLabel(tr("阿里云语音"), this);
     aliTitle->setStyleSheet("font-weight:600; padding:4px 0;");
-    layout->addWidget(aliTitle);
+    credLayout->addWidget(aliTitle);
     addKeyRow(tr("Access Key ID"), m_aliyunAsrKey);
     addKeyRow(tr("Access Key Secret"), m_aliyunAsrSecret);
 
@@ -269,11 +276,22 @@ QWidget *SettingsDialog::createAsrPage()
     testRow->addStretch();
     m_asrTestBtn = new DPushButton(tr("测试连接"), this);
     testRow->addWidget(m_asrTestBtn);
-    layout->addLayout(testRow);
+    credLayout->addLayout(testRow);
 
-    QLabel *tip = new QLabel(tr("💡 注册地址：百度 ai.baidu.com | 讯飞 xfyun.cn | 阿里云 nls.aliyun.com"), this);
+    layout->addWidget(credentialWidget);
+
+    QLabel *tip = new QLabel(tr("💡 离线模式：本地运行无需联网，首次使用前请确保已下载模型文件\n💡 在线模式：百度 ai.baidu.com | 讯飞 xfyun.cn | 阿里云 nls.aliyun.com"), this);
     tip->setStyleSheet("color:palette(placeholderText); font-size:11px; padding:4px 0;");
     layout->addWidget(tip);
+
+    // 切换引擎时显示/隐藏 API Key 配置
+    auto updateCredVisibility = [this, credentialWidget]() {
+        QString cur = m_asrEngineCombo->currentText();
+        bool offline = cur.contains("离线") || cur.contains("Whisper");
+        credentialWidget->setVisible(!offline);
+    };
+    connect(m_asrEngineCombo, &QComboBox::currentTextChanged, this, updateCredVisibility);
+    updateCredVisibility();
 
     connect(m_asrTestBtn, &DPushButton::clicked, this, [this]() {
         DDialog d(this);
@@ -351,7 +369,7 @@ void SettingsDialog::loadSettings()
     m_tongyiKeyEdit->setText(settings.value("ai/tongyi_key").toString());
 
     // ASR settings
-    QString asrEngine = settings.value("asr/engine", "百度语音").toString();
+    QString asrEngine = settings.value("asr/engine", "离线语音 (Whisper)").toString();
     int asrIdx = m_asrEngineCombo->findText(asrEngine);
     if (asrIdx >= 0) m_asrEngineCombo->setCurrentIndex(asrIdx);
     m_baiduAsrKey->setText(settings.value("asr/baidu_key").toString());

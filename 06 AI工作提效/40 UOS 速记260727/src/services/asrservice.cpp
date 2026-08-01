@@ -127,7 +127,7 @@ void BaiduAsrEngine::transcribe(const QString &audioFile,
         }
 
         // 调用短语音识别 API
-        QString url = "http://vop.baidu.com/server_api";
+        QString url = "https://vop.baidu.com/server_api";
         QJsonObject body;
         body["format"] = "wav";
         body["rate"] = 16000;
@@ -406,6 +406,7 @@ AsrServiceManager::Engine AsrServiceManager::engineFromName(const QString &name)
     if (name.contains("Whisper") || name.contains("离线")) return Whisper;
     if (name == "百度语音") return Baidu;
     if (name == "阿里云语音") return Aliyun;
+    if (name == QStringLiteral("讯飞语音")) return Xfyun;
     return Whisper; // 默认使用离线引擎
 }
 
