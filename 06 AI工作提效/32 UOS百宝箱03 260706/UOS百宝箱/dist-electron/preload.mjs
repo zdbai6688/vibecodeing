@@ -409,10 +409,10 @@ contextBridge.exposeInMainWorld('benchmarkAPI', {
 contextBridge.exposeInMainWorld('phase2API', {
   backup: (action, params) => ipcRenderer.invoke('system-backup', action, params),
   startup: (action, params) => ipcRenderer.invoke('system-backup', action, params),
-  health: () => ipcRenderer.invoke('system-backup', 'backup', {}),
-  usb: (action, params) => ipcRenderer.invoke('system-backup', action, params),
-  driver: (action, params) => ipcRenderer.invoke('system-backup', action, params),
-  remote: (action, params) => ipcRenderer.invoke('system-backup', action, params),
-  search: (params) => ipcRenderer.invoke('system-backup', 'backup', params),
-  benchmark: (type) => ipcRenderer.invoke('system-backup', 'backup', {})
+  health: () => ipcRenderer.invoke('system-backup', 'health', {}),
+  usb: (action, params) => ipcRenderer.invoke('usb-bootmaker', action, params),
+  driver: (action, params) => ipcRenderer.invoke('phase2-driver', action, params),
+  remote: (action, params) => ipcRenderer.invoke('remote-desktop', action, params),
+  search: (params) => ipcRenderer.invoke('execute-tool', 'file-search', params),
+  benchmark: (type) => ipcRenderer.invoke('benchmark', type)
 })
