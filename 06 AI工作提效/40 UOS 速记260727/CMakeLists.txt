@@ -163,6 +163,7 @@ target_link_libraries(uos-shorthand PRIVATE
     ${CMAKE_SOURCE_DIR}/whisper/libggml-cpu.so
     ${CMAKE_SOURCE_DIR}/whisper/libggml-base.so
     ${X11_LIBRARIES}
+    ${X11_xcb_LIB}
 )
 
 # 运行时搜索 whisper 共享库（避免 libggml.so.0 找不到）
