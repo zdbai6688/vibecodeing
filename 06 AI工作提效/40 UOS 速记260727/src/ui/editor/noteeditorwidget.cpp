@@ -23,15 +23,21 @@
 #include <QPair>
 #include <QFontDatabase>
 #include <QColorDialog>
+#include <DGuiApplicationHelper>
 
 NoteEditorWidget::NoteEditorWidget(QWidget *parent)
     : QWidget(parent)
 {
+    qInfo() << "[Editor] 构造开始";
     m_screenshotMgr = new ScreenshotManager(this);
+    qInfo() << "[Editor] ScreenshotManager";
     m_recorder = new AudioRecorder(this);
-    setStyleSheet("NoteEditorWidget { background: #FFFFFF; }");
+    qInfo() << "[Editor] AudioRecorder";
+    setStyleSheet("NoteEditorWidget { background: palette(base); }");
     initUI();
+    qInfo() << "[Editor] initUI";
     initConnections();
+    qInfo() << "[Editor] initConnections";
 }
 
 void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
@@ -79,7 +85,10 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
     QToolButton *colorBtn = makeBtn("●", tr("主题色"));
     colorBtn->setStyleSheet("QToolButton { background:transparent; border:none; border-radius:6px; font-size:16px; color:palette(highlight); } QToolButton:hover { background:palette(light); }");
     connect(colorBtn, &QToolButton::clicked, this, [this]() {
-        QColor c = QColorDialog::getColor(QColor("#2178E5"), this, tr("选择主题色"));
+        auto *helper = DGuiApplicationHelper::instance();
+        QColor defaultColor = helper && helper->themeType() == DGuiApplicationHelper::DarkType
+            ? QColor("#78A9FF") : QColor("#2178E5");
+        QColor c = QColorDialog::getColor(defaultColor, this, tr("选择主题色"));
         if (c.isValid()) {
             m_contentEdit->setStyleSheet(m_contentEdit->styleSheet() + QString("QTextEdit { color: %1; }").arg(c.name()));
         }
@@ -88,6 +97,14 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
     m_boldBtn = makeBtn("B", tr("加粗"));
     m_boldBtn->setCheckable(true);
     m_boldBtn->setStyleSheet("QToolButton { background:transparent; border:none; border-radius:6px; font-size:13px; font-weight:bold; color:palette(windowText); } QToolButton:hover { background:palette(light); } QToolButton:checked { color:palette(highlight); }");
+
+    m_italicBtn = makeBtn("I", tr("斜体"));
+    m_italicBtn->setCheckable(true);
+    m_italicBtn->setStyleSheet("QToolButton { background:transparent; border:none; border-radius:6px; font-size:13px; font-style:italic; color:palette(windowText); } QToolButton:hover { background:palette(light); } QToolButton:checked { color:palette(highlight); }");
+
+    m_underlineBtn = makeBtn("U", tr("下划线"));
+    m_underlineBtn->setCheckable(true);
+    m_underlineBtn->setStyleSheet("QToolButton { background:transparent; border:none; border-radius:6px; font-size:13px; text-decoration:underline; color:palette(windowText); } QToolButton:hover { background:palette(light); } QToolButton:checked { color:palette(highlight); }");
 
     m_olBtn = makeBtn("1.", tr("有序列表"));
     m_ulBtn = makeBtn("•", tr("无序列表"));
@@ -102,6 +119,31 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
             cursor.setPosition(cursor.position() - 2);
         } else {
             cursor.insertText("**" + selected + "**");
+        }
+        m_contentEdit->setFocus();
+        m_modified = true;
+    });
+    connect(m_italicBtn, &QToolButton::clicked, this, [this]() {
+        QTextCursor cursor = m_contentEdit->textCursor();
+        QString selected = cursor.selectedText();
+        if (selected.isEmpty()) {
+            cursor.insertText("**");
+            cursor.setPosition(cursor.position() - 1);
+        } else {
+            cursor.insertText("*" + selected + "*");
+        }
+        m_contentEdit->setFocus();
+        m_modified = true;
+    });
+    connect(m_underlineBtn, &QToolButton::clicked, this, [this]() {
+        QTextCursor cursor = m_contentEdit->textCursor();
+        QString selected = cursor.selectedText();
+        if (selected.isEmpty()) {
+            // 下划线在Markdown中用HTML标记
+            cursor.insertText("<u></u>");
+            cursor.setPosition(cursor.position() - 4);
+        } else {
+            cursor.insertText("<u>" + selected + "</u>");
         }
         m_contentEdit->setFocus();
         m_modified = true;

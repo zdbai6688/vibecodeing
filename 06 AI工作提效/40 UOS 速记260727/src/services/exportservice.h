@@ -16,6 +16,7 @@ public:
 
     bool exportNoteToMarkdown(const NoteData &note, const QString &filePath, bool includeMeta = true);
     bool exportNoteToTxt(const NoteData &note, const QString &filePath);
+    bool exportNoteToPdf(const NoteData &note, const QString &filePath);
     bool exportNotesToZip(const QList<NoteData> &notes, const QString &zipPath);
     bool exportMeeting(const MeetingData &meeting, const QString &dirPath);
     static QString sanitizeFileName(const QString &name);

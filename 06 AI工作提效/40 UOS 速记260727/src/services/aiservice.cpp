@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "aiservice.h"
+#include "cryptoutil.h"
 
 #include <QNetworkRequest>
 #include <QUrl>
@@ -195,8 +196,8 @@ AiServiceManager::AiServiceManager(QObject *parent)
 {
     lockSettingsFile();
     QSettings settings;
-    m_deepseekKey = settings.value("ai/deepseek_key").toString();
-    m_tongyiKey = settings.value("ai/tongyi_key").toString();
+    m_deepseekKey = CryptoUtil::decrypt(settings.value("ai/deepseek_key").toString());
+    m_tongyiKey = CryptoUtil::decrypt(settings.value("ai/tongyi_key").toString());
     QString engineName = settings.value("ai/engine", "DeepSeek").toString();
     m_currentEngine = engineFromName(engineName);
     ensureService();
@@ -225,10 +226,10 @@ void AiServiceManager::setApiKeyForEngine(Engine engine, const QString &key)
     QSettings settings;
     if (engine == DeepSeek) {
         m_deepseekKey = key;
-        settings.setValue("ai/deepseek_key", key);
+        settings.setValue("ai/deepseek_key", CryptoUtil::encrypt(key));
     } else {
         m_tongyiKey = key;
-        settings.setValue("ai/tongyi_key", key);
+        settings.setValue("ai/tongyi_key", CryptoUtil::encrypt(key));
     }
     if (engine == m_currentEngine) {
         ensureService();

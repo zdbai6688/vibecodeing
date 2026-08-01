@@ -92,11 +92,11 @@ void WeeklyReportWidget::initUI()
     m_totalLabel = new DLabel(this);
     m_totalLabel->setStyleSheet("font-size: 12px; color: palette(windowText);");
     m_completedLabel = new DLabel(this);
-    m_completedLabel->setStyleSheet("font-size: 12px; color: #52C41A;");
+    m_completedLabel->setStyleSheet("font-size: 12px; color: palette(highlight);");
     m_pendingLabel = new DLabel(this);
-    m_pendingLabel->setStyleSheet("font-size: 12px; color: #FAAD14;");
+    m_pendingLabel->setStyleSheet("font-size: 12px; color: palette(windowText);");
     m_overdueLabel = new DLabel(this);
-    m_overdueLabel->setStyleSheet("font-size: 12px; color: #E64545;");
+    m_overdueLabel->setStyleSheet("font-size: 12px; color: palette(highlight);");
     m_rateLabel = new DLabel(this);
     m_rateLabel->setStyleSheet("font-size: 16px; font-weight: 700; color: palette(highlight);");
 

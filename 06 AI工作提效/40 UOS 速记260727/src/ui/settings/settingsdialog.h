@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 UnionTech Software Technology Co., Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef SETTINGSDIALOG_H
 #define SETTINGSDIALOG_H
 
@@ -7,6 +10,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QTabWidget>
+#include <QSlider>
 #include <DSwitchButton>
 #include <DPushButton>
 
@@ -29,6 +33,7 @@ private:
     QWidget *createAiPage();
     QWidget *createAsrPage();
     QWidget *createShortcutPage();
+    QWidget *createDesktopPage();
 
     DSwitchButton *m_autostartSwitch;
     QCheckBox *m_trayNotifyCheck;
@@ -52,6 +57,13 @@ private:
 
     QLineEdit *m_shortcutEdit;
     DSwitchButton *m_compactStartSwitch;
+
+    // Desktop mode settings
+    DSwitchButton *m_desktopStartSwitch;
+    DSwitchButton *m_continuousAddSwitch;
+    QComboBox *m_defaultColorCombo;
+    QSlider *m_opacitySlider;
+    QSpinBox *m_maxNotesSpin;
 };
 
 #endif // SETTINGSDIALOG_H

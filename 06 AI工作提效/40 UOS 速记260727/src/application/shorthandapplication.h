@@ -18,6 +18,7 @@ class AiServiceManager;
 class AsrServiceManager;
 class ExportService;
 class GlobalShortcutManager;
+class DesktopModeManager;
 
 DWIDGET_USE_NAMESPACE
 
@@ -44,6 +45,7 @@ public:
     ExportService *exportService() const { return m_exportService; }
     AsrServiceManager *asrService() const { return m_asrService; }
     GlobalShortcutManager *globalShortcut() const { return m_globalShortcut; }
+    DesktopModeManager *desktopModeManager() const { return m_desktopModeManager; }
 
     // 初始化
     bool initialize();
@@ -63,6 +65,7 @@ private:
     AsrServiceManager *m_asrService = nullptr;
     ExportService *m_exportService = nullptr;
     GlobalShortcutManager *m_globalShortcut = nullptr;
+    DesktopModeManager *m_desktopModeManager = nullptr;
 };
 
 #endif // SHORTHANDAPPLICATION_H

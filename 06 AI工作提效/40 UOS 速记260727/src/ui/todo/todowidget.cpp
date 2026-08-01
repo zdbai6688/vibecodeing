@@ -24,6 +24,10 @@ void TodoWidget::initUI()
     QVBoxLayout *outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
 
+    m_stack = new QStackedWidget(this);
+
+    // 内容页面
+    m_contentWidget = new QWidget(this);
     QScrollArea *scroll = new QScrollArea(this);
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
@@ -55,13 +59,38 @@ void TodoWidget::initUI()
     };
 
     addSection(tr("今日待办"), "palette(highlight)", m_todayList);
-    addSection(tr("逾期待办"), "#E64545", m_overdueList);
-    addSection(tr("本周待办"), "#FAAD14", m_weekList);
-    addSection(tr("已完成"), "#52C41A", m_completedList);
+    addSection(tr("逾期待办"), "palette(highlight)", m_overdueList);
+    addSection(tr("本周待办"), "palette(highlight)", m_weekList);
+    addSection(tr("已完成"), "palette(highlight)", m_completedList);
     m_mainLayout->addStretch();
 
     scroll->setWidget(container);
-    outerLayout->addWidget(scroll);
+    QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
+    contentLayout->setContentsMargins(0, 0, 0, 0);
+    contentLayout->addWidget(scroll);
+    m_stack->addWidget(m_contentWidget);
+
+    // 空状态页面
+    m_emptyWidget = new QWidget(this);
+    QVBoxLayout *emptyLayout = new QVBoxLayout(m_emptyWidget);
+    emptyLayout->setAlignment(Qt::AlignCenter);
+    emptyLayout->setSpacing(8);
+    DLabel *emptyIcon = new DLabel(tr("✅"), m_emptyWidget);
+    emptyIcon->setStyleSheet("font-size: 48px;");
+    emptyIcon->setAlignment(Qt::AlignCenter);
+    emptyLayout->addWidget(emptyIcon);
+    DLabel *emptyTitle = new DLabel(tr("还没有待办事项"), m_emptyWidget);
+    emptyTitle->setStyleSheet("font-size: 14px;");
+    emptyTitle->setAlignment(Qt::AlignCenter);
+    emptyLayout->addWidget(emptyTitle);
+    DLabel *emptyHint = new DLabel(tr("在笔记中点击「转为待办」创建待办事项\n或使用快捷录入添加 #标签 和 !优先级"), m_emptyWidget);
+    emptyHint->setStyleSheet("color: palette(placeholderText); font-size: 12px;");
+    emptyHint->setAlignment(Qt::AlignCenter);
+    emptyHint->setWordWrap(true);
+    emptyLayout->addWidget(emptyHint);
+    m_stack->addWidget(m_emptyWidget);
+
+    outerLayout->addWidget(m_stack);
 }
 
 void TodoWidget::refresh()
@@ -86,15 +115,24 @@ void TodoWidget::refresh()
         }
     }
 
-    populateSection(m_todayList, todayTodos, tr("今天没有待办"));
-    populateSection(m_overdueList, overdueTodos, tr("没有逾期待办"));
-    populateSection(m_weekList, weekTodos, tr("本周没有其他待办"));
-    populateSection(m_completedList, completedTodos, tr("没有已完成事项"));
+    populateSection(m_todayList, todayTodos, tr("今天没有待办"), m_todayCount);
+    populateSection(m_overdueList, overdueTodos, tr("没有逾期待办"), m_overdueCount);
+    populateSection(m_weekList, weekTodos, tr("本周没有其他待办"), m_weekCount);
+    populateSection(m_completedList, completedTodos, tr("没有已完成事项"), m_completedCount);
+    updateOverallEmptyState();
 }
 
-void TodoWidget::populateSection(QListWidget *list, const QList<TodoData> &todos, const QString &emptyHint)
+void TodoWidget::updateOverallEmptyState()
+{
+    bool hasContent = m_todayCount > 0 || m_overdueCount > 0
+        || m_weekCount > 0 || m_completedCount > 0;
+    m_stack->setCurrentWidget(hasContent ? m_contentWidget : m_emptyWidget);
+}
+
+void TodoWidget::populateSection(QListWidget *list, const QList<TodoData> &todos, const QString &emptyHint, int &outCount)
 {
     list->clear();
+    outCount = todos.size();
     if (todos.isEmpty()) {
         // 改进的空状态显示
         QWidget *emptyWidget = new QWidget(this);

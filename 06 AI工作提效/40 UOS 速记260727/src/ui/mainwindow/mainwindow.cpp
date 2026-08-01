@@ -15,7 +15,10 @@
 #include "core/tagmanager.h"
 #include "core/todomanager.h"
 #include "ui/tray/traymanager.h"
+#include "services/globalshortcutmanager.h"
 #include "globaldef.h"
+#include "ui/desktop/desktopmodemanager.h"
+#include <QPair>
 
 #include <DTitlebar>
 #include <DToolButton>
@@ -38,12 +41,19 @@ MainWindow::MainWindow(QWidget *parent)
     setObjectName("MainWindow");
     setMinimumSize(1100, 680);
 
+    qInfo() << "[MainWindow] initUI";
     initUI();
     initConnections();
     setupGlobalShortcut();
+    qInfo() << "[MainWindow] 构造完成";
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow()
+{
+    if (m_globalShortcut) {
+        m_globalShortcut->unregisterAll();
+    }
+}
 
 void MainWindow::initUI()
 {
@@ -120,7 +130,9 @@ void MainWindow::initUI()
     m_mainLayout->addWidget(sep2);
 
     // 右侧编辑器
+    qInfo() << "[MainWindow] 创建编辑器";
     m_editor = new NoteEditorWidget(this);
+    qInfo() << "[MainWindow] 编辑器创建完成";
     m_editor->setObjectName("editorPanel");
     m_editor->setStyleSheet("#editorPanel { background: palette(base); }");
 
@@ -182,14 +194,45 @@ void MainWindow::initConnections()
     });
     connect(app->trayManager(), &TrayManager::quickEntryRequested, this, &MainWindow::onShowQuickEntry);
     connect(app->trayManager(), &TrayManager::quitRequested, qApp, &QApplication::quit);
+    connect(app->trayManager(), &TrayManager::toggleDesktopModeRequested, this, &MainWindow::onToggleDesktopMode);
+
+    connect(app->desktopModeManager(), &DesktopModeManager::desktopModeEntered, this, [this, app]() {
+        app->trayManager()->updateDesktopModeAction(true);
+        QList<QPair<int, QString>> notes;
+        for (int id : app->desktopModeManager()->stickyNoteIds()) {
+            NoteData d = app->noteManager()->getNote(id);
+            if (d.id > 0) notes.append({id, d.title.isEmpty() ? d.content.left(30) : d.title.left(30)});
+        }
+        app->trayManager()->updateStickyNotesSubmenu(notes);
+    });
+    connect(app->desktopModeManager(), &DesktopModeManager::desktopModeExited, this, [this, app]() {
+        app->trayManager()->updateDesktopModeAction(false);
+    });
+    connect(app->trayManager(), &TrayManager::showStickyNoteRequested, this, [this](int noteId) {
+        focusNote(noteId);
+        show(); raise(); activateWindow();
+    });
 }
 
 void MainWindow::setupGlobalShortcut()
 {
     QSettings settings;
     QString shortcutKey = settings.value("shortcut/quick_entry", QString(SHORTCUT_QUICK_ENTRY)).toString();
-    QShortcut *quickShortcut = new QShortcut(QKeySequence(shortcutKey), this);
-    connect(quickShortcut, &QShortcut::activated, this, &MainWindow::onShowQuickEntry);
+
+    // 使用 GlobalShortcutManager 注册全局快捷键（X11 下系统级生效）
+    m_globalShortcut = new GlobalShortcutManager(this);
+    bool registered = m_globalShortcut->registerShortcut(QKeySequence(shortcutKey), 1);
+    if (registered) {
+        connect(m_globalShortcut, &GlobalShortcutManager::shortcutActivated, this, [this](quint32 id) {
+            if (id == 1) onShowQuickEntry();
+        });
+        qInfo() << "[MainWindow] 全局快捷键已注册:" << shortcutKey;
+    } else {
+        // 非 X11 环境下降级为应用内 QShortcut
+        QShortcut *fallback = new QShortcut(QKeySequence(shortcutKey), this);
+        connect(fallback, &QShortcut::activated, this, &MainWindow::onShowQuickEntry);
+        qInfo() << "[MainWindow] 使用应用内快捷键(回退):" << shortcutKey;
+    }
 
     QShortcut *newNoteShortcut = new QShortcut(QKeySequence("Ctrl+N"), this);
     connect(newNoteShortcut, &QShortcut::activated, this, &MainWindow::onNewNote);
@@ -247,10 +290,35 @@ void MainWindow::loadInitialNotes()
     }
 }
 
+void MainWindow::onToggleDesktopMode()
+{
+    auto *app = ShorthandApplication::instance();
+    if (app->desktopModeManager()->isDesktopMode()) {
+        app->desktopModeManager()->exitDesktopMode();
+        show();
+        raise();
+        activateWindow();
+    } else {
+        hide();
+        app->desktopModeManager()->enterDesktopMode();
+    }
+}
+
+void MainWindow::focusNote(int noteId)
+{
+    onSwitchToNotes();
+    NoteData note = ShorthandApplication::instance()->noteManager()->getNote(noteId);
+    if (note.id > 0) {
+        m_noteList->selectNote(noteId);
+        m_editor->loadNote(noteId);
+    }
+}
+
 void MainWindow::onShowSettings()
 {
     m_settingsDialog->loadSettings();
     m_settingsDialog->exec();
+    m_settingsDialog->saveSettings();
 }
 
 void MainWindow::onSwitchToNotes()

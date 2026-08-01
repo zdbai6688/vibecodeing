@@ -4,7 +4,11 @@
 #include <QWidget>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QStackedWidget>
+#include <DSpinner>
 #include "storage/notestorage.h"
+
+DWIDGET_USE_NAMESPACE
 
 class NoteListWidget : public QWidget
 {
@@ -28,11 +32,14 @@ signals:
 private:
     void initUI();
     void populateList(const QList<NoteData> &notes);
+    void showLoading(bool loading);
     QString getEmptyIcon(Mode mode) const;
     QString getEmptyTitle(Mode mode) const;
     QString getEmptyHint(Mode mode) const;
 
     QListWidget *m_list;
+    QStackedWidget *m_stack;
+    DSpinner *m_spinner;
     Mode m_mode = AllNotes;
     QString m_filterTag;
     QString m_searchKeyword;

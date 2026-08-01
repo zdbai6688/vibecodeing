@@ -9,7 +9,6 @@
 #include <QRegularExpression>
 #include <QTextDocument>
 #include <QAbstractTextDocumentLayout>
-#include <QPrinter>
 #include <QPdfWriter>
 #include <QPainter>
 

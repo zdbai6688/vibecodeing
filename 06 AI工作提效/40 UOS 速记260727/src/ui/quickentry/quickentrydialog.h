@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 UnionTech Software Technology Co., Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef QUICKENTRYDIALOG_H
 #define QUICKENTRYDIALOG_H
 
@@ -13,6 +16,9 @@
 #include <QKeyEvent>
 #include <QFocusEvent>
 #include <QStackedWidget>
+#include <DSwitchButton>
+
+DWIDGET_USE_NAMESPACE
 
 class QuickEntryDialog : public QWidget
 {
@@ -26,17 +32,23 @@ public:
     void toggleCompactMode();
     bool isCompact() const { return m_compactMode; }
     bool isVisible() const { return !m_hidden; }
+    void setPasteToDesktopMode(bool on);
+
+signals:
+    void pinToDesktopRequested(int noteId);
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void focusOutEvent(QFocusEvent *event) override;
     void showEvent(QShowEvent *event) override;
+    void changeEvent(QEvent *event) override;
 
 private slots:
     void onSave();
     void onDiscard();
     void onVoiceInput();
     void onScreenshot();
+    void onPinToDesktop();
 
 private:
     void initUI();
@@ -51,6 +63,8 @@ private:
     void centerOnScreen();
     void applyCompactLayout();
     void applyFullLayout();
+    void enterGhostState();
+    void leaveGhostState();
 
     QStackedWidget *m_modeStack;
     QWidget *m_compactPage;
@@ -65,9 +79,15 @@ private:
     QPushButton *m_cancelBtn;
     QPushButton *m_expandBtn;
     QPushButton *m_compactBtn;
+    QPushButton *m_pinToDesktopBtn;
+    DSwitchButton *m_continuousSwitch;
     QFrame *m_bottomBar;
     bool m_compactMode = true;
     bool m_hidden = true;
+    bool m_ghostState = false;
+    bool m_continuousAdd = false;
+    bool m_waitingForPin = false;
+    int m_lastSavedNoteId = -1;
 };
 
 #endif // QUICKENTRYDIALOG_H

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 UnionTech Software Technology Co., Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -14,6 +17,7 @@ class MeetingWidget;
 class WeeklyReportWidget;
 class QuickEntryDialog;
 class SettingsDialog;
+class GlobalShortcutManager;
 
 DWIDGET_USE_NAMESPACE
 
@@ -28,6 +32,7 @@ public:
 
     void onShowQuickEntry();
     void loadInitialNotes();
+    void focusNote(int noteId);
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -45,6 +50,7 @@ private slots:
     void onSwitchToTag(const QString &tag);
     void onSearch(const QString &keyword);
     void onShowSettings();
+    void onToggleDesktopMode();
 
 private:
     void initUI();
@@ -62,6 +68,7 @@ private:
     WeeklyReportWidget *m_weeklyWidget;
     QuickEntryDialog *m_quickEntry;
     SettingsDialog *m_settingsDialog;
+    GlobalShortcutManager *m_globalShortcut;
     QWidget *m_blankEditor;
     QHBoxLayout *m_mainLayout;
 };

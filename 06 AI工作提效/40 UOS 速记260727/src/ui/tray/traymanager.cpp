@@ -4,6 +4,8 @@
 #include "traymanager.h"
 #include "application/shorthandapplication.h"
 #include "core/todomanager.h"
+#include "core/notemanager.h"
+#include "storage/notestorage.h"
 
 #include <QDebug>
 #include <QIcon>
@@ -32,6 +34,37 @@ void TrayManager::showMessage(const QString &title, const QString &message)
     if (m_trayIcon) {
         m_trayIcon->showMessage(title, message, QSystemTrayIcon::Information, 3000);
     }
+}
+
+void TrayManager::updateDesktopModeAction(bool isDesktopMode)
+{
+    if (m_desktopModeAction) {
+        if (isDesktopMode) {
+            m_desktopModeAction->setText(tr("● 🖥 退出桌面模式"));
+        } else {
+            m_desktopModeAction->setText(tr("🖥 切换到桌面模式"));
+        }
+    }
+}
+
+void TrayManager::updateStickyNotesSubmenu(const QList<QPair<int, QString>> &notes)
+{
+    if (!m_stickySubmenu) return;
+    m_stickySubmenu->clear();
+
+    for (const auto &pair : notes) {
+        QAction *action = m_stickySubmenu->addAction(pair.second);
+        int noteId = pair.first;
+        connect(action, &QAction::triggered, this, [this, noteId]() {
+            emit showStickyNoteRequested(noteId);
+        });
+    }
+
+    m_stickySubmenu->addSeparator();
+    QAction *manageAction = m_stickySubmenu->addAction(tr("▸ 管理便签…"));
+    connect(manageAction, &QAction::triggered, this, [this]() {
+        emit showMainWindowRequested();
+    });
 }
 
 void TrayManager::init()
@@ -65,6 +98,15 @@ void TrayManager::initMenu()
 
     QAction *quickAction = m_trayMenu->addAction(tr("⚡ 快速录入"));
     connect(quickAction, &QAction::triggered, this, &TrayManager::quickEntryRequested);
+
+    m_trayMenu->addSeparator();
+
+    // Desktop mode action
+    m_desktopModeAction = m_trayMenu->addAction(tr("🖥 切换到桌面模式"));
+    connect(m_desktopModeAction, &QAction::triggered, this, &TrayManager::toggleDesktopModeRequested);
+
+    // Sticky notes submenu
+    m_stickySubmenu = m_trayMenu->addMenu(tr("🗒 桌面便签"));
 
     m_trayMenu->addSeparator();
 

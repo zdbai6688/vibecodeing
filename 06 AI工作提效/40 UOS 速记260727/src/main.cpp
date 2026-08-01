@@ -34,8 +34,10 @@ int main(int argc, char *argv[])
         qCritical("应用初始化失败，退出");
         return 1;
     }
+    qInfo() << "[main] 初始化完成，开始创建主窗口";
 
     MainWindow *window = new MainWindow();
+    qInfo() << "[main] 主窗口创建完成";
     window->setMinimumSize(960, 640);
     window->resize(1200, 760);
 
@@ -51,9 +53,11 @@ int main(int argc, char *argv[])
         Dtk::Widget::moveToCenter(window);
         // 启动后自动加载笔记列表
         QTimer::singleShot(200, window, [window]() {
+            qInfo() << "[main] 加载初始笔记";
             window->loadInitialNotes();
+            qInfo() << "[main] 初始笔记加载完成";
         });
     }
-
+    qInfo() << "[main] 进入事件循环";
     return app.exec();
 }

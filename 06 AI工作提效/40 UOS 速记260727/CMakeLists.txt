@@ -13,7 +13,7 @@ set(RESOURCES resources.qrc)
 # ─── 安全编译参数 ──────────────────────────────────────────────────
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fstack-protector-strong -D_FORTIFY_SOURCE=2")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -flto")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie -z relro -z now")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie -z relro -z now -z noexecstack")
 
 # ─── 查找 Qt6 和 DTK6 ──────────────────────────────────────────────
 find_package(Qt6 REQUIRED COMPONENTS
@@ -61,6 +61,9 @@ set(SOURCES
     src/ui/editor/markdownhighlighter.cpp
     # UI - 快速录入
     src/ui/quickentry/quickentrydialog.cpp
+    # UI - 桌面模式
+    src/ui/desktop/stickynotecard.cpp
+    src/ui/desktop/desktopmodemanager.cpp
     # UI - 设置
     src/ui/settings/settingsdialog.cpp
     # UI - 待办看板
@@ -106,6 +109,8 @@ set(HEADERS
     src/ui/editor/noteeditorwidget.h
     src/ui/editor/markdownhighlighter.h
     src/ui/quickentry/quickentrydialog.h
+    src/ui/desktop/stickynotecard.h
+    src/ui/desktop/desktopmodemanager.h
     src/ui/meeting/meetingwidget.h
     src/ui/weekly/weeklyreportwidget.h
     src/ui/settings/settingsdialog.h

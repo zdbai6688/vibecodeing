@@ -41,6 +41,25 @@ bool Database::initialize()
     pragma.exec("PRAGMA synchronous=NORMAL");
     pragma.exec("PRAGMA foreign_keys=ON");
 
+    // 数据库架构版本管理
+    int currentVersion = 1;
+    QSqlQuery versionQuery(m_db);
+    versionQuery.exec("PRAGMA user_version");
+    int dbVersion = 0;
+    if (versionQuery.next()) {
+        dbVersion = versionQuery.value(0).toInt();
+    }
+
+    if (dbVersion < currentVersion) {
+        qInfo() << "数据库架构升级:" << dbVersion << "->" << currentVersion;
+        // 未来版本升级逻辑可在此添加
+        // if (dbVersion < 2) { ... }
+        // if (dbVersion < 3) { ... }
+
+        QSqlQuery setVersion(m_db);
+        setVersion.exec(QString("PRAGMA user_version=%1").arg(currentVersion));
+    }
+
     if (!createTables()) {
         return false;
     }
@@ -166,6 +185,26 @@ bool Database::createTables()
     if (!query.exec(createTranscripts)) {
         qCritical() << "创建meeting_transcripts表失败:" << query.lastError().text();
         return false;
+    }
+
+    const QString createStickyNotes = R"(
+        CREATE TABLE IF NOT EXISTS sticky_notes (
+            note_id       INTEGER PRIMARY KEY,
+            sticky_x      INTEGER DEFAULT 0,
+            sticky_y      INTEGER DEFAULT 0,
+            sticky_w      INTEGER DEFAULT 280,
+            sticky_h      INTEGER DEFAULT 160,
+            sticky_color  TEXT DEFAULT '#409EFF',
+            is_visible    INTEGER DEFAULT 1,
+            FOREIGN KEY (note_id) REFERENCES notes_todos(id)
+        )
+    )";
+
+    if (!query.exec(createStickyNotes)) {
+        qCritical() << "创建sticky_notes表失败:" << query.lastError().text();
+        return false;
+
+
     }
 
     // 索引

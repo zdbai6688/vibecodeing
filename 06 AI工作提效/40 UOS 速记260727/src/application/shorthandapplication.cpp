@@ -13,6 +13,7 @@
 #include "services/asrservice.h"
 #include "services/exportservice.h"
 #include "services/globalshortcutmanager.h"
+#include "ui/desktop/desktopmodemanager.h"
 
 #include <QDir>
 #include <QStandardPaths>
@@ -72,6 +73,7 @@ void ShorthandApplication::initServices()
     m_exportService = new ExportService(this);
     m_trayManager = new TrayManager(this);
     m_globalShortcut = new GlobalShortcutManager(this);
+    m_desktopModeManager = new DesktopModeManager(m_noteManager, this);
 }
 
 void ShorthandApplication::cleanupServices()

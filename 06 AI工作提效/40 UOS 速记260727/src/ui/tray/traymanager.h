@@ -21,10 +21,14 @@ public:
 
     bool isAvailable() const;
     void showMessage(const QString &title, const QString &message);
+    void updateDesktopModeAction(bool isDesktopMode);
+    void updateStickyNotesSubmenu(const QList<QPair<int, QString>> &notes);
 
 signals:
     void showMainWindowRequested();
     void quickEntryRequested();
+    void toggleDesktopModeRequested();
+    void showStickyNoteRequested(int noteId);
     void quitRequested();
 
 private slots:
@@ -39,6 +43,9 @@ private:
     QSystemTrayIcon *m_trayIcon = nullptr;
     QMenu *m_trayMenu = nullptr;
     QTimer *m_reminderTimer = nullptr;
+
+    QAction *m_desktopModeAction = nullptr;
+    QMenu *m_stickySubmenu = nullptr;
 };
 
 #endif // TRAYMANAGER_H

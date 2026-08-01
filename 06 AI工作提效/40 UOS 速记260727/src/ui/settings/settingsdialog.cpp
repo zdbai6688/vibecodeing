@@ -17,19 +17,26 @@
 #include <QTextStream>
 #include <QDir>
 #include <QStandardPaths>
+#include <QFileInfo>
+#include <QFile>
+#include <QTextStream>
+#include <DGroupBox>
 
 SettingsDialog::SettingsDialog(QWidget *parent)
     : DDialog(parent)
 {
     setWindowTitle(tr("设置"));
-    setFixedSize(600, 520);
+    setFixedSize(600, 560);
 
     QTabWidget *tabs = new QTabWidget(this);
     tabs->addTab(createGeneralPage(), tr("通用"));
+    tabs->addTab(createDesktopPage(), tr("桌面模式"));
     tabs->addTab(createAiPage(), tr("AI 服务"));
     tabs->addTab(createAsrPage(), tr("语音识别"));
     tabs->addTab(createShortcutPage(), tr("快捷键"));
     addContent(tabs);
+
+    connect(this, &DDialog::accepted, this, &SettingsDialog::saveSettings);
 }
 
 QWidget *SettingsDialog::createGeneralPage()
@@ -76,6 +83,87 @@ QWidget *SettingsDialog::createGeneralPage()
     return page;
 }
 
+QWidget *SettingsDialog::createDesktopPage()
+{
+    QWidget *page = new QWidget(this);
+    QVBoxLayout *layout = new QVBoxLayout(page);
+    layout->setContentsMargins(20, 16, 20, 16);
+    layout->setSpacing(12);
+
+    DLabel *titleLabel = new DLabel(tr("🖥 桌面模式设置"), this);
+    titleLabel->setStyleSheet("font-size: 15px; font-weight: 600;");
+    layout->addWidget(titleLabel);
+
+    // 开机进入桌面模式
+    QHBoxLayout *deskStartRow = new QHBoxLayout();
+    deskStartRow->addWidget(new DLabel(tr("开机进入桌面模式"), this));
+    deskStartRow->addStretch();
+    m_desktopStartSwitch = new DSwitchButton(this);
+    m_desktopStartSwitch->setToolTip(tr("启动后直接进入桌面模式"));
+    deskStartRow->addWidget(m_desktopStartSwitch);
+    layout->addLayout(deskStartRow);
+
+    // 连续新增
+    QHBoxLayout *contRow = new QHBoxLayout();
+    contRow->addWidget(new DLabel(tr("快速录入连续新增"), this));
+    contRow->addStretch();
+    m_continuousAddSwitch = new DSwitchButton(this);
+    m_continuousAddSwitch->setToolTip(tr("保存后不关闭窗口，可连续录入"));
+    contRow->addWidget(m_continuousAddSwitch);
+    layout->addLayout(contRow);
+
+    // 默认颜色
+    QHBoxLayout *colorRow = new QHBoxLayout();
+    colorRow->addWidget(new DLabel(tr("便签默认颜色"), this));
+    colorRow->addStretch();
+    m_defaultColorCombo = new QComboBox(this);
+    m_defaultColorCombo->addItem(tr("蓝色"), "#409EFF");
+    m_defaultColorCombo->addItem(tr("绿色"), "#67C23A");
+    m_defaultColorCombo->addItem(tr("黄色"), "#E6A23C");
+    m_defaultColorCombo->addItem(tr("橙色"), "#F56C6C");
+    m_defaultColorCombo->addItem(tr("紫色"), "#B37FEB");
+    m_defaultColorCombo->addItem(tr("红色"), "#F56C6C");
+    m_defaultColorCombo->setFixedWidth(200);
+    colorRow->addWidget(m_defaultColorCombo);
+    layout->addLayout(colorRow);
+
+    // 透明度
+    QHBoxLayout *opacityRow = new QHBoxLayout();
+    opacityRow->addWidget(new DLabel(tr("桌面便签透明度"), this));
+    opacityRow->addStretch();
+    m_opacitySlider = new QSlider(Qt::Horizontal, this);
+    m_opacitySlider->setRange(40, 95);
+    m_opacitySlider->setValue(90);
+    m_opacitySlider->setFixedWidth(200);
+    DLabel *opacityLabel = new DLabel("90%", this);
+    opacityLabel->setFixedWidth(36);
+    connect(m_opacitySlider, &QSlider::valueChanged, this, [opacityLabel](int v) {
+        opacityLabel->setText(QString::number(v) + "%");
+    });
+    opacityRow->addWidget(m_opacitySlider);
+    opacityRow->addWidget(opacityLabel);
+    layout->addLayout(opacityRow);
+
+    // 最多便签数
+    QHBoxLayout *maxRow = new QHBoxLayout();
+    maxRow->addWidget(new DLabel(tr("最多便签数"), this));
+    maxRow->addStretch();
+    m_maxNotesSpin = new QSpinBox(this);
+    m_maxNotesSpin->setRange(1, 12);
+    m_maxNotesSpin->setValue(6);
+    m_maxNotesSpin->setSuffix(tr(" 张"));
+    maxRow->addWidget(m_maxNotesSpin);
+    layout->addLayout(maxRow);
+
+    // Wayland 提示
+    DLabel *waylandTip = new DLabel(tr("💡 Wayland 下嵌入桌面受限，便签默认停靠右侧"), this);
+    waylandTip->setStyleSheet("color: palette(placeholderText); font-size: 11px; padding: 8px 0;");
+    layout->addWidget(waylandTip);
+
+    layout->addStretch();
+    return page;
+}
+
 QWidget *SettingsDialog::createAiPage()
 {
     QWidget *page = new QWidget(this);
@@ -113,6 +201,18 @@ QWidget *SettingsDialog::createAiPage()
     testRow->addWidget(m_aiTestBtn);
     layout->addLayout(testRow);
 
+    QLabel *tip = new QLabel(tr("💡 API Key 将加密存储在本地，不会上传"), this);
+    tip->setStyleSheet("color:palette(placeholderText); font-size:11px; padding:4px 0;");
+    layout->addWidget(tip);
+
+    connect(m_aiTestBtn, &DPushButton::clicked, this, [this]() {
+        DDialog d(this);
+        d.setTitle(tr("提示"));
+        d.setMessage(tr("测试功能需要联网，将在后续版本中完善。"));
+        d.addButton(tr("确定"));
+        d.exec();
+    });
+
     layout->addStretch();
     return page;
 }
@@ -122,13 +222,12 @@ QWidget *SettingsDialog::createAsrPage()
     QWidget *page = new QWidget(this);
     QVBoxLayout *layout = new QVBoxLayout(page);
     layout->setContentsMargins(20, 16, 20, 16);
-    layout->setSpacing(10);
+    layout->setSpacing(12);
 
     QHBoxLayout *engineRow = new QHBoxLayout();
-    engineRow->addWidget(new DLabel(tr("ASR 引擎"), this));
+    engineRow->addWidget(new DLabel(tr("语音识别引擎"), this));
     engineRow->addStretch();
     m_asrEngineCombo = new QComboBox(this);
-    m_asrEngineCombo->addItem(tr("离线语音 (Whisper)"));
     m_asrEngineCombo->addItem(tr("百度语音"));
     m_asrEngineCombo->addItem(tr("讯飞语音"));
     m_asrEngineCombo->addItem(tr("阿里云语音"));
@@ -136,7 +235,7 @@ QWidget *SettingsDialog::createAsrPage()
     engineRow->addWidget(m_asrEngineCombo);
     layout->addLayout(engineRow);
 
-    auto addRow = [this, layout](const QString &label, QLineEdit *&edit) {
+    auto addKeyRow = [this, layout](const QString &label, QLineEdit *&edit) {
         QHBoxLayout *row = new QHBoxLayout();
         row->addWidget(new DLabel(label, this));
         row->addStretch();
@@ -147,24 +246,24 @@ QWidget *SettingsDialog::createAsrPage()
         layout->addLayout(row);
     };
 
-    DLabel *baiduTitle = new DLabel(tr("百度语音（推荐）"), this);
-    baiduTitle->setStyleSheet("font-weight:600; font-size:12px;");
+    QLabel *baiduTitle = new QLabel(tr("百度语音"), this);
+    baiduTitle->setStyleSheet("font-weight:600; padding:4px 0;");
     layout->addWidget(baiduTitle);
-    addRow(tr("API Key"), m_baiduAsrKey);
-    addRow(tr("Secret Key"), m_baiduAsrSecret);
+    addKeyRow(tr("API Key"), m_baiduAsrKey);
+    addKeyRow(tr("Secret Key"), m_baiduAsrSecret);
 
-    DLabel *xunfeiTitle = new DLabel(tr("讯飞语音"), this);
-    xunfeiTitle->setStyleSheet("font-weight:600; font-size:12px;");
+    QLabel *xunfeiTitle = new QLabel(tr("讯飞语音"), this);
+    xunfeiTitle->setStyleSheet("font-weight:600; padding:4px 0;");
     layout->addWidget(xunfeiTitle);
-    addRow(tr("APP ID"), m_xunfeiAsrAppId);
-    addRow(tr("API Key"), m_xunfeiAsrKey);
-    addRow(tr("API Secret"), m_xunfeiAsrSecret);
+    addKeyRow(tr("APP ID"), m_xunfeiAsrAppId);
+    addKeyRow(tr("API Key"), m_xunfeiAsrKey);
+    addKeyRow(tr("API Secret"), m_xunfeiAsrSecret);
 
-    DLabel *aliTitle = new DLabel(tr("阿里云语音"), this);
-    aliTitle->setStyleSheet("font-weight:600; font-size:12px;");
+    QLabel *aliTitle = new QLabel(tr("阿里云语音"), this);
+    aliTitle->setStyleSheet("font-weight:600; padding:4px 0;");
     layout->addWidget(aliTitle);
-    addRow(tr("Access Key ID"), m_aliyunAsrKey);
-    addRow(tr("Access Key Secret"), m_aliyunAsrSecret);
+    addKeyRow(tr("Access Key ID"), m_aliyunAsrKey);
+    addKeyRow(tr("Access Key Secret"), m_aliyunAsrSecret);
 
     QHBoxLayout *testRow = new QHBoxLayout();
     testRow->addStretch();
@@ -172,9 +271,18 @@ QWidget *SettingsDialog::createAsrPage()
     testRow->addWidget(m_asrTestBtn);
     layout->addLayout(testRow);
 
-    QLabel *tip = new QLabel(tr("注册地址：百度 ai.baidu.com | 讯飞 xfyun.cn | 阿里云 nls.aliyun.com"), this);
-    tip->setStyleSheet("color:palette(placeholderText); font-size:11px;");
+    QLabel *tip = new QLabel(tr("💡 注册地址：百度 ai.baidu.com | 讯飞 xfyun.cn | 阿里云 nls.aliyun.com"), this);
+    tip->setStyleSheet("color:palette(placeholderText); font-size:11px; padding:4px 0;");
     layout->addWidget(tip);
+
+    connect(m_asrTestBtn, &DPushButton::clicked, this, [this]() {
+        DDialog d(this);
+        d.setTitle(tr("提示"));
+        d.setMessage(tr("ASR 连接测试功能将在后续版本中实现。"));
+        d.addButton(tr("确定"));
+        d.exec();
+    });
+
     layout->addStretch();
     return page;
 }
@@ -221,12 +329,28 @@ void SettingsDialog::loadSettings()
     int themeType = settings.value("appearance/theme", 0).toInt();
     m_themeCombo->setCurrentIndex(themeType);
 
+    m_shortcutEdit->setText(settings.value("shortcut/quick_entry", SHORTCUT_QUICK_ENTRY).toString());
+    m_compactStartSwitch->setChecked(settings.value("startup/compact_mode", false).toBool());
+
+    // Desktop mode settings
+    m_desktopStartSwitch->setChecked(settings.value("desktop/start_in_desktop_mode", false).toBool());
+    m_continuousAddSwitch->setChecked(settings.value("desktop/continuous_add", false).toBool());
+
+    QString defaultColor = settings.value("desktop/default_color", "#409EFF").toString();
+    int colorIdx = m_defaultColorCombo->findData(defaultColor);
+    if (colorIdx >= 0) m_defaultColorCombo->setCurrentIndex(colorIdx);
+
+    m_opacitySlider->setValue(settings.value("desktop/opacity", 90).toInt());
+    m_maxNotesSpin->setValue(settings.value("desktop/max_notes", 6).toInt());
+
+    // AI settings
     QString engine = settings.value("ai/engine", "DeepSeek").toString();
     int idx = m_aiEngineCombo->findText(engine);
     if (idx >= 0) m_aiEngineCombo->setCurrentIndex(idx);
     m_deepseekKeyEdit->setText(settings.value("ai/deepseek_key").toString());
     m_tongyiKeyEdit->setText(settings.value("ai/tongyi_key").toString());
 
+    // ASR settings
     QString asrEngine = settings.value("asr/engine", "百度语音").toString();
     int asrIdx = m_asrEngineCombo->findText(asrEngine);
     if (asrIdx >= 0) m_asrEngineCombo->setCurrentIndex(asrIdx);
@@ -237,18 +361,30 @@ void SettingsDialog::loadSettings()
     m_xunfeiAsrSecret->setText(settings.value("asr/xunfei_secret").toString());
     m_aliyunAsrKey->setText(settings.value("asr/aliyun_key").toString());
     m_aliyunAsrSecret->setText(settings.value("asr/aliyun_secret").toString());
-
-    m_shortcutEdit->setText(settings.value("shortcut/quick_entry", SHORTCUT_QUICK_ENTRY).toString());
-    m_compactStartSwitch->setChecked(settings.value("startup/compact_mode", false).toBool());
 }
 
 void SettingsDialog::saveSettings()
 {
     QSettings settings;
+
+    // General
     settings.setValue("appearance/theme", m_themeCombo->currentIndex());
+    settings.setValue("shortcut/quick_entry", m_shortcutEdit->text());
+    settings.setValue("startup/compact_mode", m_compactStartSwitch->isChecked());
+
+    // Desktop mode settings
+    settings.setValue("desktop/start_in_desktop_mode", m_desktopStartSwitch->isChecked());
+    settings.setValue("desktop/continuous_add", m_continuousAddSwitch->isChecked());
+    settings.setValue("desktop/default_color", m_defaultColorCombo->currentData().toString());
+    settings.setValue("desktop/opacity", m_opacitySlider->value());
+    settings.setValue("desktop/max_notes", m_maxNotesSpin->value());
+
+    // AI settings
     settings.setValue("ai/engine", m_aiEngineCombo->currentText());
     settings.setValue("ai/deepseek_key", m_deepseekKeyEdit->text());
     settings.setValue("ai/tongyi_key", m_tongyiKeyEdit->text());
+
+    // ASR settings
     settings.setValue("asr/engine", m_asrEngineCombo->currentText());
     settings.setValue("asr/baidu_key", m_baiduAsrKey->text());
     settings.setValue("asr/baidu_secret", m_baiduAsrSecret->text());
@@ -257,6 +393,33 @@ void SettingsDialog::saveSettings()
     settings.setValue("asr/xunfei_secret", m_xunfeiAsrSecret->text());
     settings.setValue("asr/aliyun_key", m_aliyunAsrKey->text());
     settings.setValue("asr/aliyun_secret", m_aliyunAsrSecret->text());
-    settings.setValue("shortcut/quick_entry", m_shortcutEdit->text());
-    settings.setValue("startup/compact_mode", m_compactStartSwitch->isChecked());
+
+    // 应用主题
+    int themeIdx = m_themeCombo->currentIndex();
+    auto *themeHelper = DGuiApplicationHelper::instance();
+    if (themeHelper) {
+        switch (themeIdx) {
+        case 0: themeHelper->setPaletteType(DGuiApplicationHelper::UnknownType); break;
+        case 1: themeHelper->setPaletteType(DGuiApplicationHelper::LightType); break;
+        case 2: themeHelper->setPaletteType(DGuiApplicationHelper::DarkType); break;
+        }
+    }
+
+    // 自启动
+    QString autostartDir = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart";
+    QString desktopFile = autostartDir + "/uos-shorthand.desktop";
+    if (m_autostartSwitch->isChecked()) {
+        QDir().mkpath(autostartDir);
+        QFile f(desktopFile);
+        if (!f.exists()) {
+            if (f.open(QIODevice::WriteOnly)) {
+                QTextStream out(&f);
+                out.setEncoding(QStringConverter::Utf8);
+                out << "[Desktop Entry]\nType=Application\nName=UOS速记\nExec=uos-shorthand\nX-GNOME-Autostart-enabled=true\n";
+                f.close();
+            }
+        }
+    } else {
+        QFile::remove(desktopFile);
+    }
 }

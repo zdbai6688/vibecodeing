@@ -10,7 +10,7 @@
 #include <DLabel>
 #include <DFontSizeManager>
 #include <DGuiApplicationHelper>
-#include <DGuiApplicationHelper>
+#include <DSpinner>
 #include <QDebug>
 
 NoteListWidget::NoteListWidget(QWidget *parent)
@@ -25,6 +25,16 @@ void NoteListWidget::initUI()
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(12, 8, 12, 8);
     layout->setSpacing(0);
+
+    m_stack = new QStackedWidget(this);
+
+    m_spinner = new DSpinner(this);
+    m_spinner->setFixedSize(32, 32);
+    QWidget *spinnerWrapper = new QWidget(this);
+    QVBoxLayout *spinnerLayout = new QVBoxLayout(spinnerWrapper);
+    spinnerLayout->setAlignment(Qt::AlignCenter);
+    spinnerLayout->addWidget(m_spinner);
+    m_stack->addWidget(spinnerWrapper);
 
     m_list = new QListWidget(this);
     m_list->setFrameShape(QFrame::NoFrame);
@@ -42,7 +52,10 @@ void NoteListWidget::initUI()
         QListWidget::item:selected { background: palette(highlight); border-color: palette(highlight); }
     )");
 
-    layout->addWidget(m_list, 1);
+    m_stack->addWidget(m_list);
+    m_stack->setCurrentWidget(m_list);
+
+    layout->addWidget(m_stack, 1);
 
     connect(m_list, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
         int noteId = item->data(Qt::UserRole).toInt();
@@ -78,6 +91,17 @@ void NoteListWidget::refresh()
     }
 
     populateList(notes);
+}
+
+void NoteListWidget::showLoading(bool loading)
+{
+    if (loading) {
+        m_spinner->start();
+        m_stack->setCurrentWidget(m_spinner->parentWidget());
+    } else {
+        m_spinner->stop();
+        m_stack->setCurrentWidget(m_list);
+    }
 }
 
 void NoteListWidget::selectNote(int noteId)

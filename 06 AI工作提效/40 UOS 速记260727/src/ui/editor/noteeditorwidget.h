@@ -58,6 +58,8 @@ private:
     QComboBox *m_fontCombo;
     QComboBox *m_sizeCombo;
     QToolButton *m_boldBtn;
+    QToolButton *m_italicBtn;
+    QToolButton *m_underlineBtn;
     QToolButton *m_olBtn;
     QToolButton *m_ulBtn;
     QToolButton *m_imageBtn;

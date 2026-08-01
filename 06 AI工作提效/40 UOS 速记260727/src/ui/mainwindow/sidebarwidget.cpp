@@ -16,8 +16,8 @@ SidebarWidget::SidebarWidget(QWidget *parent)
     : QWidget(parent)
 {
     setFixedWidth(200);
-    updateStyleSheet();
     initUI();
+    updateStyleSheet();
 
     // 监听主题变化
     connect(DGuiApplicationHelper::instance(), &DGuiApplicationHelper::themeTypeChanged,
@@ -35,10 +35,10 @@ void SidebarWidget::updateStyleSheet()
     auto *helper = DGuiApplicationHelper::instance();
     bool dark = (helper->themeType() == DGuiApplicationHelper::DarkType);
 
-    QString gradStart = dark ? "#1f2a3a" : "#F0E6FF";
-    QString gradEnd   = dark ? "#2d3a4a" : "#F5F0FF";
+    QString gradStart = dark ? "#1f2a3a" : "#D8DCF0";
+    QString gradEnd   = dark ? "#2d3a4a" : "#C8CCE2";
     QString textColor = dark ? "#E0E0E0" : "#222222";
-    QString textMuted = dark ? "#888888" : "#999999";
+    QString textMuted = dark ? "#AAAAAA" : "#666666";
     QString accent    = dark ? "#78A9FF" : "#2178E5";
     QString accentBg  = dark ? "#78A9FF" : "#2178E5";
     QString hoverBg   = dark ? "rgba(120,169,255,0.12)" : "rgba(33,120,229,0.08)";
@@ -151,7 +151,14 @@ void SidebarWidget::initUI()
     logo->setStyleSheet("font-size: 16px; font-weight: 700; padding: 8px 16px 16px 16px;");
     // 使用 DPalette 设置主题色
     QPalette pa = logo->palette();
-    pa.setColor(QPalette::WindowText, QColor("#2178E5"));
+    auto *dguiHelper = DGuiApplicationHelper::instance();
+    if (dguiHelper) {
+        QColor accentColor = dguiHelper->themeType() == DGuiApplicationHelper::DarkType
+            ? QColor("#78A9FF") : QColor("#2178E5");
+        pa.setColor(QPalette::WindowText, accentColor);
+    } else {
+        pa.setColor(QPalette::WindowText, QColor("#2178E5"));
+    }
     logo->setPalette(pa);
     m_layout->addWidget(logo);
 
