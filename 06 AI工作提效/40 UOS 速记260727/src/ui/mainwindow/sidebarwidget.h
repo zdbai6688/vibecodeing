@@ -6,6 +6,9 @@
 #include <QVBoxLayout>
 #include <QListWidget>
 #include <QLabel>
+#include <QMenu>
+#include <QInputDialog>
+#include <QMessageBox>
 
 class SidebarWidget : public QWidget
 {
@@ -28,6 +31,12 @@ signals:
     void settingsClicked();
     void tagClicked(const QString &tag);
     void newNoteClicked();
+
+private slots:
+    void showTagContextMenu(const QPoint &pos);
+    void onCreateTag();
+    void onRenameTag();
+    void onDeleteTag();
 
 private:
     void initUI();

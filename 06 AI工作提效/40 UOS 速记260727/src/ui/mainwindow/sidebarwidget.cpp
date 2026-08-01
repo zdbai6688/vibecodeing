@@ -11,6 +11,7 @@
 #include <DFontSizeManager>
 #include <DGuiApplicationHelper>
 #include <QDebug>
+#include <QAction>
 
 SidebarWidget::SidebarWidget(QWidget *parent)
     : QWidget(parent)
@@ -177,6 +178,9 @@ void SidebarWidget::initUI()
     m_tagList->setObjectName("tagList");
     m_tagList->setFrameShape(QFrame::NoFrame);
     m_tagList->setMaximumHeight(130);
+    m_tagList->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_tagList, &QListWidget::customContextMenuRequested,
+            this, &SidebarWidget::showTagContextMenu);
     m_layout->addWidget(m_tagList);
     m_layout->addSpacing(12);
 
@@ -252,10 +256,111 @@ void SidebarWidget::updateTagList()
 {
     m_tagList->clear();
     auto *app = ShorthandApplication::instance();
-    QStringList tags = app->tagManager()->allTagNames();
-    for (const QString &tag : tags) {
-        QListWidgetItem *item = new QListWidgetItem("  " + tag);
-        item->setData(Qt::UserRole, tag);
+    QList<TagData> tags = app->tagManager()->getAllTags();
+    for (const TagData &tag : tags) {
+        QListWidgetItem *item = new QListWidgetItem("  " + tag.name);
+        item->setData(Qt::UserRole, tag.name);
+        item->setData(Qt::UserRole + 1, tag.id);
         m_tagList->addItem(item);
+    }
+}
+
+// ─── 右键菜单 ────────────────────────────────────────────────
+
+void SidebarWidget::showTagContextMenu(const QPoint &pos)
+{
+    QListWidgetItem *item = m_tagList->itemAt(pos);
+    QMenu menu(this);
+
+    QAction *actNew = menu.addAction(tr("新建标签"));
+    connect(actNew, &QAction::triggered, this, &SidebarWidget::onCreateTag);
+
+    if (item) {
+        // 选中右键点击的项
+        m_tagList->setCurrentItem(item);
+
+        menu.addSeparator();
+        QAction *actRename = menu.addAction(tr("重命名"));
+        connect(actRename, &QAction::triggered, this, &SidebarWidget::onRenameTag);
+
+        QAction *actDelete = menu.addAction(tr("删除"));
+        connect(actDelete, &QAction::triggered, this, &SidebarWidget::onDeleteTag);
+    }
+
+    menu.exec(m_tagList->mapToGlobal(pos));
+}
+
+void SidebarWidget::onCreateTag()
+{
+    auto *app = ShorthandApplication::instance();
+    bool ok = false;
+    QString name = QInputDialog::getText(this, tr("新建标签"),
+                                          tr("请输入标签名称："),
+                                          QLineEdit::Normal, QString(), &ok);
+    if (!ok || name.trimmed().isEmpty())
+        return;
+
+    name = name.trimmed();
+    // 检查是否已存在同名标签
+    if (app->tagManager()->getTagByName(name).id > 0) {
+        QMessageBox::warning(this, tr("重复标签"),
+                             tr("标签「%1」已存在，请使用其他名称。").arg(name));
+        return;
+    }
+
+    app->tagManager()->createTag(name);
+}
+
+void SidebarWidget::onRenameTag()
+{
+    QListWidgetItem *item = m_tagList->currentItem();
+    if (!item)
+        return;
+
+    QString oldName = item->data(Qt::UserRole).toString();
+    int tagId = item->data(Qt::UserRole + 1).toInt();
+    if (tagId <= 0)
+        return;
+
+    auto *app = ShorthandApplication::instance();
+    bool ok = false;
+    QString newName = QInputDialog::getText(this, tr("重命名标签"),
+                                             tr("请输入新名称："),
+                                             QLineEdit::Normal, oldName, &ok);
+    if (!ok || newName.trimmed().isEmpty() || newName.trimmed() == oldName)
+        return;
+
+    newName = newName.trimmed();
+    // 检查是否与其他标签重名
+    TagData existing = app->tagManager()->getTagByName(newName);
+    if (existing.id > 0 && existing.id != tagId) {
+        QMessageBox::warning(this, tr("重复标签"),
+                             tr("标签「%1」已存在，请使用其他名称。").arg(newName));
+        return;
+    }
+
+    TagData current = app->tagManager()->getTag(tagId);
+    app->tagManager()->updateTag(tagId, newName, current.color);
+}
+
+void SidebarWidget::onDeleteTag()
+{
+    QListWidgetItem *item = m_tagList->currentItem();
+    if (!item)
+        return;
+
+    QString tagName = item->data(Qt::UserRole).toString();
+    int tagId = item->data(Qt::UserRole + 1).toInt();
+    if (tagId <= 0)
+        return;
+
+    auto *app = ShorthandApplication::instance();
+    QMessageBox::StandardButton btn = QMessageBox::question(
+        this, tr("删除标签"),
+        tr("确定要删除标签「%1」吗？\n删除后，关联的笔记和待办将不再包含此标签。").arg(tagName),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+    if (btn == QMessageBox::Yes) {
+        app->tagManager()->deleteTag(tagId);
     }
 }
