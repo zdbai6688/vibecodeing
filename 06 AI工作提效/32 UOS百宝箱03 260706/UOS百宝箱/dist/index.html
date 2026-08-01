@@ -632,6 +632,10 @@ const OPTIMIZE = [
   {id:'clean-logs',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,name:'系统日志清理',desc:'删除系统运行日志，释放磁盘存储空间',type:'terminal',options:[{v:'clean-7days',l:'清理7天前日志',d:'删除7天前系统和应用日志'},{v:'clean-buffer',l:'清空日志缓冲区',d:'清空 journald 缓冲区'}]},
 
 ];
+var _currentPage = '';
+var _currentSub = null;
+var _monitorTimer = null;
+var _progressHandler = null;
 function renderNav(){
   var expandedGroup = localStorage.getItem('uos_expanded_group');
   if(expandedGroup === null) expandedGroup = '\u7cfb\u7edf\u5de5\u5177';
