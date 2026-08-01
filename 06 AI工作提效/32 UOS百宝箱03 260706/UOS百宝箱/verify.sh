@@ -80,7 +80,7 @@ for p in "$HOME/.local/share/uos-baibaoxiang/electron/node_modules/electron/dist
 done
 export ELECTRON_BIN
 if [ -n "$ELECTRON_BIN" ]; then
-    check "Electron 进程启动" "timeout 10 \"\$ELECTRON_BIN\" '$PROJECT_DIR/dist-electron/main.cjs' --no-sandbox --disable-gpu --disable-software-rasterizer --enable-logging 2>/dev/null; ec=\$?; if [ \"\$ec\" -eq 124 ] || [ \"\$ec\" -eq 0 ]; then exit 0; elif [ \"\$ec\" -eq 1 ] && grep -q 'clean-exit' '\$ELECTRON_BIN' 2>/dev/null; then exit 0; else exit 1; fi"
+    check "Electron 进程启动" "timeout 10 \"\$ELECTRON_BIN\" '$PROJECT_DIR/dist-electron/main.cjs' --no-sandbox --disable-gpu --disable-software-rasterizer --enable-logging 2>/dev/null; ec=\$?; [ \"\$ec\" -eq 124 ] || [ \"\$ec\" -eq 0 ] && exit 0 || exit 1"
 else
     check "Electron 运行时" "exit 2"
 fi
