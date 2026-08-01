@@ -157,9 +157,9 @@ bool ExportService::exportNoteToPdf(const NoteData &note, const QString &filePat
     html += "<h1>" + note.title.toHtmlEscaped() + "</h1>";
     html += "<hr>";
     html += "<p style=\"color:#999; font-size:10pt;\">";
-    html += QString::fromUtf8("æ¶é´: ") + note.createdAt().toString("yyyy-MM-dd hh:mm:ss");
+    html += "时间: " + note.createdAt().toString("yyyy-MM-dd hh:mm:ss");
     if (!note.tag.isEmpty()) {
-        html += " | " + QString::fromUtf8("æ ç­¾: ") + note.tag.toHtmlEscaped();
+        html += QStringLiteral(" | 标签: ") + note.tag.toHtmlEscaped();
     }
     html += "</p><hr>";
 
@@ -174,7 +174,7 @@ bool ExportService::exportNoteToPdf(const NoteData &note, const QString &filePat
     // 渲染到 PDF
     doc.print(&writer);
 
-    qInfo() << "PDF å¯¼åºæå:" << filePath;
+    qInfo() << "PDF 导出成功:" << filePath;
     return true;
 #else
     Q_UNUSED(note);
