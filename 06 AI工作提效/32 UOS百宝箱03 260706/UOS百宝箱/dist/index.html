@@ -729,7 +729,7 @@ async function renderSysInfo(el){
     <div style="max-width:900px;margin:0 auto">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
         <div style="background:var(--card-bg);border-radius:12px;padding:24px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px">
-          <div style="width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--primary-light),var(--primary));display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🖥️</div>
+          <div style="width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--primary-light),var(--primary));display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:32px;height:32px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
           <div><div style="font-size:18px;font-weight:600;color:var(--text)">${os.distro||'UOS Desktop'}</div>
           <div style="font-size:12px;color:var(--text-sec);margin-top:2px">${os.kernel||'-'} · ${cpu.arch||'-'}</div>
           <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
@@ -1415,7 +1415,7 @@ async function execRepairDirect(id,name,desc){
 
 function renderOptimize(el){
   el.innerHTML=`<p style="margin-bottom:12px;color:var(--text-sec);font-size:13px">⚡ 系统优化 · 点击功能卡片，选择优化操作</p>
-    <div class="card-grid">${OPTIMIZE.map(o=>`<div class="card" onclick="showOptModal('${o.id}')"><div class="ico">${o.ico}</div><h3>${o.name}</h3><p>${o.desc}</p></div>`).join('')}</div>`
+    <div class="card-grid">${OPTIMIZE.map(o=>`<div class="card" onclick="showOptModal('${o.id}')"><div class="ico">${o.ico}</div><h3>${esc(o.name)}</h3><p>${esc(o.desc)}</p></div>`).join('')}</div>`
 }
 
 
@@ -1451,7 +1451,7 @@ function showOptModal(id){
     <h2>${opt.ico} ${opt.name}</h2>
     <div class="sub">${opt.desc}</div>
     <div class="warning-msg">⚠ 优化操作可能会改变系统设置，请谨慎执行</div>
-    <div class="actions">${opt.actions.map(a=>`<button class="btn" onclick="execOpt('${opt.id}','${a.id}')">${a.label}<span class="opt-desc">${a.desc}</span></button>`).join('')}</div>
+    <div class="actions">${(opt.options||[]).map(a=>`<button class="btn" onclick="execOpt('${opt.id}','${a.id}')">${a.label}<span class="opt-desc">${a.desc}</span></button>`).join('')}</div>
     <div class="modal-output" id="optResult"></div>
     <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>`
 }
