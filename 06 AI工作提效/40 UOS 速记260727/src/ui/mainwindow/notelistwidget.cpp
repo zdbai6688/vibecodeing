@@ -8,6 +8,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <DLabel>
+#include <DDialog>
 #include <DFontSizeManager>
 #include <DGuiApplicationHelper>
 #include <DSpinner>
@@ -24,7 +25,34 @@ void NoteListWidget::initUI()
 {
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->setContentsMargins(12, 8, 12, 8);
-    layout->setSpacing(0);
+    layout->setSpacing(4);
+
+    // 回收站操作栏（仅回收站模式可见）
+    m_trashToolbar = new QWidget(this);
+    QHBoxLayout *trashLayout = new QHBoxLayout(m_trashToolbar);
+    trashLayout->setContentsMargins(2, 0, 2, 0);
+    trashLayout->setSpacing(6);
+
+    m_selectAllChk = new QCheckBox(tr("全选"), this);
+    m_selectAllChk->setStyleSheet("font-size: 12px;");
+    trashLayout->addWidget(m_selectAllChk);
+
+    m_restoreBtn = new QPushButton(tr("恢复"), this);
+    m_deleteBtn = new QPushButton(tr("删除"), this);
+    m_clearTrashBtn = new QPushButton(tr("清空回收站"), this);
+    for (QPushButton *btn : {m_restoreBtn, m_deleteBtn, m_clearTrashBtn}) {
+        btn->setFixedHeight(28);
+        btn->setStyleSheet("QPushButton { background: palette(light); border: 1px solid palette(mid); border-radius: 6px; padding: 2px 12px; font-size: 12px; } QPushButton:hover { border-color: palette(highlight); color: palette(highlight); }");
+        trashLayout->addWidget(btn);
+    }
+    trashLayout->addStretch();
+    layout->addWidget(m_trashToolbar);
+    m_trashToolbar->hide();
+
+    connect(m_selectAllChk, &QCheckBox::toggled, this, &NoteListWidget::onSelectAllToggled);
+    connect(m_restoreBtn, &QPushButton::clicked, this, &NoteListWidget::onRestoreSelected);
+    connect(m_deleteBtn, &QPushButton::clicked, this, &NoteListWidget::onDeleteSelected);
+    connect(m_clearTrashBtn, &QPushButton::clicked, this, &NoteListWidget::onEmptyTrash);
 
     m_stack = new QStackedWidget(this);
 
@@ -63,12 +91,29 @@ void NoteListWidget::initUI()
     });
 }
 
-void NoteListWidget::setMode(Mode mode) { m_mode = mode; }
+void NoteListWidget::updateTrashToolbarVisibility()
+{
+    bool isTrash = (m_mode == Trash);
+    m_trashToolbar->setVisible(isTrash);
+    if (isTrash) {
+        m_selectAllChk->blockSignals(true);
+        m_selectAllChk->setChecked(false);
+        m_selectAllChk->blockSignals(false);
+    }
+}
+
+void NoteListWidget::setMode(Mode mode)
+{
+    m_mode = mode;
+    updateTrashToolbarVisibility();
+}
 void NoteListWidget::setFilterTag(const QString &tag) { m_filterTag = tag; }
 void NoteListWidget::setSearchKeyword(const QString &keyword) { m_searchKeyword = keyword; }
 
 void NoteListWidget::refresh()
 {
+    m_trashChecks.clear();
+
     auto *app = ShorthandApplication::instance();
     QList<NoteData> notes;
 
@@ -162,6 +207,14 @@ void NoteListWidget::populateList(const QList<NoteData> &notes)
 
         QHBoxLayout *topRow = new QHBoxLayout();
         topRow->setSpacing(6);
+
+        QCheckBox *trashCheck = nullptr;
+        if (m_mode == Trash) {
+            trashCheck = new QCheckBox(card);
+            trashCheck->setChecked(false);
+            topRow->addWidget(trashCheck);
+        }
+
         DLabel *titleLabel = new DLabel(title, this);
         titleLabel->setStyleSheet("font-size: 13px; font-weight: 600;");
         titleLabel->setFixedHeight(20);
@@ -193,6 +246,77 @@ void NoteListWidget::populateList(const QList<NoteData> &notes)
         item->setSizeHint(QSize(0, 72));
         m_list->addItem(item);
         m_list->setItemWidget(item, card);
+
+        if (trashCheck) {
+            m_trashChecks.append(qMakePair(note.id, trashCheck));
+        }
+    }
+}
+
+void NoteListWidget::onSelectAllToggled(bool checked)
+{
+    if (m_mode != Trash) return;
+    for (const auto &pair : m_trashChecks) {
+        pair.second->setChecked(checked);
+    }
+}
+
+QList<int> NoteListWidget::selectedNoteIds() const
+{
+    QList<int> ids;
+    if (m_mode != Trash) return ids;
+    for (const auto &pair : m_trashChecks) {
+        if (pair.second->isChecked()) {
+            ids.append(pair.first);
+        }
+    }
+    return ids;
+}
+
+void NoteListWidget::onRestoreSelected()
+{
+    QList<int> ids = selectedNoteIds();
+    if (ids.isEmpty()) {
+        DDialog d(this); d.setTitle(tr("提示")); d.setMessage(tr("请先勾选要恢复的笔记")); d.addButton(tr("确定")); d.exec();
+        return;
+    }
+    auto *app = ShorthandApplication::instance();
+    for (int id : ids) app->noteManager()->restoreNote(id);
+    refresh();
+}
+
+void NoteListWidget::onDeleteSelected()
+{
+    QList<int> ids = selectedNoteIds();
+    if (ids.isEmpty()) {
+        DDialog d(this); d.setTitle(tr("提示")); d.setMessage(tr("请先勾选要删除的笔记")); d.addButton(tr("确定")); d.exec();
+        return;
+    }
+    DDialog d(this);
+    d.setTitle(tr("确认删除"));
+    d.setMessage(tr("确定要永久删除选中的 %1 条笔记吗？删除后将无法恢复。").arg(ids.size()));
+    d.addButton(tr("取消"));
+    d.addButton(tr("删除"), true, DDialog::ButtonWarning);
+    if (d.exec() == 1) {
+        auto *app = ShorthandApplication::instance();
+        for (int id : ids) app->noteManager()->permanentDelete(id);
+        refresh();
+    }
+}
+
+void NoteListWidget::onEmptyTrash()
+{
+    auto *app = ShorthandApplication::instance();
+    int count = app->noteManager()->getDeletedNotes().size();
+    if (count == 0) return;
+    DDialog d(this);
+    d.setTitle(tr("清空回收站"));
+    d.setMessage(tr("确定要清空回收站吗？将永久删除全部 %1 条笔记。").arg(count));
+    d.addButton(tr("取消"));
+    d.addButton(tr("清空"), true, DDialog::ButtonWarning);
+    if (d.exec() == 1) {
+        app->noteManager()->permanentDeleteAll();
+        refresh();
     }
 }
 

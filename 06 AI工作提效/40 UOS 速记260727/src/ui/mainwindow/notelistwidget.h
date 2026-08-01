@@ -5,6 +5,9 @@
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QStackedWidget>
+#include <QCheckBox>
+#include <QPushButton>
+#include <QPair>
 #include <DSpinner>
 #include "storage/notestorage.h"
 
@@ -29,10 +32,18 @@ public:
 signals:
     void noteSelected(int noteId);
 
+private slots:
+    void onSelectAllToggled(bool checked);
+    void onRestoreSelected();
+    void onDeleteSelected();
+    void onEmptyTrash();
+
 private:
     void initUI();
     void populateList(const QList<NoteData> &notes);
     void showLoading(bool loading);
+    void updateTrashToolbarVisibility();
+    QList<int> selectedNoteIds() const;
     QString getEmptyIcon(Mode mode) const;
     QString getEmptyTitle(Mode mode) const;
     QString getEmptyHint(Mode mode) const;
@@ -40,6 +51,12 @@ private:
     QListWidget *m_list;
     QStackedWidget *m_stack;
     DSpinner *m_spinner;
+    QWidget *m_trashToolbar;
+    QCheckBox *m_selectAllChk;
+    QPushButton *m_restoreBtn;
+    QPushButton *m_deleteBtn;
+    QPushButton *m_clearTrashBtn;
+    QList<QPair<int, QCheckBox *>> m_trashChecks;
     Mode m_mode = AllNotes;
     QString m_filterTag;
     QString m_searchKeyword;

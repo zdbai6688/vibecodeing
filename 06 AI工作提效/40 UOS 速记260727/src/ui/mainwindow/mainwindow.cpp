@@ -16,6 +16,7 @@
 #include "core/todomanager.h"
 #include "ui/tray/traymanager.h"
 #include "services/globalshortcutmanager.h"
+#include "services/exportservice.h"
 #include "globaldef.h"
 #include "ui/desktop/desktopmodemanager.h"
 #include <QPair>
@@ -33,6 +34,10 @@
 #include <QLabel>
 #include <QFrame>
 #include <QSettings>
+#include <QMenu>
+#include <QAction>
+#include <QFileDialog>
+#include <DDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : DMainWindow(parent)
@@ -88,6 +93,23 @@ void MainWindow::initUI()
     menuBtn->setToolTip(tr("菜单"));
     menuBtn->setFixedSize(32, 32);
     titlebar->addWidget(menuBtn, Qt::AlignRight);
+
+    // 主菜单（菜单/更多按钮共用，修复「切换便签模式无响应」问题）
+    QMenu *mainMenu = new QMenu(this);
+    QAction *desktopModeAction = mainMenu->addAction(tr("🖥 便签模式"));
+    desktopModeAction->setToolTip(tr("切换到桌面便签模式"));
+    mainMenu->addSeparator();
+    QAction *newNoteMenuAction = mainMenu->addAction(tr("新建笔记"));
+    QAction *exportMenuAction = mainMenu->addAction(tr("导出当前笔记"));
+    QAction *settingsMenuAction = mainMenu->addAction(tr("设置"));
+    moreBtn->setMenu(mainMenu);
+    menuBtn->setMenu(mainMenu);
+
+    connect(desktopModeAction, &QAction::triggered, this, &MainWindow::onToggleDesktopMode);
+    connect(newNoteMenuAction, &QAction::triggered, this, &MainWindow::onNewNote);
+    connect(exportMenuAction, &QAction::triggered, this, &MainWindow::onExportCurrentNote);
+    connect(settingsMenuAction, &QAction::triggered, this, &MainWindow::onShowSettings);
+    connect(exportBtn, &DToolButton::clicked, this, &MainWindow::onExportCurrentNote);
 
     // 主内容区 - 三栏布局
     QWidget *centralWidget = new QWidget(this);
@@ -277,6 +299,32 @@ void MainWindow::onNoteSelected(int noteId)
 void MainWindow::onShowQuickEntry()
 {
     m_quickEntry->setFocus();
+}
+
+void MainWindow::onExportCurrentNote()
+{
+    auto *app = ShorthandApplication::instance();
+    NoteData note = app->noteManager()->getNote(m_editor->currentNoteId());
+    if (note.id <= 0) {
+        DDialog d(this);
+        d.setTitle(tr("提示"));
+        d.setMessage(tr("请先在左侧选择要导出的笔记"));
+        d.addButton(tr("确定"));
+        d.exec();
+        return;
+    }
+    QString fileName = note.title.isEmpty() ? tr("未命名笔记") : note.title;
+    QString path = QFileDialog::getSaveFileName(this, tr("导出笔记"),
+        fileName + ".md", tr("Markdown (*.md);;文本文件 (*.txt)"));
+    if (path.isEmpty()) return;
+    bool ok = path.endsWith(".txt", Qt::CaseInsensitive)
+        ? app->exportService()->exportNoteToTxt(note, path)
+        : app->exportService()->exportNoteToMarkdown(note, path);
+    DDialog d(this);
+    d.setTitle(ok ? tr("导出成功") : tr("导出失败"));
+    d.setMessage(ok ? tr("已导出到：%1").arg(path) : tr("导出失败，请重试"));
+    d.addButton(tr("确定"));
+    d.exec();
 }
 
 void MainWindow::loadInitialNotes()

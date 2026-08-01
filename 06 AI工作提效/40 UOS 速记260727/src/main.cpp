@@ -42,8 +42,14 @@ int main(int argc, char *argv[])
     window->resize(1200, 760);
 
     QSettings settings;
+    bool desktopStart = settings.value("desktop/start_in_desktop_mode", false).toBool();
     bool compactStart = settings.value("startup/compact_mode", false).toBool();
-    if (compactStart) {
+    if (desktopStart) {
+        window->hide();
+        QTimer::singleShot(300, window, [window]() {
+            window->onToggleDesktopMode();
+        });
+    } else if (compactStart) {
         window->showMinimized();
         QTimer::singleShot(500, window, [window]() {
             window->onShowQuickEntry();

@@ -29,6 +29,7 @@ public:
     explicit NoteEditorWidget(QWidget *parent = nullptr);
     void loadNote(int noteId);
     void clearEditor();
+    int currentNoteId() const { return m_currentNoteId; }
 
 private slots:
     void onSave();

@@ -167,18 +167,18 @@ void MeetingWidget::initUI()
     m_transcriptEdit = new QTextEdit(this);
     m_transcriptEdit->setPlaceholderText(tr("点击「语音转写」识别录音内容..."));
     m_transcriptEdit->setReadOnly(true);
-    m_transcriptEdit->setFixedHeight(120);
-    detailLayout->addWidget(m_transcriptEdit, 1);
+    m_transcriptEdit->setMinimumHeight(160);
+    detailLayout->addWidget(m_transcriptEdit, 3);
 
     // AI 摘要
     DLabel *summaryTitle = new DLabel(tr("AI 摘要"), this);
-    summaryTitle->setStyleSheet("font-size:12px; font-weight:600;");
+    summaryTitle->setStyleSheet("font-size:12px; font-weight:600; margin-top:4px;");
     detailLayout->addWidget(summaryTitle);
     m_summaryEdit = new QTextEdit(this);
-    m_summaryEdit->setPlaceholderText(tr("AI 生成的会议纪要..."));;
+    m_summaryEdit->setPlaceholderText(tr("AI 生成的会议纪要..."));
     m_summaryEdit->setReadOnly(true);
-    m_summaryEdit->setFixedHeight(100);
-    detailLayout->addWidget(m_summaryEdit);
+    m_summaryEdit->setMinimumHeight(120);
+    detailLayout->addWidget(m_summaryEdit, 2);
 
     m_stack->addWidget(m_detailPage);
 
@@ -231,6 +231,23 @@ void MeetingWidget::showMeetingDetail(int meetingId)
     MeetingData meeting = app->meetingManager()->getMeeting(meetingId);
     m_titleLabel->setText(meeting.title.isEmpty() ? tr("无标题") : meeting.title);
     m_dateLabel->setText(QDateTime::fromSecsSinceEpoch(meeting.createdAt).toString("yyyy-MM-dd hh:mm"));
+
+    // 加载转写内容
+    QString transcriptText;
+    QList<TranscriptData> transcripts = app->meetingManager()->getTranscripts(meetingId);
+    for (const auto &t : transcripts) {
+        transcriptText += QString("[%1] %2\n").arg(t.formattedTimestamp(), t.text);
+    }
+    m_transcriptEdit->setPlainText(transcriptText.trimmed());
+
+    // 加载 AI 摘要
+    m_summaryEdit->setPlainText(meeting.aiSummary);
+
+    // 重置播放器状态
+    m_playBtn->setText(tr("▶ 播放"));
+    if (m_player->isPlaying()) m_player->stop();
+    m_positionLabel->setText(QString("00:00 / %1").arg(formatTime(meeting.durationSecs * 1000LL)));
+
     m_stack->setCurrentWidget(m_detailPage);
 }
 
@@ -264,9 +281,27 @@ void MeetingWidget::populateMeetingList(const QList<MeetingData> &meetings)
     for (const auto &meeting : meetings) {
         QString displayText = meeting.title.isEmpty() ? tr("无标题") : meeting.title;
         QString dateStr = QDateTime::fromSecsSinceEpoch(meeting.createdAt).toString("MM-dd hh:mm");
-        QListWidgetItem *item = new QListWidgetItem(displayText + "\n" + dateStr);
+        QString durationStr = meeting.durationSecs > 0 ? tr(" · %1").arg(meeting.formattedDuration()) : "";
+
+        QWidget *card = new QWidget(this);
+        QVBoxLayout *cardLayout = new QVBoxLayout(card);
+        cardLayout->setContentsMargins(12, 8, 12, 8);
+        cardLayout->setSpacing(3);
+
+        DLabel *titleLabel = new DLabel(displayText, this);
+        titleLabel->setStyleSheet("font-size: 14px; font-weight: 600;");
+        titleLabel->setWordWrap(true);
+        cardLayout->addWidget(titleLabel);
+
+        DLabel *subLabel = new DLabel(dateStr + durationStr, this);
+        subLabel->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
+        cardLayout->addWidget(subLabel);
+
+        QListWidgetItem *item = new QListWidgetItem(m_meetingList);
         item->setData(Qt::UserRole, meeting.id);
+        item->setSizeHint(QSize(0, 64));
         m_meetingList->addItem(item);
+        m_meetingList->setItemWidget(item, card);
     }
 }
 

@@ -33,6 +33,7 @@ public:
     void onShowQuickEntry();
     void loadInitialNotes();
     void focusNote(int noteId);
+    void onToggleDesktopMode();
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -50,7 +51,7 @@ private slots:
     void onSwitchToTag(const QString &tag);
     void onSearch(const QString &keyword);
     void onShowSettings();
-    void onToggleDesktopMode();
+    void onExportCurrentNote();
 
 private:
     void initUI();
