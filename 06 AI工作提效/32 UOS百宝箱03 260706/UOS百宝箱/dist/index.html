@@ -2360,27 +2360,36 @@ function showToolModal(id,need){
     <\/script>`},
     'localsend':{title:'📡 局域网文件传输',content:
 `<div class="sub" style="margin-bottom:8px">
-      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
         <button class="btn" onclick="localsendScan()" id="lsScanBtn" style="font-size:12px;padding:6px 14px">🔍 扫描设备</button>
         <button class="btn" onclick="localsendStartReceive()" id="lsReceiveBtn" style="font-size:12px;padding:6px 14px">📥 开启接收</button>
         <button class="btn" onclick="localsendStopReceive()" id="lsStopBtn" style="font-size:12px;padding:6px 14px;display:none">⏹ 停止接收</button>
+        <button class="btn" onclick="localsendOpenReceiveDir()" id="lsOpenDirBtn" style="font-size:12px;padding:6px 14px">📂 接收目录</button>
         <span id="lsStatus" style="font-size:11px;color:var(--text-sec);padding:6px 0">就绪</span>
       </div>
-      <div style="margin-bottom:8px"><strong>设备列表</strong></div>
-      <div id="lsDeviceList" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:60px;max-height:150px;overflow-y:auto;font-size:12px;background:#fafafa">
-        <div style="color:var(--text-ter);text-align:center;padding:20px 0">点击"扫描设备"搜索局域网内的设备</div>
+      <div style="padding:8px 10px;background:#f0f6ff;border-left:3px solid var(--primary);border-radius:6px;margin-bottom:10px;font-size:11px;color:#444;line-height:1.7">
+        <div>🖥 本机: <b id="lsSelfName">-</b> <span id="lsSelfIP" style="color:var(--text-sec)"></span></div>
+        <div>📥 接收状态: <span id="lsSelfRecv" style="color:#888">未开启</span></div>
+        <div style="color:#999">提示: 双方都打开本功能并开启接收，扫描即可互发现；也支持发现 LocalSend 应用设备</div>
       </div>
-      <div style="margin:8px 0;display:flex;gap:8px;align-items:center">
+      <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between"><strong>设备列表</strong><span id="lsDeviceCount" style="font-size:11px;color:var(--text-ter)"></span></div>
+      <div id="lsDeviceList" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:60px;max-height:150px;overflow-y:auto;font-size:12px;background:var(--card-bg)">
+        <div style="color:var(--text-ter);text-align:center;padding:20px 0">点击「扫描设备」搜索局域网内的设备</div>
+      </div>
+      <div style="margin:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn" onclick="localsendSelectFile()" id="lsFileBtn" style="font-size:12px;padding:6px 14px">📂 选择文件</button>
         <button class="btn" onclick="localsendSelectFolder()" id="lsFolderBtn" style="font-size:12px;padding:6px 14px">📁 选择文件夹</button>
+        <button class="btn" onclick="lsClearFiles()" id="lsClearBtn" style="font-size:12px;padding:6px 14px;display:none">🗑 清空</button>
         <span id="lsFileInfo" style="font-size:11px;color:var(--text-sec)">未选择文件</span>
       </div>
-      <div style="margin-bottom:4px"><strong>传输进度</strong></div>
-      <div id="lsProgress" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:50px;max-height:120px;overflow-y:auto;font-size:11px;background:#fafafa">
+      <div id="lsFileList" style="display:none;border:1px solid var(--border);border-radius:6px;padding:6px;max-height:80px;overflow-y:auto;font-size:11px;background:var(--card-bg);margin-bottom:8px"></div>
+      <button class="btn" onclick="localsendSendFiles()" id="lsSendBtn" disabled style="font-size:12px;padding:8px 16px;width:100%;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;opacity:.45">🚀 发送到选中设备</button>
+      <div style="margin:10px 0 4px"><strong>传输进度</strong></div>
+      <div id="lsProgress" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:50px;max-height:120px;overflow-y:auto;font-size:11px;background:var(--card-bg)">
         <div style="color:var(--text-ter);text-align:center;padding:10px 0">暂无传输</div>
       </div>
       <div style="margin-top:8px;margin-bottom:4px"><strong>传输记录</strong></div>
-      <div id="lsHistory" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:40px;max-height:100px;overflow-y:auto;font-size:11px;background:#fafafa">
+      <div id="lsHistory" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:40px;max-height:100px;overflow-y:auto;font-size:11px;background:var(--card-bg)">
         <div style="color:var(--text-ter);text-align:center;padding:10px 0">暂无记录</div>
       </div>
     </div>`},
@@ -2421,6 +2430,7 @@ function showToolModal(id,need){
     openGongwen()
   }
   if(id==='disk-analyzer') initDiskAnalyzer()
+  if(id==='localsend') setTimeout(localsendInitModal, 50)
 }
 
 // ============ 磁盘分析器 ============
@@ -4410,104 +4420,224 @@ async function renderLocalSend(el){
   el.innerHTML=[
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
       '<div class="card" style="padding:16px;text-align:center">' +
-        '<div style="font-size:32px;margin-bottom:8px">\ud83d\udce4</div>' +
-        '<h3 style="font-size:14px;margin-bottom:4px;font-weight:500">启动文件共享</h3>' +
-        '<p style="font-size:12px;color:var(--text-sec);margin-bottom:12px">在局域网内共享文件，其他设备通过浏览器访问</p>' +
-        '<button class="btn" onclick="localsendStart()" id="lsStartBtn" style="padding:8px 24px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">\ud83d\ude80 启动服务</button>' +
-        '<button class="btn" onclick="localsendStop()" id="lsStopBtn" style="padding:8px 24px;background:#ff3b30;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;display:none">\u23f9 停止服务</button>' +
+        '<div style="font-size:32px;margin-bottom:8px">📤</div>' +
+        '<h3 style="font-size:14px;margin-bottom:4px;font-weight:500">共享文件（浏览器访问）</h3>' +
+        '<p style="font-size:12px;color:var(--text-sec);margin-bottom:12px">将本机文件夹共享给局域网，其他设备通过浏览器下载/上传</p>' +
+        '<div id="lsShareDir" style="font-size:11px;color:var(--text-sec);margin-bottom:8px;word-break:break-all">共享目录: 未选择（默认 ~/UOS共享）</div>' +
+        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
+          '<button class="btn" onclick="localsendPickDir()" id="lsPickDirBtn" style="padding:6px 14px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:6px;cursor:pointer;font-size:12px">📁 选择共享目录</button>' +
+          '<button class="btn" onclick="localsendStart()" id="lsStartBtn" style="padding:8px 24px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🚀 启动服务</button>' +
+          '<button class="btn" onclick="localsendStop()" id="lsStopBtn" style="padding:8px 24px;background:#ff3b30;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;display:none">⏹ 停止服务</button>' +
+        '</div>' +
       '</div>' +
       '<div class="card" style="padding:16px;text-align:center">' +
-        '<div style="font-size:32px;margin-bottom:8px">\ud83d\udce5</div>' +
-        '<h3 style="font-size:14px;margin-bottom:4px;font-weight:500">接收文件</h3>' +
-        '<p style="font-size:12px;color:var(--text-sec);margin-bottom:12px">启动服务后，其他人可上传文件到本机</p>' +
-        '<div id="lsStatus" style="font-size:12px;color:var(--text-sec)">服务状态: <span id="lsStatusText" style="color:#888">未启动</span></div>' +
+        '<div style="font-size:32px;margin-bottom:8px">📥</div>' +
+        '<h3 style="font-size:14px;margin-bottom:4px;font-weight:500">接收文件（UOS 设备互传）</h3>' +
+        '<p style="font-size:12px;color:var(--text-sec);margin-bottom:12px">开启后其他 UOS百宝箱 / LocalSend 设备可向本机发送文件</p>' +
+        '<div style="font-size:12px;color:var(--text-sec);margin-bottom:8px">状态: <span id="lsRecvStatusText" style="color:#888">未开启</span></div>' +
+        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
+          '<button class="btn" onclick="localsendStartReceive()" id="lsRecvStartBtn" style="padding:6px 14px;background:var(--success);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">📥 开启接收</button>' +
+          '<button class="btn" onclick="localsendStopReceive()" id="lsRecvStopBtn" style="padding:6px 14px;background:#ff3b30;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;display:none">⏹ 停止接收</button>' +
+          '<button class="btn" onclick="localsendOpenReceiveDir()" id="lsRecvOpenBtn" style="padding:6px 14px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:6px;cursor:pointer;font-size:12px">📂 接收目录</button>' +
+        '</div>' +
       '</div>' +
     '</div>' +
     '<div class="card" style="padding:16px;margin-bottom:16px">' +
-      '<h3 style="font-size:14px;margin-bottom:8px;font-weight:500">\ud83c\udf10 局域网 IP 地址</h3>' +
+      '<h3 style="font-size:14px;margin-bottom:8px;font-weight:500">🌐 局域网访问地址</h3>' +
       '<div id="lsIPList" style="font-size:12px;color:var(--text-sec)">点击下方按钮获取</div>' +
-      '<button class="btn" onclick="localsendGetIP()" style="margin-top:8px;padding:6px 16px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:4px;cursor:pointer;font-size:12px">\ud83d\udd04 获取 IP</button>' +
+      '<button class="btn" onclick="localsendGetIP()" style="margin-top:8px;padding:6px 16px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:4px;cursor:pointer;font-size:12px">🔄 获取 IP</button>' +
+    '</div>' +
+    '<div class="card" style="padding:16px;margin-bottom:16px">' +
+      '<h3 style="font-size:14px;margin-bottom:8px;font-weight:500">📡 设备发现与传输</h3>' +
+      '<div style="font-size:12px;line-height:1.9;color:var(--text-sec)">' +
+        '<p>1. 双方都打开「局域网传输」，点击「开启接收」即可被对方扫描发现</p>' +
+        '<p>2. 点击「扫描设备」搜索同网段设备，选中设备后选择文件/文件夹发送</p>' +
+        '<p>3. 支持多文件批量与文件夹递归传输</p>' +
+        '<p>4. 可发现安装 LocalSend 应用的设备（Android/iOS/Windows/Mac，需对方开启接收）</p>' +
+        '<p>5. 共享目录可被任意设备的浏览器访问下载/上传（跨平台）</p>' +
+      '</div>' +
     '</div>' +
     '<div class="card" style="padding:16px">' +
-      '<h3 style="font-size:14px;margin-bottom:8px;font-weight:500">\ud83d\udccb 使用说明</h3>' +
-      '<div style="font-size:12px;line-height:1.8;color:var(--text-sec)">' +
-        '<p>1. 点击「启动服务」开始共享</p>' +
-        '<p>2. 获取本机局域网 IP 地址</p>' +
+      '<h3 style="font-size:14px;margin-bottom:8px;font-weight:500">📚 使用说明（共享服务）</h3>' +
+      '<div style="font-size:12px;line-height:1.9;color:var(--text-sec)">' +
+        '<p>1. 点击「选择共享目录」指定要共享的文件夹（默认 ~/UOS共享）</p>' +
+        '<p>2. 点击「启动服务」，再点击「获取 IP」查看访问地址</p>' +
         '<p>3. 其他设备在浏览器访问: <code style="background:#f0f0f0;padding:2px 6px;border-radius:3px">http://IP:8080</code></p>' +
-        '<p>4. 在网页中可下载文件或上传文件到本机</p>' +
-        '<p>5. 使用完毕点击「停止服务」</p>' +
+        '<p>4. 使用完毕点击「停止服务」</p>' +
       '</div>' +
     '</div>' +
     '<div id="lsLog" style="margin-top:12px;display:none;background:#1e1e2e;color:#cdd6f4;border-radius:8px;padding:12px;font-size:12px;font-family:monospace;max-height:200px;overflow-y:auto;line-height:1.6"></div>' +
   ''].join('\n')
+  lsShareDir = ''
+  try {
+    const st = await window.localsendAPI.getStatus()
+    const sb = document.getElementById('lsStartBtn')
+    const spb = document.getElementById('lsStopBtn')
+    const sdir = document.getElementById('lsShareDir')
+    if (st && st.running) {
+      if (sb) sb.style.display = 'none'
+      if (spb) spb.style.display = 'inline-block'
+      if (sdir && st.dir) { sdir.textContent = '共享目录: ' + st.dir; lsShareDir = st.dir }
+    }
+  } catch(e){}
+  localsendGetIP()
+  localsendRefreshReceiveStatus()
 }
-
 
 // ============ 局域网文件传输 (LocalSend) 弹窗 ============
 let lsDevices = []
 let lsSelectedAddress = ''
 let lsSelectedHostname = ''
+let lsSelectedPort = 0
+let lsSelectedKind = ''
 let lsFiles = []
+let lsShareDir = ''
+
+function lsFmtSize(b){
+  try { return window.fileAPI ? window.fileAPI.formatSize(b) : (b + ' B') } catch(e){ return b + ' B' }
+}
+
+async function localsendInitModal() {
+  const st = document.getElementById('lsSelfName')
+  const si = document.getElementById('lsSelfIP')
+  try {
+    const ipr = await window.localsendAPI.getIP()
+    if (ipr && ipr.success && ipr.ips && ipr.ips.length) {
+      const ip = ipr.ips[0].address
+      if (st) st.textContent = ipr.ips[0].hostname || '-'
+      if (si) si.textContent = ip + (ipr.ips.length > 1 ? ' 等' + ipr.ips.length + ' 个地址' : '')
+    }
+  } catch(e){}
+  localsendRefreshReceiveStatus()
+  localsendScan()
+}
 
 async function localsendScan() {
   const list = document.getElementById('lsDeviceList')
   const status = document.getElementById('lsStatus')
+  const count = document.getElementById('lsDeviceCount')
   if (!list || !status) return
-  list.innerHTML = '<div style="color:var(--text-ter);text-align:center;padding:10px 0">⏳ 扫描中...</div>'
+  list.innerHTML = '<div style="color:var(--text-ter);text-align:center;padding:10px 0">⏳ 扫描中（广播 + 局域网探测）...</div>'
   status.textContent = '正在扫描设备...'
+  if (count) count.textContent = ''
   try {
-    const result = await window.toolAPI.execute('localsend-discovery', {})
+    const result = await (window.localsendAPI.discover ? window.localsendAPI.discover() : window.toolAPI.execute('localsend-discovery', {}))
     if (result && result.success && result.devices && result.devices.length > 0) {
       lsDevices = result.devices
       list.innerHTML = ''
       for (var i = 0; i < result.devices.length; i++) {
         var d = result.devices[i]
+        var badge = ''
+        if (d.kind === 'localsend') {
+          badge = '<span style="background:#f0e6ff;color:#7c3aed;border-radius:3px;padding:1px 6px;font-size:9px;flex-shrink:0">LocalSend</span>'
+        } else if (d.canSend) {
+          badge = '<span style="background:#e8f7ee;color:#1a9c4d;border-radius:3px;padding:1px 6px;font-size:9px;flex-shrink:0">可接收</span>'
+        } else {
+          badge = '<span style="background:#fff4e5;color:#c77700;border-radius:3px;padding:1px 6px;font-size:9px;flex-shrink:0">共享中</span>'
+        }
+        var extra = (d.source ? '<span style="color:var(--text-ter);font-size:9px">' + esc(d.source) + '</span>' : '')
         list.innerHTML +=
-          '<div class="ls-device" onclick="localsendSelectDevice(\'' + d.address + '\',\'' + (d.hostname || d.address) + '\')" style="padding:6px 10px;cursor:pointer;border-radius:4px;margin:2px 0;background:var(--card-bg);border:1px solid var(--border);display:flex;align-items:center;gap:8px">' +
-            '<span style="font-size:16px">💻</span>' +
-            '<div><div style="font-weight:500;font-size:12px">' + (d.hostname || '未知设备') + '</div>' +
-            '<div style="font-size:10px;color:var(--text-ter)">' + d.address + '</div></div>' +
+          '<div class="ls-device" data-addr="' + esc(d.address) + '" data-port="' + (d.port || 0) + '" data-kind="' + (d.kind || 'uos') + '" onclick="localsendSelectDevice(this)" style="padding:6px 10px;cursor:pointer;border-radius:4px;margin:2px 0;background:var(--card-bg);border:1px solid var(--border);display:flex;align-items:center;gap:8px">' +
+            '<span style="font-size:16px">' + (d.kind === 'localsend' ? '📱' : '💻') + '</span>' +
+            '<div style="flex:1;min-width:0"><div style="font-weight:500;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(d.hostname || '未知设备') + (d.deviceModel ? ' (' + esc(d.deviceModel) + ')' : '') + '</div>' +
+            '<div style="font-size:10px;color:var(--text-ter)">' + esc(d.address) + (d.port ? ':' + d.port : '') + ' ' + extra + '</div></div>' +
+            badge +
           '</div>'
       }
       status.textContent = '发现 ' + result.devices.length + ' 个设备'
+      if (count) count.textContent = result.devices.length + ' 台'
     } else {
-      list.innerHTML = '<div style="color:var(--text-ter);text-align:center;padding:10px 0">未发现设备</div>'
+      list.innerHTML = '<div style="color:var(--text-ter);text-align:center;padding:10px 0">未发现设备<br><span style="font-size:10px">请确认对方已开启「接收」，且与您在同一网段</span></div>'
       status.textContent = '未发现设备'
+      if (count) count.textContent = '0 台'
     }
   } catch(e) {
-    list.innerHTML = '<div style="color:var(--danger);text-align:center;padding:10px 0">扫描失败: ' + e.message + '</div>'
+    list.innerHTML = '<div style="color:var(--danger);text-align:center;padding:10px 0">扫描失败: ' + esc(e.message) + '</div>'
     status.textContent = '扫描失败'
   }
 }
 
-function localsendSelectDevice(address, hostname) {
-  lsSelectedAddress = address
+function localsendSelectDevice(el) {
+  if (!el) return
+  var addr = el.getAttribute('data-addr')
+  var port = parseInt(el.getAttribute('data-port') || '0', 10)
+  var kind = el.getAttribute('data-kind') || 'uos'
+  var nameEl = el.querySelector('div div')
+  var hostname = nameEl ? nameEl.textContent : addr
+  lsSelectedAddress = addr
   lsSelectedHostname = hostname
-  document.getElementById('lsStatus').textContent = '已选中: ' + hostname + ' (' + address + ')'
-  // Highlight selected device
+  lsSelectedPort = port
+  lsSelectedKind = kind
+  var st = document.getElementById('lsStatus')
+  if (st) st.textContent = '已选中: ' + hostname + ' (' + addr + (port ? ':' + port : '') + ')'
   var devices = document.querySelectorAll('.ls-device')
   for (var i = 0; i < devices.length; i++) {
     devices[i].style.borderColor = 'var(--border)'
     devices[i].style.background = 'var(--card-bg)'
   }
-  event.currentTarget.style.borderColor = 'var(--primary)'
-  event.currentTarget.style.background = 'var(--primary-light)'
+  el.style.borderColor = 'var(--primary)'
+  el.style.background = 'var(--primary-light)'
+  lsUpdateSendBtn()
+}
+
+function lsUpdateSendBtn() {
+  const btn = document.getElementById('lsSendBtn')
+  if (!btn) return
+  const ok = !!lsSelectedAddress && lsFiles.length > 0
+  btn.disabled = !ok
+  btn.style.opacity = ok ? '1' : '.45'
+  if (ok) btn.textContent = '🚀 发送 ' + lsFiles.length + ' 项到 ' + lsSelectedHostname
+  else btn.textContent = '🚀 发送到选中设备'
+}
+
+function lsRenderFiles() {
+  const info = document.getElementById('lsFileInfo')
+  const listEl = document.getElementById('lsFileList')
+  const clearBtn = document.getElementById('lsClearBtn')
+  if (info) {
+    if (lsFiles.length === 0) info.textContent = '未选择文件'
+    else {
+      var total = 0
+      for (var i = 0; i < lsFiles.length; i++) total += (lsFiles[i].size || 0)
+      info.textContent = '已选 ' + lsFiles.length + ' 项 (' + lsFmtSize(total) + ')'
+    }
+  }
+  if (listEl) {
+    if (lsFiles.length === 0) { listEl.style.display = 'none'; listEl.innerHTML = '' }
+    else {
+      listEl.style.display = 'block'
+      listEl.innerHTML = lsFiles.map(function(f, idx){
+        return '<div style="display:flex;align-items:center;gap:6px;padding:2px 0;border-bottom:1px solid var(--border-light)">' +
+          '<span style="color:var(--text-ter)">' + (idx + 1) + '.</span>' +
+          '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(f.name) + (f.isDir ? ' 📁' : '') + '</span>' +
+          '<span style="color:var(--text-ter);font-size:10px">' + lsFmtSize(f.size) + '</span></div>'
+      }).join('')
+    }
+  }
+  if (clearBtn) clearBtn.style.display = lsFiles.length > 0 ? 'inline-block' : 'none'
+  lsUpdateSendBtn()
+}
+
+function lsClearFiles() {
+  lsFiles = []
+  lsRenderFiles()
 }
 
 async function localsendSelectFile() {
   try {
-    const file = await window.fileAPI.selectFile()
-    if (file) {
-      lsFiles = [file]
-      document.getElementById('lsFileInfo').textContent = '已选择文件: ' + file.split('/').pop()
-      if (lsSelectedAddress) {
-        await doSendFiles()
-      } else {
-        document.getElementById('lsStatus').textContent = '请先选择目标设备'
+    const files = await window.fileAPI.selectFile({ multiSelections: true })
+    if (files && files.length) {
+      for (var i = 0; i < files.length; i++) {
+        lsFiles.push({ path: files[i], name: files[i].split('/').pop(), size: 0, isDir: false })
       }
+      lsRenderFiles()
+      var st = document.getElementById('lsStatus')
+      if (st && !lsSelectedAddress) st.textContent = '已选择文件，请选择目标设备后发送'
+      else if (st) st.textContent = '已选择 ' + lsFiles.length + ' 项，点击「发送」'
     }
   } catch(e) {
-    document.getElementById('lsStatus').textContent = '选择文件失败: ' + e.message
+    var st = document.getElementById('lsStatus')
+    if (st) st.textContent = '选择文件失败: ' + e.message
   }
 }
 
@@ -4515,76 +4645,131 @@ async function localsendSelectFolder() {
   try {
     const dir = await window.fileAPI.selectDirectory()
     if (dir) {
-      lsFiles = [dir]
-      document.getElementById('lsFileInfo').textContent = '文件夹已选择'
-      if (lsSelectedAddress) {
-        await doSendFiles()
-      } else {
-        document.getElementById('lsStatus').textContent = '请先选择目标设备'
-      }
+      lsFiles.push({ path: dir, name: dir.split('/').pop(), size: 0, isDir: true })
+      lsRenderFiles()
+      var st = document.getElementById('lsStatus')
+      if (st && !lsSelectedAddress) st.textContent = '已选择文件夹（自动递归发送），请选择目标设备'
+      else if (st) st.textContent = '已选择 ' + lsFiles.length + ' 项，点击「发送」'
     }
   } catch(e) {
-    document.getElementById('lsStatus').textContent = '选择文件夹失败: ' + e.message
+    var st = document.getElementById('lsStatus')
+    if (st) st.textContent = '选择文件夹失败: ' + e.message
   }
 }
 
-async function doSendFiles() {
+async function localsendSendFiles() {
+  if (!lsSelectedAddress) {
+    var st = document.getElementById('lsStatus')
+    if (st) st.textContent = '请先选择目标设备'
+    return
+  }
+  if (lsFiles.length === 0) {
+    var st2 = document.getElementById('lsStatus')
+    if (st2) st2.textContent = '请先选择文件或文件夹'
+    return
+  }
+  const paths = lsFiles.map(function(f){ return f.path })
+  await doSendFiles(paths)
+}
+
+async function doSendFiles(paths) {
   const progress = document.getElementById('lsProgress')
   const status = document.getElementById('lsStatus')
   if (!progress || !status) return
-  progress.innerHTML = '<div style="color:var(--primary);text-align:center;padding:5px 0">⏳ 正在传输...</div>'
+  progress.innerHTML = '<div style="color:var(--primary);text-align:center;padding:8px 0">⏳ 正在传输到 ' + esc(lsSelectedHostname) + ' ...</div>'
   status.textContent = '正在传输到 ' + lsSelectedHostname + '...'
   try {
-    const result = await window.toolAPI.execute('localsend-send', {
+    const result = await (window.localsendAPI.send ? window.localsendAPI.send({
       targetAddress: lsSelectedAddress,
-      targetPort: 42136,
-      files: lsFiles
-    })
+      targetPort: lsSelectedPort || 42136,
+      files: paths
+    }) : window.toolAPI.execute('localsend-send', {
+      targetAddress: lsSelectedAddress,
+      targetPort: lsSelectedPort || 42136,
+      files: paths
+    }))
     if (result && result.success && result.results) {
-      var html = '<div style="color:var(--success);font-weight:600;margin-bottom:4px">✅ 传输完成</div>'
+      var html = '<div style="color:var(--success);font-weight:600;margin-bottom:4px">✅ 传输完成' + (result.totalFiles ? '（' + result.totalFiles + ' 个文件，' + lsFmtSize(result.sentBytes || 0) + '，' + (result.speed || 0) + ' KB/s）' : '') + '</div>'
       for (var i = 0; i < result.results.length; i++) {
         var r = result.results[i]
-        html += '<div style="padding:2px 0">' + (r.success ? '✅' : '❌') + ' ' + r.file + (r.success ? ' 成功' : ' 失败: ' + (r.error || '')) + '</div>'
+        html += '<div style="padding:2px 0">' + (r.success ? '✅' : '❌') + ' ' + esc(r.file) + (r.success ? '' : ' 失败: ' + esc(r.error || '')) + '</div>'
       }
       progress.innerHTML = html
       status.textContent = '传输完成'
       var succ = 0
-      for (var i = 0; i < result.results.length; i++) { if (result.results[i].success) succ++ }
+      for (var j = 0; j < result.results.length; j++) { if (result.results[j].success) succ++ }
       addLsHistory('发送到 ' + lsSelectedHostname + ' (' + lsSelectedAddress + ')', succ + '/' + result.results.length + ' 成功')
     } else {
-      progress.innerHTML = '<div style="color:var(--danger)">❌ 传输失败: ' + (result ? result.error : '未知错误') + '</div>'
+      progress.innerHTML = '<div style="color:var(--danger)">❌ 传输失败: ' + esc(result ? result.error : '未知错误') + '</div>'
       status.textContent = '传输失败'
     }
   } catch(e) {
-    progress.innerHTML = '<div style="color:var(--danger)">❌ 传输出错: ' + e.message + '</div>'
+    progress.innerHTML = '<div style="color:var(--danger)">❌ 传输出错: ' + esc(e.message) + '</div>'
     status.textContent = '传输出错'
   }
 }
 
 async function localsendStartReceive() {
   try {
-    const result = await window.toolAPI.execute('localsend-receive', { saveDir: '/tmp/localsend_received' })
+    const result = await (window.localsendAPI.receive ? window.localsendAPI.receive({}) : window.toolAPI.execute('localsend-receive', {}))
     if (result && result.success) {
-      document.getElementById('lsReceiveBtn').style.display = 'none'
-      document.getElementById('lsStopBtn').style.display = 'inline-block'
-      document.getElementById('lsStatus').textContent = '📥 接收中 (端口 42136)'
+      const rb = document.getElementById('lsReceiveBtn'); if (rb) rb.style.display = 'none'
+      const sb = document.getElementById('lsStopBtn'); if (sb) sb.style.display = 'inline-block'
+      const st = document.getElementById('lsStatus'); if (st) st.textContent = '📥 接收中 (端口 42136)'
+      const selfr = document.getElementById('lsSelfRecv'); if (selfr) { selfr.textContent = '接收中 (端口 42136)'; selfr.style.color = 'var(--success)' }
+      const rb2 = document.getElementById('lsRecvStartBtn'); if (rb2) rb2.style.display = 'none'
+      const sb2 = document.getElementById('lsRecvStopBtn'); if (sb2) sb2.style.display = 'inline-block'
+      const st2 = document.getElementById('lsRecvStatusText'); if (st2) { st2.textContent = '接收中 (端口 42136)'; st2.style.color = 'var(--success)' }
+      showToast('✅ 已开启接收，对方扫描即可发现本机')
     } else {
-      document.getElementById('lsStatus').textContent = '开启接收失败: ' + (result ? result.error : '未知错误')
+      const st = document.getElementById('lsStatus'); if (st) st.textContent = '开启接收失败: ' + (result ? result.error : '未知错误')
     }
   } catch(e) {
-    document.getElementById('lsStatus').textContent = '开启接收出错: ' + e.message
+    const st = document.getElementById('lsStatus'); if (st) st.textContent = '开启接收出错: ' + e.message
   }
 }
 
 async function localsendStopReceive() {
   try {
-    await window.toolAPI.execute('localsend-stop', {})
-    document.getElementById('lsReceiveBtn').style.display = 'inline-block'
-    document.getElementById('lsStopBtn').style.display = 'none'
-    document.getElementById('lsStatus').textContent = '已停止接收'
+    await (window.localsendAPI.stopReceive ? window.localsendAPI.stopReceive() : window.toolAPI.execute('localsend-stop', {}))
+    const rb = document.getElementById('lsReceiveBtn'); if (rb) rb.style.display = 'inline-block'
+    const sb = document.getElementById('lsStopBtn'); if (sb) sb.style.display = 'none'
+    const st = document.getElementById('lsStatus'); if (st) st.textContent = '已停止接收'
+    const selfr = document.getElementById('lsSelfRecv'); if (selfr) { selfr.textContent = '未开启'; selfr.style.color = '#888' }
+    const rb2 = document.getElementById('lsRecvStartBtn'); if (rb2) rb2.style.display = 'inline-block'
+    const sb2 = document.getElementById('lsRecvStopBtn'); if (sb2) sb2.style.display = 'none'
+    const st2 = document.getElementById('lsRecvStatusText'); if (st2) { st2.textContent = '未开启'; st2.style.color = '#888' }
   } catch(e) {
-    document.getElementById('lsStatus').textContent = '停止出错: ' + e.message
+    const st = document.getElementById('lsStatus'); if (st) st.textContent = '停止出错: ' + e.message
   }
+}
+
+async function localsendOpenReceiveDir() {
+  try {
+    const st = await (window.localsendAPI.receiveStatus ? window.localsendAPI.receiveStatus() : window.toolAPI.execute('localsend-status', {}))
+    const dir = (st && st.saveDir) ? st.saveDir : ''
+    if (window.shell && window.shell.openPath && dir) {
+      const ok = await window.shell.openPath(dir)
+      if (ok !== true && ok !== undefined) showToast('打开目录失败')
+    } else {
+      showToast('接收目录: ' + (dir || '未开启接收'))
+    }
+  } catch(e) {
+    showToast('打开目录失败: ' + e.message)
+  }
+}
+
+async function localsendRefreshReceiveStatus() {
+  try {
+    const st = await (window.localsendAPI.receiveStatus ? window.localsendAPI.receiveStatus() : window.toolAPI.execute('localsend-status', {}))
+    const running = !!(st && st.running)
+    const rb = document.getElementById('lsReceiveBtn'); if (rb) rb.style.display = running ? 'none' : 'inline-block'
+    const sb = document.getElementById('lsStopBtn'); if (sb) sb.style.display = running ? 'inline-block' : 'none'
+    const selfr = document.getElementById('lsSelfRecv'); if (selfr) { selfr.textContent = running ? '接收中 (端口 42136)' : '未开启'; selfr.style.color = running ? 'var(--success)' : '#888' }
+    const rb2 = document.getElementById('lsRecvStartBtn'); if (rb2) rb2.style.display = running ? 'none' : 'inline-block'
+    const sb2 = document.getElementById('lsRecvStopBtn'); if (sb2) sb2.style.display = running ? 'inline-block' : 'none'
+    const st2 = document.getElementById('lsRecvStatusText'); if (st2) { st2.textContent = running ? '接收中 (端口 42136)' : '未开启'; st2.style.color = running ? 'var(--success)' : '#888' }
+  } catch(e){}
 }
 
 function addLsHistory(action, result) {
@@ -4599,92 +4784,105 @@ function addLsHistory(action, result) {
 
 async function localsendGetStatus(){
   try{
-    const r = await window.localsendAPI.getStatus();
-    const st = document.getElementById('lsStatusText');
-    const sb = document.getElementById('lsStartBtn');
-    const spb = document.getElementById('lsStopBtn');
-    if(!st) return;
-    if(r?.running){
-      st.textContent = '运行中 (端口: 8080)';
-      st.style.color = 'var(--success)';
-      if(sb) sb.style.display = 'none';
-      if(spb) spb.style.display = 'inline-block';
+    const r = await window.localsendAPI.getStatus()
+    const st = document.getElementById('lsStatusText')
+    const sb = document.getElementById('lsStartBtn')
+    const spb = document.getElementById('lsStopBtn')
+    if(!st) return
+    if(r && r.running){
+      st.textContent = '运行中 (端口: 8080)'
+      st.style.color = 'var(--success)'
+      if(sb) sb.style.display = 'none'
+      if(spb) spb.style.display = 'inline-block'
     } else {
-      st.textContent = '未启动';
-      st.style.color = '#888';
-      if(sb) sb.style.display = 'inline-block';
-      if(spb) spb.style.display = 'none';
+      st.textContent = '未启动'
+      st.style.color = '#888'
+      if(sb) sb.style.display = 'inline-block'
+      if(spb) spb.style.display = 'none'
+    }
+  }catch(e){}
+}
+
+async function localsendPickDir(){
+  try{
+    const dir = await window.fileAPI.selectDirectory()
+    if(dir){
+      lsShareDir = dir
+      const el = document.getElementById('lsShareDir')
+      if(el) el.textContent = '共享目录: ' + dir
     }
   }catch(e){}
 }
 
 async function localsendStart(){
-  const btn = document.getElementById('lsStartBtn');
-  if(!btn) return;
-  btn.disabled = true;
-  btn.textContent = '\u23f3 启动中...';
-  const log = document.getElementById('lsLog');
-  if(log){ log.style.display = 'block'; log.innerHTML += '> 正在启动文件共享服务...\n'; }
+  const btn = document.getElementById('lsStartBtn')
+  if(!btn) return
+  btn.disabled = true
+  btn.textContent = '⏳ 启动中...'
+  const log = document.getElementById('lsLog')
+  if(log){ log.style.display = 'block'; log.innerHTML += '> 正在启动文件共享服务...\n' }
   try{
-    const r = await window.localsendAPI.start('', 8080);
-    if(r?.success){
-      if(log) log.innerHTML += '> \u2705 服务已启动 (端口: 8080)\n';
-      localsendGetStatus();
+    const r = await window.localsendAPI.start(lsShareDir || '', 8080)
+    if(r && r.success){
+      if(log) log.innerHTML += '> ✅ 服务已启动 (端口: 8080)\n'
+      const sdir = document.getElementById('lsShareDir')
+      if(sdir && r.dir) { sdir.textContent = '共享目录: ' + r.dir; lsShareDir = r.dir }
+      localsendGetStatus()
     } else {
-      if(log) log.innerHTML += '> \u274c 启动失败: ' + esc(r?.error||'未知错误') + '\n';
+      if(log) log.innerHTML += '> ❌ 启动失败: ' + esc((r && r.error) || '未知错误') + '\n'
     }
   }catch(e){
-    if(log) log.innerHTML += '> \u274c 启动异常: ' + esc(e.message) + '\n';
+    if(log) log.innerHTML += '> ❌ 启动异常: ' + esc(e.message) + '\n'
   }
-  btn.disabled = false;
-  btn.textContent = '\ud83d\ude80 启动服务';
+  btn.disabled = false
+  btn.textContent = '🚀 启动服务'
 }
 
 async function localsendStop(){
-  const btn = document.getElementById('lsStopBtn');
-  if(!btn) return;
-  btn.textContent = '\u23f3 停止中...';
-  const log = document.getElementById('lsLog');
-  if(log) log.innerHTML += '> 正在停止服务...\n';
+  const btn = document.getElementById('lsStopBtn')
+  if(!btn) return
+  btn.textContent = '⏳ 停止中...'
+  const log = document.getElementById('lsLog')
+  if(log) log.innerHTML += '> 正在停止服务...\n'
   try{
-    const r = await window.localsendAPI.stop();
-    if(r?.success){
-      if(log) log.innerHTML += '> \u2705 服务已停止\n';
-      localsendGetStatus();
+    const r = await window.localsendAPI.stop()
+    if(r && r.success){
+      if(log) log.innerHTML += '> ✅ 服务已停止\n'
+      localsendGetStatus()
     }
   }catch(e){
-    if(log) log.innerHTML += '> \u274c 停止异常: ' + esc(e.message) + '\n';
+    if(log) log.innerHTML += '> ❌ 停止异常: ' + esc(e.message) + '\n'
   }
-  btn.textContent = '\u23f9 停止服务';
+  btn.textContent = '⏹ 停止服务'
 }
 
 async function localsendGetIP(){
-  const el = document.getElementById('lsIPList');
-  if(!el) return;
-  el.innerHTML = '\u23f3 获取中...';
+  const el = document.getElementById('lsIPList')
+  if(!el) return
+  el.innerHTML = '⏳ 获取中...'
   try{
-    const r = await window.localsendAPI.getIP();
-    if(r?.success && r.ips.length){
-      el.innerHTML = r.ips.map(ip =>
-        '<div style="padding:6px 0;border-bottom:1px solid var(--sidebar-logo-border);display:flex;align-items:center;gap:8px">' +
+    const r = await window.localsendAPI.getIP()
+    if(r && r.success && r.ips && r.ips.length){
+      el.innerHTML = r.ips.map(function(ip){
+        return '<div style="padding:6px 0;border-bottom:1px solid var(--sidebar-logo-border);display:flex;align-items:center;gap:8px">' +
           '<span style="color:var(--primary);font-weight:500">' + esc(ip.address) + '</span>' +
           '<span style="color:#aaa;font-size:11px">(' + esc(ip.name) + ')</span>' +
-          '<button class="btn btn-sm" onclick="copyText(\"' + ip.address + '\")" style="margin-left:auto;padding:2px 8px;font-size:10px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:3px;cursor:pointer">复制</button>' +
+          '<button class="btn btn-sm" onclick="copyText(\'' + ip.address + '\')" style="margin-left:auto;padding:2px 8px;font-size:10px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:3px;cursor:pointer">复制</button>' +
         '</div>'
-      ).join('') +
+      }).join('') +
       '<div style="margin-top:8px;padding:8px;background:#f0f8ff;border-radius:6px;font-size:12px;color:#333;border-left:3px solid var(--primary)">' +
-        '\ud83d\udca1 在局域网其他设备的浏览器中访问: <code style="background:#e0e0e0;padding:2px 6px;border-radius:3px;font-weight:500">http://' + (r.ips[0]?.address||'IP') + ':8080</code>' +
+        '💡 在局域网其他设备的浏览器中访问: <code style="background:#e0e0e0;padding:2px 6px;border-radius:3px;font-weight:500">http://' + (r.ips[0] ? r.ips[0].address : 'IP') + ':8080</code>' +
       '</div>'
     } else {
-      el.innerHTML = '<div style="color:var(--text-sec)">未找到局域网 IP 地址</div>';
+      el.innerHTML = '<div style="color:var(--text-sec)">未找到局域网 IP 地址</div>'
     }
   }catch(e){
-    el.innerHTML = '<div style="color:var(--danger)">获取失败: ' + esc(e.message) + '</div>';
+    el.innerHTML = '<div style="color:var(--danger)">获取失败: ' + esc(e.message) + '</div>'
   }
 }
 
 function copyText(text){
-  navigator.clipboard.writeText(text).then(() => showToast('已复制: ' + text)).catch(function(){});
+  navigator.clipboard.writeText(text).then(function(){ showToast('已复制: ' + text) }).catch(function(){})
 }
 
 async function renderPkgManager(el){
