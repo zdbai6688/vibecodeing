@@ -87,6 +87,32 @@ bool TodoManager::permanentDelete(int id)
     return ok;
 }
 
+// ─── 批量操作 ─────────────────────────────────────────────────────
+
+bool TodoManager::batchDeleteTodos(const QList<int> &ids)
+{
+    bool ok = m_storage->batchDeleteTodos(ids);
+    if (ok) {
+        for (int id : ids) {
+            emit todoDeleted(id);
+        }
+        emit dataChanged();
+    }
+    return ok;
+}
+
+bool TodoManager::batchRestoreTodos(const QList<int> &ids)
+{
+    bool ok = m_storage->batchRestoreTodos(ids);
+    if (ok) {
+        for (int id : ids) {
+            emit todoRestored(id);
+        }
+        emit dataChanged();
+    }
+    return ok;
+}
+
 TodoData TodoManager::getTodo(int id) const { return m_storage->getTodo(id); }
 QList<TodoData> TodoManager::getAllTodos() const { return m_storage->getAllTodos(false, false); }
 QList<TodoData> TodoManager::getPendingTodos(const TodoSortParam &sort) const { return m_storage->getPendingTodos(sort); }
@@ -94,6 +120,8 @@ QList<TodoData> TodoManager::getCompletedTodos() const { return m_storage->getCo
 QList<TodoData> TodoManager::getDeletedTodos() const { return m_storage->getDeletedTodos(); }
 QList<TodoData> TodoManager::getTodayTodos(const TodoSortParam &sort) const { return m_storage->getTodayTodos(sort); }
 QList<TodoData> TodoManager::getOverdueTodos(const TodoSortParam &sort) const { return m_storage->getOverdueTodos(sort); }
+QList<TodoData> TodoManager::getWeekTodos(const TodoSortParam &sort) const { return m_storage->getWeekTodos(sort); }
+
 QList<TodoData> TodoManager::getTodosByTag(const QString &tag) const { return m_storage->getTodosByTag(tag); }
 QList<TodoData> TodoManager::searchTodos(const QString &keyword) const { return m_storage->searchTodos(keyword); }
 int TodoManager::pendingCount() const { return m_storage->pendingCount(); }
