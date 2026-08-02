@@ -13,6 +13,8 @@
 #include <QDateTime>
 #include <QFile>
 #include <QInputDialog>
+#include <QScrollBar>
+#include <QTextBlock>
 #include <DLabel>
 #include <DFontSizeManager>
 #include <DDialog>
@@ -48,7 +50,7 @@ void MeetingWidget::initUI()
 
     m_stack = new QStackedWidget(this);
 
-    // 空状态页
+    // ─── 空状态页 ─────────────────────────────────────────────
     m_emptyPage = new QWidget(this);
     QVBoxLayout *emptyLayout = new QVBoxLayout(m_emptyPage);
     emptyLayout->setAlignment(Qt::AlignCenter);
@@ -76,7 +78,7 @@ void MeetingWidget::initUI()
 
     m_stack->addWidget(m_emptyPage);
 
-    // 列表页
+    // ─── 列表页 ────────────────────────────────────────────────
     m_listPage = new QWidget(this);
     QVBoxLayout *listLayout = new QVBoxLayout(m_listPage);
     listLayout->setContentsMargins(16, 12, 16, 12);
@@ -113,12 +115,13 @@ void MeetingWidget::initUI()
     listLayout->addWidget(m_meetingList, 1);
     m_stack->addWidget(m_listPage);
 
-    // 详情页
+    // ─── 详情页 ────────────────────────────────────────────────
     m_detailPage = new QWidget(this);
     QVBoxLayout *detailLayout = new QVBoxLayout(m_detailPage);
     detailLayout->setContentsMargins(16, 12, 16, 12);
     detailLayout->setSpacing(8);
 
+    // 标题栏
     QHBoxLayout *detailHeader = new QHBoxLayout();
     m_backBtn = new QPushButton(tr("← 返回"), this);
     m_backBtn->setStyleSheet("QPushButton { background:transparent; border:none; color:palette(placeholderText); font-size:13px; } QPushButton:hover { color:palette(highlight); }");
@@ -163,22 +166,24 @@ void MeetingWidget::initUI()
     actionRow->addStretch();
     detailLayout->addLayout(actionRow);
 
-    // 转写内容
-    m_transcriptEdit = new QTextEdit(this);
+    // 转写内容（QTextBrowser 支持锚点点击）
+    m_transcriptEdit = new QTextBrowser(this);
     m_transcriptEdit->setPlaceholderText(tr("点击「语音转写」识别录音内容..."));
     m_transcriptEdit->setReadOnly(true);
-    m_transcriptEdit->setFixedHeight(120);
-    detailLayout->addWidget(m_transcriptEdit, 1);
+    m_transcriptEdit->setMinimumHeight(160);
+    m_transcriptEdit->setOpenExternalLinks(false);
+    m_transcriptEdit->setOpenLinks(false);
+    detailLayout->addWidget(m_transcriptEdit, 3);
 
     // AI 摘要
     DLabel *summaryTitle = new DLabel(tr("AI 摘要"), this);
     summaryTitle->setStyleSheet("font-size:12px; font-weight:600;");
     detailLayout->addWidget(summaryTitle);
     m_summaryEdit = new QTextEdit(this);
-    m_summaryEdit->setPlaceholderText(tr("AI 生成的会议纪要..."));;
+    m_summaryEdit->setPlaceholderText(tr("AI 生成的会议纪要..."));
     m_summaryEdit->setReadOnly(true);
-    m_summaryEdit->setFixedHeight(100);
-    detailLayout->addWidget(m_summaryEdit);
+    m_summaryEdit->setMinimumHeight(140);
+    detailLayout->addWidget(m_summaryEdit, 2);
 
     m_stack->addWidget(m_detailPage);
 
@@ -199,11 +204,15 @@ void MeetingWidget::initConnections()
         showMeetingDetail(meetingId);
     });
     connect(m_searchEdit, &QLineEdit::textChanged, this, &MeetingWidget::onSearch);
-    connect(m_player, &AudioPlayer::positionChanged, this, [this](qint64 pos) {
-        if (m_player->durationMs() > 0)
-            m_positionLabel->setText(QString("%1/%2")
-                .arg(formatTime(pos)).arg(formatTime(m_player->durationMs())));
-    });
+
+    // 时间戳点击 → 跳转到音频对应位置
+    connect(m_transcriptEdit, &QTextBrowser::anchorClicked,
+            this, &MeetingWidget::onTranscriptAnchorClicked);
+
+    // 播放位置变化 → 更新显示并高亮当前转写段
+    connect(m_player, &AudioPlayer::positionChanged,
+            this, &MeetingWidget::onPlaybackPositionChanged);
+
     connect(m_player, &AudioPlayer::playbackStarted, this, [this]() {
         m_playBtn->setText(tr("⏸ 暂停"));
     });
@@ -215,6 +224,7 @@ void MeetingWidget::initConnections()
     });
     connect(m_player, &AudioPlayer::playbackFinished, this, [this]() {
         m_playBtn->setText(tr("▶ 播放"));
+        m_highlightedSegmentIndex = -1;
     });
 }
 
@@ -228,9 +238,36 @@ void MeetingWidget::showMeetingDetail(int meetingId)
 {
     m_currentMeetingId = meetingId;
     auto *app = ShorthandApplication::instance();
-    MeetingData meeting = app->meetingManager()->getMeeting(meetingId);
+    auto *mgr = app->meetingManager();
+    MeetingData meeting = mgr->getMeeting(meetingId);
+
     m_titleLabel->setText(meeting.title.isEmpty() ? tr("无标题") : meeting.title);
     m_dateLabel->setText(QDateTime::fromSecsSinceEpoch(meeting.createdAt).toString("yyyy-MM-dd hh:mm"));
+
+    // 加载转写文本（带可点击时间戳）
+    m_currentTranscripts = mgr->getTranscripts(meetingId);
+    if (!m_currentTranscripts.isEmpty()) {
+        m_transcriptEdit->setHtml(buildTranscriptHtml());
+    } else {
+        m_transcriptEdit->clear();
+        m_transcriptEdit->setPlaceholderText(tr("点击「语音转写」识别录音内容..."));
+    }
+
+    // 加载 AI 摘要
+    m_summaryEdit->setPlainText(meeting.aiSummary);
+
+    // 重置高亮
+    m_highlightedSegmentIndex = -1;
+
+    // 如果有音频文件，预加载
+    if (!meeting.audioFilePath.isEmpty() && QFile::exists(meeting.audioFilePath)) {
+        m_player->load(meeting.audioFilePath);
+        if (!m_player->isPlaying()) {
+            m_player->stop();
+            m_positionLabel->setText(tr("00:00 / 00:00"));
+        }
+    }
+
     m_stack->setCurrentWidget(m_detailPage);
 }
 
@@ -260,13 +297,18 @@ void MeetingWidget::populateMeetingList(const QList<MeetingData> &meetings)
         m_stack->setCurrentWidget(m_emptyPage);
         return;
     }
-    m_stack->setCurrentWidget(m_listPage);
-    for (const auto &meeting : meetings) {
-        QString displayText = meeting.title.isEmpty() ? tr("无标题") : meeting.title;
-        QString dateStr = QDateTime::fromSecsSinceEpoch(meeting.createdAt).toString("MM-dd hh:mm");
-        QListWidgetItem *item = new QListWidgetItem(displayText + "\n" + dateStr);
-        item->setData(Qt::UserRole, meeting.id);
-        m_meetingList->addItem(item);
+
+    for (const auto &m : meetings) {
+        QString display = m.title;
+        if (m.createdAt > 0) {
+            display += "\n" + QDateTime::fromSecsSinceEpoch(m.createdAt).toString("yyyy-MM-dd hh:mm");
+        }
+        if (!m.formattedDuration().isEmpty()) {
+            display += "  ⏱ " + m.formattedDuration();
+        }
+        QListWidgetItem *item = new QListWidgetItem(display, m_meetingList);
+        item->setData(Qt::UserRole, m.id);
+        item->setToolTip(m.title);
     }
 }
 
@@ -275,14 +317,24 @@ void MeetingWidget::onPlayPause()
     if (m_currentMeetingId <= 0) return;
     auto *app = ShorthandApplication::instance();
     MeetingData meeting = app->meetingManager()->getMeeting(m_currentMeetingId);
-    if (meeting.audioFilePath.isEmpty() || !QFile::exists(meeting.audioFilePath)) return;
-    if (!m_player->isPlaying()) {
-        m_player->load(meeting.audioFilePath);
-        m_player->play();
-        m_playBtn->setText(tr("⏸ 暂停"));
+    if (meeting.audioFilePath.isEmpty() || !QFile::exists(meeting.audioFilePath)) {
+        DDialog d(this);
+        d.setTitle(tr("提示"));
+        d.setMessage(tr("暂无录音文件"));
+        d.addButton(tr("确定"));
+        d.exec();
+        return;
+    }
+
+    if (m_player->isPlaying()) {
+        // 正在播放 → 暂停
+        m_player->pause();
     } else {
-        m_player->stop();
-        m_playBtn->setText(tr("▶ 播放"));
+        // 暂停或停止 → 开始/继续播放
+        if (!m_player->isLoaded()) {
+            m_player->load(meeting.audioFilePath);
+        }
+        m_player->play();
     }
 }
 
@@ -297,6 +349,8 @@ void MeetingWidget::onDeleteMeeting()
         auto *app = ShorthandApplication::instance();
         app->meetingManager()->deleteMeeting(m_currentMeetingId);
         m_currentMeetingId = -1;
+        m_currentTranscripts.clear();
+        m_highlightedSegmentIndex = -1;
         refresh();
     }
 }
@@ -427,10 +481,173 @@ void MeetingWidget::onSearch(const QString &keyword)
     populateMeetingList(meetings);
 }
 
+// ─── 时间戳点击跳转 ──────────────────────────────────────────
+
+void MeetingWidget::onTranscriptAnchorClicked(const QUrl &link)
+{
+    // 链接格式: "seek://TIMESTAMP_MS"
+    if (link.scheme() != "seek") return;
+
+    bool ok = false;
+    QString path = link.path();
+    // 去掉开头的 "/"
+    if (path.startsWith('/')) path = path.mid(1);
+    qint64 ts = path.toLongLong(&ok);
+
+    if (!ok || m_currentMeetingId <= 0) return;
+
+    auto *app = ShorthandApplication::instance();
+    MeetingData meeting = app->meetingManager()->getMeeting(m_currentMeetingId);
+    if (meeting.audioFilePath.isEmpty() || !QFile::exists(meeting.audioFilePath)) return;
+
+    // 跳转到对应时间位置
+    if (!m_player->isLoaded()) {
+        m_player->load(meeting.audioFilePath);
+    }
+    m_player->seekTo(ts);
+
+    // 如果播放器不在播放状态，开始播放
+    if (!m_player->isPlaying()) {
+        m_player->play();
+    }
+}
+
+void MeetingWidget::onPlaybackPositionChanged(qint64 posMs)
+{
+    // 更新位置标签
+    auto *app = ShorthandApplication::instance();
+    MeetingData meeting = app->meetingManager()->getMeeting(m_currentMeetingId);
+    if (!meeting.audioFilePath.isEmpty() && m_player->isLoaded()) {
+        m_positionLabel->setText(QString("%1 / %2")
+            .arg(formatTime(posMs)).arg(formatTime(m_player->durationMs())));
+    }
+
+    // 高亮当前对应的转写段
+    highlightTranscriptAtPosition(posMs);
+}
+
+// ─── 构建转写 HTML（可点击时间戳） ───────────────────────────
+
+QString MeetingWidget::buildTranscriptHtml() const
+{
+    if (m_currentTranscripts.isEmpty()) return QString();
+
+    QString html;
+    html += QStringLiteral("<html><body style='font-size:13px; line-height:1.6;'>");
+
+    for (int i = 0; i < m_currentTranscripts.size(); ++i) {
+        const TranscriptData &t = m_currentTranscripts[i];
+
+        // 时间戳作为可点击锚点
+        QString tsStr = t.formattedTimestamp();
+        QString tsLink = QStringLiteral("seek://%1").arg(t.timestampMs);
+
+        // 说话人标签
+        QString speakerTag;
+        if (!t.speaker.isEmpty()) {
+            speakerTag = QStringLiteral("<span style='color:#666; font-size:11px; font-weight:600;'>%1 </span>")
+                             .arg(t.speaker.toHtmlEscaped());
+        }
+
+        // 构建单条转写：可点击时间戳 + 说话人 + 文本
+        html += QStringLiteral(
+            "<p id='seg_%1' style='margin:4px 0; padding:4px 8px; border-radius:4px;'>"
+            "<a href='%2' style='color:palette(highlight); text-decoration:none; font-weight:600;'>[%3]</a> "
+            "%4%5</p>"
+        ).arg(i)
+         .arg(tsLink, tsStr)
+         .arg(speakerTag, t.text.toHtmlEscaped());
+    }
+
+    html += QStringLiteral("</body></html>");
+    return html;
+}
+
+// ─── 高亮当前播放位置对应的转写段 ────────────────────────────
+
+void MeetingWidget::highlightTranscriptAtPosition(qint64 posMs)
+{
+    if (m_currentTranscripts.isEmpty()) return;
+
+    // 找到 posMs 所在的 segment 索引（二分查找优化）
+    int newIndex = -1;
+    for (int i = m_currentTranscripts.size() - 1; i >= 0; --i) {
+        if (m_currentTranscripts[i].timestampMs <= posMs) {
+            newIndex = i;
+            break;
+        }
+    }
+
+    // 如果没变化则跳过
+    if (newIndex == m_highlightedSegmentIndex) return;
+
+    m_highlightedSegmentIndex = newIndex;
+
+    // 重新构建 HTML 时标记当前段高亮
+    QString html;
+    html += QStringLiteral("<html><body style='font-size:13px; line-height:1.6;'>");
+
+    for (int i = 0; i < m_currentTranscripts.size(); ++i) {
+        const TranscriptData &t = m_currentTranscripts[i];
+        QString tsStr = t.formattedTimestamp();
+        QString tsLink = QStringLiteral("seek://%1").arg(t.timestampMs);
+
+        QString speakerTag;
+        if (!t.speaker.isEmpty()) {
+            speakerTag = QStringLiteral("<span style='color:#666; font-size:11px; font-weight:600;'>%1 </span>")
+                             .arg(t.speaker.toHtmlEscaped());
+        }
+
+        QString bgStyle;
+        QString linkColor = QStringLiteral("palette(highlight)");
+        QString textColor;
+
+        if (i == newIndex) {
+            bgStyle = QStringLiteral("background:palette(highlight); color:palette(highlightedText);");
+            linkColor = QStringLiteral("palette(highlightedText)");
+            textColor = QStringLiteral("color:palette(highlightedText);");
+        }
+
+        html += QStringLiteral(
+            "<p id='seg_%1' style='margin:4px 0; padding:4px 8px; border-radius:4px; %2'>"
+            "<a href='%3' style='color:%4; text-decoration:none; font-weight:600;'>[%5]</a> "
+            "<span style='%6'>%7%8</span></p>"
+        ).arg(i)
+         .arg(bgStyle)
+         .arg(tsLink, linkColor, tsStr)
+         .arg(textColor, speakerTag, t.text.toHtmlEscaped());
+    }
+
+    html += QStringLiteral("</body></html>");
+    m_transcriptEdit->setHtml(html);
+
+    // 滚动到高亮行
+    if (newIndex >= 0) {
+        QTextDocument *doc = m_transcriptEdit->document();
+        QTextBlock block = doc->findBlockByNumber(newIndex);
+        if (block.isValid()) {
+            QTextCursor scrollCursor(block);
+            m_transcriptEdit->setTextCursor(scrollCursor);
+            m_transcriptEdit->ensureCursorVisible();
+        }
+    }
+}
+
 QString MeetingWidget::formatTime(qint64 ms) const
 {
-    int secs = ms / 1000;
-    int mins = secs / 60;
-    secs = secs % 60;
-    return QString("%1:%2").arg(mins, 2, 10, QChar('0')).arg(secs, 2, 10, QChar('0'));
+    if (ms < 0) ms = 0;
+    int totalSecs = ms / 1000;
+    int hours = totalSecs / 3600;
+    int mins = (totalSecs % 3600) / 60;
+    int secs = totalSecs % 60;
+
+    if (hours > 0) {
+        return QString("%1:%2:%3")
+            .arg(hours, 2, 10, QChar('0'))
+            .arg(mins, 2, 10, QChar('0'))
+            .arg(secs, 2, 10, QChar('0'));
+    }
+    return QString("%1:%2")
+        .arg(mins, 2, 10, QChar('0'))
+        .arg(secs, 2, 10, QChar('0'));
 }

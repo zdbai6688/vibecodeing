@@ -3,11 +3,12 @@
 
 #include <QWidget>
 #include <QListWidget>
-#include <QTextEdit>
+#include <QTextBrowser>
 #include <QLabel>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QLineEdit>
+#include <QUrl>
 #include <DPushButton>
 #include <DLabel>
 #include "storage/meetingstorage.h"
@@ -32,6 +33,8 @@ private slots:
     void onAiSummary();
     void onTranscribe();
     void onSearch(const QString &keyword);
+    void onTranscriptAnchorClicked(const QUrl &link);
+    void onPlaybackPositionChanged(qint64 posMs);
 
 private:
     void initUI();
@@ -39,6 +42,8 @@ private:
     void showMeetingList();
     void showMeetingDetail(int meetingId);
     void populateMeetingList(const QList<MeetingData> &meetings);
+    QString buildTranscriptHtml() const;
+    void highlightTranscriptAtPosition(qint64 posMs);
     QString formatTime(qint64 ms) const;
 
     QStackedWidget *m_stack;
@@ -53,7 +58,7 @@ private:
     DLabel *m_titleLabel;
     DLabel *m_dateLabel;
     QTextEdit *m_summaryEdit;
-    QTextEdit *m_transcriptEdit;
+    QTextBrowser *m_transcriptEdit;
     QPushButton *m_deleteBtn;
     QPushButton *m_backBtn;
     QPushButton *m_aiSummaryBtn;
@@ -63,6 +68,8 @@ private:
     AudioPlayer *m_player;
 
     int m_currentMeetingId = -1;
+    QList<TranscriptData> m_currentTranscripts;
+    int m_highlightedSegmentIndex = -1;
 };
 
 #endif // MEETINGWIDGET_H
