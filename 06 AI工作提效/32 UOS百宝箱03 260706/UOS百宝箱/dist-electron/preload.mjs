@@ -114,6 +114,7 @@ contextBridge.exposeInMainWorld('settingsAPI', {
 // Shell API (用于打开文件/路径)
 contextBridge.exposeInMainWorld('shell', {
   openPath: (filePath) => ipcRenderer.invoke('shell-open-path', filePath),
+  fileExists: (filePath) => ipcRenderer.invoke('shell-file-exists', filePath),
   getResourcePath: () => ipcRenderer.invoke('get-resource-path')
 })
 

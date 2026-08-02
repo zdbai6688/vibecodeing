@@ -177,6 +177,14 @@ ipcMain.handle('read-file', (_, fp) => {
 })
 ipcMain.handle('open-file-path', (_, fp) => shell.showItemInFolder(fp))
 ipcMain.handle('shell-open-path', (_, fp) => { try { shell.openPath(fp); return true } catch { return false } })
+ipcMain.handle('shell-file-exists', (_, fp) => {
+  try {
+    const resolved = path.resolve(String(fp || ''))
+    const resRoot = path.resolve(path.join(__dirname, '../resources/'))
+    if (resolved !== resRoot && !resolved.startsWith(resRoot + path.sep)) return false
+    return fs.existsSync(resolved) && fs.statSync(resolved).isFile()
+  } catch { return false }
+})
 ipcMain.handle('get-resource-path', () => path.join(__dirname, '../resources/'))
 ipcMain.handle('save-image', async (_, dataUrl, defaultName) => {
   const r = await dialog.showSaveDialog(mainWindow, {
