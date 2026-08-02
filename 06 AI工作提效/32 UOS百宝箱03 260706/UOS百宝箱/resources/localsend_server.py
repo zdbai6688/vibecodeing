@@ -28,6 +28,9 @@ def esc(s):
 
 class UploadHandler(SimpleHTTPRequestHandler):
     server_version = 'UOSLocalShare/1.0'
+    # 文字消息存储
+    text_messages = []
+
 
     # ---------- 工具 ----------
     def _json(self, obj, code=200):
@@ -86,6 +89,22 @@ class UploadHandler(SimpleHTTPRequestHandler):
                 'app': 'UOS百宝箱'
             })
             return
+        if parsed.path == '/api/v1/info':
+            self._json({
+                'alias': socket.gethostname(),
+                'deviceModel': 'UOS百宝箱',
+                'deviceType': 'desktop',
+                'fingerprint': 'uos-baibaoxiang',
+                'protocolVersion': '2.0',
+                'download': True
+            })
+            return
+        if parsed.path == '/api/v1/message':
+            self._json({
+                'success': True,
+                'messages': self.text_messages[-50:] if hasattr(self, 'text_messages') else []
+            })
+            return
         if parsed.path == '/api/files':
             self._json({'success': True, 'directory': self.directory, 'files': self._list_items()})
             return
@@ -96,7 +115,51 @@ class UploadHandler(SimpleHTTPRequestHandler):
         return SimpleHTTPRequestHandler.do_GET(self)
 
     def do_POST(self):
+        parsed = urllib.parse.urlparse(self.path)
         ctype = self.headers.get('content-type', '')
+        
+        # LocalSend protocol: text message
+        if parsed.path == '/api/v1/register/send':
+            try:
+                length = int(self.headers.get('content-length', 0) or 0)
+                body = json.loads(self.rfile.read(length).decode('utf-8')) if length > 0 else {}
+                message = body.get('message', '')
+                device_name = body.get('deviceName', 'Unknown')
+                import uuid
+                session_id = str(uuid.uuid4())
+                self.text_messages.append({
+                    'sessionId': session_id,
+                    'deviceName': device_name,
+                    'message': message,
+                    'timestamp': time.time()
+                })
+                self._json({'sessionId': session_id, 'message': 'text received'})
+                return
+            except Exception as e:
+                self._json({'error': str(e)}, 400)
+                return
+        
+        if parsed.path.startswith('/api/v1/register'):
+            self._json({'sessionId': 'uos-' + str(int(time.time()))})
+            return
+            
+        if parsed.path.startswith('/api/v1/prepare-upload') or parsed.path.startswith('/api/v1/upload'):
+            # LocalSend file transfer
+            query = urllib.parse.parse_qs(parsed.query)
+            file_id = (query.get('fileId') or [''])[0]
+            session_id = (query.get('sessionId') or [''])[0]
+            
+            if parsed.path.startswith('/api/v1/prepare-upload'):
+                self._json({'token': 'ok', 'fileId': file_id, 'sessionId': session_id})
+                return
+            else:
+                self._handle_raw()
+                return
+        
+        if parsed.path == '/api/v1/confirm':
+            self._json({'success': True})
+            return
+        
         if 'multipart/form-data' in ctype:
             self._handle_multipart(ctype)
         else:

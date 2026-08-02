@@ -2119,6 +2119,65 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
           return { success: false, error: e.message }
         }
         
+
+      case 'localsend-send-text':
+        try {
+          const https = require('https')
+          const os = require('os')
+          const { targetAddress, targetPort, text } = params
+          if (!targetAddress || !text) {
+            return { success: false, error: '缺少目标地址或发送内容' }
+          }
+          const base = {
+            hostname: targetAddress,
+            port: Number(targetPort) || 53317,
+            rejectUnauthorized: false
+          }
+          const agent = new https.Agent({ rejectUnauthorized: false })
+          base.agent = agent
+          
+          // Register send session
+          const regBody = JSON.stringify({
+            deviceName: os.hostname(),
+            deviceId: 'uos-' + os.hostname().replace(/[^a-zA-Z0-9]/g, '-'),
+            fingerprint: 'uos-baibaoxiang-message',
+            message: text,
+            fileCount: 0
+          })
+          
+          return new Promise((resolve) => {
+            const req = https.request({ ...base, path: '/api/v1/register/send', method: 'POST' }, (res) => {
+              const chunks = []
+              res.on('data', (c) => chunks.push(c))
+              res.on('end', () => {
+                const body = Buffer.concat(chunks).toString('utf-8')
+                let regData
+                try { regData = JSON.parse(body) } catch { regData = null }
+                if (regData && regData.sessionId) {
+                  resolve({ success: true, sessionId: regData.sessionId, message: '文字消息已发送' })
+                } else {
+                  resolve({ success: false, error: '注册会话失败: ' + (regData ? JSON.stringify(regData) : body) })
+                }
+              })
+            })
+            req.on('timeout', () => { try { req.destroy() } catch {}; resolve({ success: false, error: '连接超时' }) })
+            req.on('error', (e) => resolve({ success: false, error: e.message }))
+            req.setTimeout(15000)
+            req.write(regBody)
+            req.end()
+          })
+        } catch(e) {
+          return { success: false, error: e.message }
+        }
+        
+      case 'localsend-accept':
+        try {
+          // Accept a file transfer - acknowledge the session
+          return { success: true, accepted: true }
+        } catch(e) {
+          return { success: false, error: e.message }
+        }
+        
       case 'localsend-send':
         try {
           const http = require('http')

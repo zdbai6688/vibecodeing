@@ -510,7 +510,7 @@ const NAV_GROUPS = [
     {id:'systemapps',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span>`,label:'系统应用',desc:'系统能力调用与集成'}
   ]},
   {group:'🛠 高级工具', icon:'🛠', items:[
-    {id:'localsend',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>`,label:'局域网传输',desc:'基于 Python 的局域网文件共享传输'},
+    {id:'localsend',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg></span>`,label:'局域网快传',desc:'基于 LocalSend 协议的局域网文件/文字传输'},
     {id:'docker-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>`,label:'容器管理',desc:'Docker 容器/镜像管理 · 启动/停止 · 日志查看 · 镜像拉取'},
     {id:'upgrade-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>`,label:'升级助手',desc:'系统版本升级 · 升级前检查 · 过程监控 · 失败回滚'},
     {id:'asset-mgr',ico:`<span class="ico-bg" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--primary-light);flex-shrink:0"><svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>`,label:'资产清单',desc:'硬件扫描 · 软件盘点 · 资产报告 · 导出 CSV/Excel'},
@@ -2200,7 +2200,7 @@ const TOOLS = [
     {id:'traceroute',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>`,name:'路由追踪',desc:'追踪网络数据包路由路径'}
   ]},
     {cat:'📡',name:'局域网通信',items:[
-    {id:'localsend',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,name:'局域网文件传输',desc:'同局域网设备发现、文件发送和接收'}
+    {id:'localsend',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,name:'局域网快传',desc:'基于 LocalSend 协议的文件/文字传输'}
   ]},
   {cat:'🎮',name:'游戏娱乐',items:[
     {id:'game-2048',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>`,name:'2048',desc:'经典数字合成游戏'},
@@ -2358,7 +2358,7 @@ function showToolModal(id,need){
     document.addEventListener('keydown',function(e){const k={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'}[e.key];if(k&&!((dir==='up'&&k==='down')||(dir==='down'&&k==='up')||(dir==='left'&&k==='right')||(dir==='right'&&k==='left'))){e.preventDefault();dir=k}});
     initSnake();
     <\/script>`},
-    'localsend':{title:'📡 局域网文件传输',content:
+    'localsend':{title:'📡 局域网快传',content:
 `<div class="sub" style="margin-bottom:8px">
       <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
         <button class="btn" onclick="localsendScan()" id="lsScanBtn" style="font-size:12px;padding:6px 14px">🔍 扫描设备</button>
@@ -2379,10 +2379,12 @@ function showToolModal(id,need){
       <div style="margin:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn" onclick="localsendSelectFile()" id="lsFileBtn" style="font-size:12px;padding:6px 14px">📂 选择文件</button>
         <button class="btn" onclick="localsendSelectFolder()" id="lsFolderBtn" style="font-size:12px;padding:6px 14px">📁 选择文件夹</button>
+        <button class="btn" onclick="localsendSendText()" id="lsTextBtn" style="font-size:12px;padding:6px 14px">💬 发送文字</button>
         <button class="btn" onclick="lsClearFiles()" id="lsClearBtn" style="font-size:12px;padding:6px 14px;display:none">🗑 清空</button>
         <span id="lsFileInfo" style="font-size:11px;color:var(--text-sec)">未选择文件</span>
       </div>
       <div id="lsFileList" style="display:none;border:1px solid var(--border);border-radius:6px;padding:6px;max-height:80px;overflow-y:auto;font-size:11px;background:var(--card-bg);margin-bottom:8px"></div>
+      <div id="lsDropZone" style="border:2px dashed #4A6CF7;border-radius:8px;padding:16px;text-align:center;background:rgba(74,108,247,0.03);margin-bottom:8px;cursor:pointer;transition:all .2s;font-size:11px;color:var(--text-sec)" ondragover="lsDragOver(event)" ondrop="lsDrop(event)" ondragleave="lsDragLeave(event)" ondragenter="lsDragEnter(event)">📎 拖拽文件到此处发送</div>
       <button class="btn" onclick="localsendSendFiles()" id="lsSendBtn" disabled style="font-size:12px;padding:8px 16px;width:100%;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;opacity:.45">🚀 发送到选中设备</button>
       <div style="margin:10px 0 4px"><strong>传输进度</strong></div>
       <div id="lsProgress" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:50px;max-height:120px;overflow-y:auto;font-size:11px;background:var(--card-bg)">
@@ -4418,55 +4420,65 @@ let _pkgSearchTimer = null
 
 async function renderLocalSend(el){
   el.innerHTML=[
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
-      '<div class="card" style="padding:16px;text-align:center">' +
-        '<div style="font-size:32px;margin-bottom:8px">📤</div>' +
-        '<h3 style="font-size:14px;margin-bottom:4px;font-weight:500">共享文件（浏览器访问）</h3>' +
-        '<p style="font-size:12px;color:var(--text-sec);margin-bottom:12px">将本机文件夹共享给局域网，其他设备通过浏览器下载/上传</p>' +
-        '<div id="lsShareDir" style="font-size:11px;color:var(--text-sec);margin-bottom:8px;word-break:break-all">共享目录: 未选择（默认 ~/UOS共享）</div>' +
-        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
-          '<button class="btn" onclick="localsendPickDir()" id="lsPickDirBtn" style="padding:6px 14px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:6px;cursor:pointer;font-size:12px">📁 选择共享目录</button>' +
-          '<button class="btn" onclick="localsendStart()" id="lsStartBtn" style="padding:8px 24px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🚀 启动服务</button>' +
-          '<button class="btn" onclick="localsendStop()" id="lsStopBtn" style="padding:8px 24px;background:#ff3b30;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;display:none">⏹ 停止服务</button>' +
+    '<div style="max-width:960px">' +
+      // 连接状态栏
+      '<div id="lsStatusBar" style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;font-size:12px;flex-wrap:wrap">' +
+        '<span style="display:flex;align-items:center;gap:4px">🖥 <b id="lsSelfName" style="color:var(--text)">-</b></span>' +
+        '<span id="lsSelfIP" style="color:var(--text-sec)">-</span>' +
+        '<span style="display:flex;align-items:center;gap:4px">📥 接收: <span id="lsSelfRecv" style="color:#888;font-weight:500">未开启</span></span>' +
+        '<button class="btn" onclick="localsendStartReceive()" id="lsReceiveBtn" style="font-size:11px;padding:4px 12px">📥 开启接收</button>' +
+        '<button class="btn" onclick="localsendStopReceive()" id="lsStopBtn" style="font-size:11px;padding:4px 12px;display:none">⏹ 停止接收</button>' +
+        '<button class="btn" onclick="localsendOpenReceiveDir()" id="lsOpenDirBtn" style="font-size:11px;padding:4px 12px">📂 接收目录</button>' +
+      '</div>' +
+      // 设备发现面板
+      '<div class="card" style="padding:14px;margin-bottom:12px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+          '<strong style="font-size:13px">📱 局域网设备</strong>' +
+          '<div style="display:flex;gap:6px;align-items:center">' +
+            '<span id="lsDeviceCount" style="font-size:11px;color:var(--text-ter)"></span>' +
+            '<button class="btn" onclick="localsendScan()" id="lsScanBtn" style="font-size:11px;padding:4px 12px">🔄 扫描</button>' +
+          '</div>' +
+        '</div>' +
+        '<div id="lsDeviceList" style="display:flex;gap:8px;flex-wrap:wrap;min-height:80px;padding:8px;border:1px dashed var(--border);border-radius:8px;background:var(--card-bg)">' +
+          '<div style="color:var(--text-ter);text-align:center;padding:20px 0;width:100%;font-size:12px">点击扫描或选择文件后自动发现设备</div>' +
         '</div>' +
       '</div>' +
-      '<div class="card" style="padding:16px;text-align:center">' +
-        '<div style="font-size:32px;margin-bottom:8px">📥</div>' +
-        '<h3 style="font-size:14px;margin-bottom:4px;font-weight:500">接收文件（UOS 设备互传）</h3>' +
-        '<p style="font-size:12px;color:var(--text-sec);margin-bottom:12px">开启后其他 UOS百宝箱 / LocalSend 设备可向本机发送文件</p>' +
-        '<div style="font-size:12px;color:var(--text-sec);margin-bottom:8px">状态: <span id="lsRecvStatusText" style="color:#888">未开启</span></div>' +
-        '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
-          '<button class="btn" onclick="localsendStartReceive()" id="lsRecvStartBtn" style="padding:6px 14px;background:var(--success);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px">📥 开启接收</button>' +
-          '<button class="btn" onclick="localsendStopReceive()" id="lsRecvStopBtn" style="padding:6px 14px;background:#ff3b30;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;display:none">⏹ 停止接收</button>' +
-          '<button class="btn" onclick="localsendOpenReceiveDir()" id="lsRecvOpenBtn" style="padding:6px 14px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:6px;cursor:pointer;font-size:12px">📂 接收目录</button>' +
+      // 发送区域
+      '<div class="card" style="padding:14px;margin-bottom:12px">' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">' +
+          '<button class="btn" onclick="localsendSelectFile()" id="lsFileBtn" style="font-size:11px;padding:5px 14px">📂 选择文件</button>' +
+          '<button class="btn" onclick="localsendSelectFolder()" id="lsFolderBtn" style="font-size:11px;padding:5px 14px">📁 选择文件夹</button>' +
+          '<button class="btn" onclick="localsendSendText()" id="lsTextBtn" style="font-size:11px;padding:5px 14px">💬 发送文字</button>' +
+          '<button class="btn" onclick="lsClearFiles()" id="lsClearBtn" style="font-size:11px;padding:5px 14px;display:none">🗑 清空</button>' +
+          '<span id="lsFileInfo" style="font-size:11px;color:var(--text-sec);flex:1">未选择文件 — 先选设备，再选文件</span>' +
+        '</div>' +
+        // 待发送文件列表
+        '<div id="lsFileList" style="display:none;border:1px solid var(--border);border-radius:6px;padding:6px;max-height:100px;overflow-y:auto;font-size:11px;background:var(--card-bg);margin-bottom:8px"></div>' +
+        // 拖拽区域
+        '<div id="lsDropZone" style="border:2px dashed #4A6CF7;border-radius:10px;padding:24px;text-align:center;background:rgba(74,108,247,0.03);margin-bottom:10px;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text-sec)"' +
+          ' ondragover="lsDragOver(event)" ondrop="lsDrop(event)" ondragleave="lsDragLeave(event)" ondragenter="lsDragEnter(event)">' +
+          '📎 拖拽文件到此处发送' +
+        '</div>' +
+        // 目标设备 & 发送按钮
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">' +
+          '<span style="font-size:11px;color:var(--text-sec)">' +
+            '<span style="color:var(--text-ter)">目标设备:</span> <span id="lsTargetDevice" style="font-weight:500">未选择</span>' +
+          '</span>' +
+        '</div>' +
+        '<button class="btn" onclick="localsendSendFiles()" id="lsSendBtn" disabled style="font-size:12px;padding:8px 24px;width:100%;background:var(--primary);color:#fff;border:none;border-radius:8px;cursor:pointer;opacity:.45">🚀 发送到选中设备</button>' +
+      '</div>' +
+      // 传输进度与记录
+      '<div class="card" style="padding:14px">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><strong style="font-size:13px">📊 传输进度</strong></div>' +
+        '<div id="lsProgress" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:50px;max-height:120px;overflow-y:auto;font-size:11px;background:var(--card-bg);margin-bottom:10px">' +
+          '<div style="color:var(--text-ter);text-align:center;padding:10px 0">暂无传输</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><strong style="font-size:13px">📋 传输记录</strong></div>' +
+        '<div id="lsHistory" style="border:1px solid var(--border);border-radius:6px;padding:8px;min-height:40px;max-height:100px;overflow-y:auto;font-size:11px;background:var(--card-bg)">' +
+          '<div style="color:var(--text-ter);text-align:center;padding:10px 0">暂无记录</div>' +
         '</div>' +
       '</div>' +
     '</div>' +
-    '<div class="card" style="padding:16px;margin-bottom:16px">' +
-      '<h3 style="font-size:14px;margin-bottom:8px;font-weight:500">🌐 局域网访问地址</h3>' +
-      '<div id="lsIPList" style="font-size:12px;color:var(--text-sec)">点击下方按钮获取</div>' +
-      '<button class="btn" onclick="localsendGetIP()" style="margin-top:8px;padding:6px 16px;background:var(--primary-light);color:var(--primary);border:1px solid var(--primary);border-radius:4px;cursor:pointer;font-size:12px">🔄 获取 IP</button>' +
-    '</div>' +
-    '<div class="card" style="padding:16px;margin-bottom:16px">' +
-      '<h3 style="font-size:14px;margin-bottom:8px;font-weight:500">📡 设备发现与传输</h3>' +
-      '<div style="font-size:12px;line-height:1.9;color:var(--text-sec)">' +
-        '<p>1. 双方都打开「局域网传输」，点击「开启接收」即可被对方扫描发现</p>' +
-        '<p>2. 点击「扫描设备」搜索同网段设备，选中设备后选择文件/文件夹发送</p>' +
-        '<p>3. 支持多文件批量与文件夹递归传输</p>' +
-        '<p>4. 可发现安装 LocalSend 应用的设备（Android/iOS/Windows/Mac，需对方开启接收）</p>' +
-        '<p>5. 共享目录可被任意设备的浏览器访问下载/上传（跨平台）</p>' +
-      '</div>' +
-    '</div>' +
-    '<div class="card" style="padding:16px">' +
-      '<h3 style="font-size:14px;margin-bottom:8px;font-weight:500">📚 使用说明（共享服务）</h3>' +
-      '<div style="font-size:12px;line-height:1.9;color:var(--text-sec)">' +
-        '<p>1. 点击「选择共享目录」指定要共享的文件夹（默认 ~/UOS共享）</p>' +
-        '<p>2. 点击「启动服务」，再点击「获取 IP」查看访问地址</p>' +
-        '<p>3. 其他设备在浏览器访问: <code style="background:#f0f0f0;padding:2px 6px;border-radius:3px">http://IP:8080</code></p>' +
-        '<p>4. 使用完毕点击「停止服务」</p>' +
-      '</div>' +
-    '</div>' +
-    '<div id="lsLog" style="margin-top:12px;display:none;background:#1e1e2e;color:#cdd6f4;border-radius:8px;padding:12px;font-size:12px;font-family:monospace;max-height:200px;overflow-y:auto;line-height:1.6"></div>' +
   ''].join('\n')
   lsShareDir = ''
   try {
@@ -4482,8 +4494,9 @@ async function renderLocalSend(el){
   } catch(e){}
   localsendGetIP()
   localsendRefreshReceiveStatus()
+  // 页面加载后自动扫描
+  setTimeout(localsendScan, 300)
 }
-
 // ============ 局域网文件传输 (LocalSend) 弹窗 ============
 let lsDevices = []
 let lsSelectedAddress = ''
@@ -8279,7 +8292,195 @@ async function removeCronLine(lineNum){
 
 </script>
 <script src="markdown-render.js"></script>
-<script src="init.js"></script>
+<script src="init.js">
+// ============ LocalSend 新功能: 文字消息发送 & 拖拽文件 & 接收确认 ===========
+
+async function localsendSendText() {
+  var addr = lsSelectedAddress
+  var port = lsSelectedPort
+  var hostname = lsSelectedHostname
+  if (!addr) {
+    showToast('请先在设备列表中选择目标设备')
+    return
+  }
+  // 创建文字输入对话框
+  var overlay = document.createElement('div')
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center'
+  var dialog = document.createElement('div')
+  dialog.style.cssText = 'background:var(--card-bg,#fff);border-radius:12px;padding:20px;width:360px;max-width:90vw;box-shadow:0 4px 24px rgba(0,0,0,0.15)'
+  dialog.innerHTML =
+    '<h3 style="font-size:14px;margin:0 0 10px;font-weight:500">\u{1F4AC} 发送文字消息到 ' + esc(hostname) + '</h3>' +
+    '<textarea id="lsTextInput" style="width:100%;height:100px;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:12px;resize:vertical;box-sizing:border-box" placeholder="输入要发送的文字..."></textarea>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">' +
+      '<button class="btn" onclick="this.parentElement.parentElement.parentElement.remove()" style="padding:6px 16px;font-size:12px">\u53D6\u6D88</button>' +
+      '<button class="btn" onclick="lsDoSendText()" style="padding:6px 16px;font-size:12px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer">\u53D1\u9001</button>' +
+    '</div>'
+  overlay.appendChild(dialog)
+  document.body.appendChild(overlay)
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove() }
+}
+
+function lsDoSendText() {
+  var textarea = document.getElementById('lsTextInput')
+  if (!textarea) return
+  var text = textarea.value.trim()
+  if (!text) { showToast('\u8BF7\u8F93\u5165\u8981\u53D1\u9001\u7684\u6587\u5B57'); return }
+  var overlay = textarea.closest('div[style*="position:fixed"]')
+  if (overlay) overlay.remove()
+  showToast('\u6B63\u5728\u53D1\u9001\u6587\u5B57\u6D88\u606F...')
+  var addr = lsSelectedAddress
+  var port = lsSelectedPort
+  window.toolAPI.execute('localsend-send-text', {
+    targetAddress: addr,
+    targetPort: port || 53317,
+    text: text
+  }).then(function(result) {
+    if (result && result.success) {
+      showToast('\u2705 \u6587\u5B57\u6D88\u606F\u5DF2\u53D1\u9001')
+      addLsHistory('\u{1F4AC} \u6587\u5B57\u6D88\u606F', '\u53D1\u9001\u5230 ' + addr + ' \u6210\u529F')
+    } else {
+      showToast('\u274C \u53D1\u9001\u5931\u8D25: ' + ((result && result.error) || '\u672A\u77E5\u9519\u8BEF'))
+      addLsHistory('\u{1F4AC} \u6587\u5B57\u6D88\u606F', '\u53D1\u9001\u5230 ' + addr + ' \u5931\u8D25')
+    }
+  }).catch(function(e) {
+    showToast('\u274C \u53D1\u9001\u5F02\u5E38: ' + e.message)
+    addLsHistory('\u{1F4AC} \u6587\u5B57\u6D88\u606F', '\u53D1\u9001\u5230 ' + addr + ' \u5F02\u5E38')
+  })
+}
+
+// ============ 拖拽文件处理 ============
+var lsDragCounter = 0
+
+function lsDragEnter(e) {
+  e.preventDefault()
+  e.stopPropagation()
+  lsDragCounter++
+  var zone = document.getElementById('lsDropZone')
+  if (zone) {
+    zone.style.borderColor = '#6B8AFF'
+    zone.style.background = 'rgba(74,108,247,0.08)'
+    zone.textContent = '\u{1F4CE} \u91CA\u653E\u6587\u4EF6\u4EE5\u4E0A\u4F20'
+  }
+}
+
+function lsDragOver(e) {
+  e.preventDefault()
+  e.stopPropagation()
+}
+
+function lsDragLeave(e) {
+  e.preventDefault()
+  e.stopPropagation()
+  lsDragCounter--
+  if (lsDragCounter <= 0) {
+    lsDragCounter = 0
+    var zone = document.getElementById('lsDropZone')
+    if (zone) {
+      zone.style.borderColor = '#4A6CF7'
+      zone.style.background = 'rgba(74,108,247,0.03)'
+      zone.textContent = '\u{1F4CE} \u62D6\u62FD\u6587\u4EF6\u5230\u6B64\u5904\u53D1\u9001'
+    }
+  }
+}
+
+function lsDrop(e) {
+  e.preventDefault()
+  e.stopPropagation()
+  lsDragCounter = 0
+  var zone = document.getElementById('lsDropZone')
+  if (zone) {
+    zone.style.borderColor = '#4A6CF7'
+    zone.style.background = 'rgba(74,108,247,0.03)'
+    zone.textContent = '\u{1F4CE} \u62D6\u62FD\u6587\u4EF6\u5230\u6B64\u5904\u53D1\u9001'
+  }
+  var files = e.dataTransfer.files
+  if (!files || files.length === 0) return
+  if (!lsSelectedAddress) {
+    showToast('\u8BF7\u5148\u5728\u8BBE\u5907\u5217\u8868\u4E2D\u9009\u62E9\u76EE\u6807\u8BBE\u5907')
+    return
+  }
+  for (var i = 0; i < files.length; i++) {
+    lsFiles.push(files[i])
+  }
+  lsRenderFiles()
+  showToast('\u5DF2\u6DFB\u52A0 ' + files.length + ' \u4E2A\u6587\u4EF6')
+}
+
+function lsRenderFiles() {
+  var list = document.getElementById('lsFileList')
+  var info = document.getElementById('lsFileInfo')
+  var clearBtn = document.getElementById('lsClearBtn')
+  if (!list) return
+  if (lsFiles.length === 0) {
+    list.style.display = 'none'
+    if (info) info.textContent = '\u672A\u9009\u62E9\u6587\u4EF6'
+    if (clearBtn) clearBtn.style.display = 'none'
+    lsUpdateSendBtn()
+    return
+  }
+  list.style.display = 'block'
+  list.innerHTML = ''
+  var totalSize = 0
+  for (var i = 0; i < lsFiles.length; i++) {
+    var f = lsFiles[i]
+    var name = f.name || f.relPath || '\u6587\u4EF6'
+    var size = f.size || f.fileSize || 0
+    totalSize += size
+    list.innerHTML += '<div style="display:flex;align-items:center;gap:6px;padding:3px 4px;border-bottom:1px solid var(--border-light)" data-idx="' + i + '">' +
+      '<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(name) + '</span>' +
+      '<span style="color:var(--text-ter);font-size:10px;flex-shrink:0">' + lsFmtSize(size) + '</span>' +
+      '<span onclick="lsRemoveFile(' + i + ')" style="cursor:pointer;color:#ff3b30;font-size:14px;flex-shrink:0;padding:0 2px">&times;</span>' +
+    '</div>'
+  }
+  if (info) info.textContent = lsFiles.length + ' \u4E2A\u6587\u4EF6\uFF0C\u5171 ' + lsFmtSize(totalSize)
+  if (clearBtn) clearBtn.style.display = 'inline-block'
+  lsUpdateSendBtn()
+}
+
+function lsRemoveFile(idx) {
+  lsFiles.splice(idx, 1)
+  lsRenderFiles()
+}
+
+// ============ 接收确认对话框 ============
+function lsShowReceiveConfirm(sender, fileName, fileSize, sessionId, fileId) {
+  var overlay = document.createElement('div')
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center'
+  var dialog = document.createElement('div')
+  dialog.style.cssText = 'background:var(--card-bg,#fff);border-radius:12px;padding:20px;width:360px;max-width:90vw;box-shadow:0 4px 24px rgba(0,0,0,0.15)'
+  dialog.innerHTML =
+    '<h3 style="font-size:14px;margin:0 0 12px;font-weight:500">📥 收到文件请求</h3>' +
+    '<div style="font-size:12px;line-height:1.8;margin-bottom:14px">' +
+      '<div>发送方: <b>' + esc(sender) + '</b></div>' +
+      '<div>文件: <b>' + esc(fileName) + '</b></div>' +
+      '<div>大小: <b>' + lsFmtSize(fileSize) + '</b></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+      '<button class="btn" id="lsRejectBtn" style="padding:6px 16px;font-size:12px">拒绝</button>' +
+      '<button class="btn" id="lsAcceptBtn" style="padding:6px 16px;font-size:12px;background:var(--success);color:#fff;border:none;border-radius:6px;cursor:pointer">接受</button>' +
+    '</div>'
+  overlay.appendChild(dialog)
+  document.body.appendChild(overlay)
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove() }
+  // Bind buttons using DOM to avoid quote escaping issues
+  setTimeout(function() {
+    var rej = document.getElementById('lsRejectBtn')
+    if (rej) rej.onclick = function() { overlay.remove() }
+    var acc = document.getElementById('lsAcceptBtn')
+    if (acc) acc.onclick = function() {
+      lsAcceptReceive(sessionId, fileId)
+      overlay.remove()
+    }
+  }, 0)
+}
+
+function lsAcceptReceive(sessionId, fileId) {
+  window.toolAPI.execute('localsend-accept', { sessionId: sessionId, fileId: fileId }).then(function(r) {
+    showToast(r && r.success ? '\u2705 \u6587\u4EF6\u63A5\u6536\u4E2D' : '\u274C \u63A5\u6536\u5931\u8D25')
+  })
+}
+
+</script>
 <div id="toastContainer" class="toast-container"></div>
 </body>
 </html>
