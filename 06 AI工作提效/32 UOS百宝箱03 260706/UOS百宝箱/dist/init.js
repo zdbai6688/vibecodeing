@@ -4,8 +4,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   if (typeof renderNav === 'function') {
     renderNav();
-    if (typeof NAV !== 'undefined' && NAV[0]) {
-      switchPage(NAV[0].id);
-    }
+    // 默认加载系统信息页
+    switchPage('sysinfo');
   }
 });
