@@ -21,17 +21,18 @@ public:
     bool updateTodo(const TodoData &todo);
     bool toggleComplete(int id, bool completed);
     bool setPriority(int id, int priority);
+    bool setTag(int id, const QString &tag);
     bool deleteTodo(int id);
     bool restoreTodo(int id);
     bool permanentDelete(int id);
 
     TodoData getTodo(int id) const;
     QList<TodoData> getAllTodos() const;
-    QList<TodoData> getPendingTodos() const;
+    QList<TodoData> getPendingTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getCompletedTodos() const;
     QList<TodoData> getDeletedTodos() const;
-    QList<TodoData> getTodayTodos() const;
-    QList<TodoData> getOverdueTodos() const;
+    QList<TodoData> getTodayTodos(const TodoSortParam &sort = TodoSortParam()) const;
+    QList<TodoData> getOverdueTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getTodosByTag(const QString &tag) const;
     QList<TodoData> searchTodos(const QString &keyword) const;
 

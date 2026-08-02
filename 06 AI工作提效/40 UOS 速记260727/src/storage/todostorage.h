@@ -31,6 +31,13 @@ struct TodoData {
     bool isDueThisWeek() const;
 };
 
+// 待办排序参数
+struct TodoSortParam {
+    enum Field { DueDate = 0, CreatedAt };
+    Field field = DueDate;
+    bool ascending = true; // true = ASC（默认：截止日期升序）
+};
+
 class TodoStorage : public QObject
 {
     Q_OBJECT
@@ -43,17 +50,18 @@ public:
     bool updateTodo(const TodoData &todo);
     bool toggleComplete(int id, bool completed);
     bool setPriority(int id, int priority);
+    bool setTag(int id, const QString &tag);
     bool deleteTodo(int id);
     bool restoreTodo(int id);
     bool permanentDelete(int id);
 
     TodoData getTodo(int id) const;
     QList<TodoData> getAllTodos(bool includeCompleted = false, bool includeDeleted = false) const;
-    QList<TodoData> getPendingTodos() const;
+    QList<TodoData> getPendingTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getCompletedTodos() const;
     QList<TodoData> getDeletedTodos() const;
-    QList<TodoData> getTodayTodos() const;
-    QList<TodoData> getOverdueTodos() const;
+    QList<TodoData> getTodayTodos(const TodoSortParam &sort = TodoSortParam()) const;
+    QList<TodoData> getOverdueTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getTodosByTag(const QString &tag) const;
     QList<TodoData> searchTodos(const QString &keyword) const;
 
@@ -62,6 +70,7 @@ public:
 
 private:
     TodoData rowToTodo(const QVariantMap &row) const;
+    QString buildTodoOrderClause(const TodoSortParam &sort) const;
     Database *m_db;
 };
 

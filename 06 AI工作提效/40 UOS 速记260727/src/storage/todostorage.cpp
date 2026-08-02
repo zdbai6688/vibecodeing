@@ -120,6 +120,20 @@ bool TodoStorage::setPriority(int id, int priority)
     query.bindValue(":id", id);
     return query.exec();
 }
+bool TodoStorage::setTag(int id, const QString &tag)
+{
+    QSqlQuery query(m_db->connection());
+    query.prepare("UPDATE notes_todos SET tag=:t, modification_datetime=:m WHERE id=:id AND is_todo=1");
+    query.bindValue(":t", tag);
+    query.bindValue(":m", QDateTime::currentSecsSinceEpoch());
+    query.bindValue(":id", id);
+    if (!query.exec()) {
+        qWarning() << "设置待办标签失败:" << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
 
 bool TodoStorage::deleteTodo(int id)
 {
@@ -143,7 +157,7 @@ bool TodoStorage::restoreTodo(int id)
 bool TodoStorage::permanentDelete(int id)
 {
     QSqlQuery query(m_db->connection());
-    query.prepare("DELETE FROM notes_todos WHERE id=:id AND is_todo=1");
+    query.prepare("DELETE FROM notes_todos WHERE id=:id AND is_todo=1 AND is_deleted=1");
     query.bindValue(":id", id);
     return query.exec();
 }
@@ -176,9 +190,24 @@ QList<TodoData> TodoStorage::getAllTodos(bool includeCompleted, bool includeDele
     return list;
 }
 
-QList<TodoData> TodoStorage::getPendingTodos() const
+QString TodoStorage::buildTodoOrderClause(const TodoSortParam &sort) const
 {
-    return getAllTodos(false, false);
+    QString fieldName = (sort.field == TodoSortParam::CreatedAt)
+        ? "creation_datetime" : "due_datetime";
+    QString order = sort.ascending ? "ASC" : "DESC";
+    return QString(" ORDER BY %1 %2").arg(fieldName, order);
+}
+
+QList<TodoData> TodoStorage::getPendingTodos(const TodoSortParam &sort) const
+{
+    QList<TodoData> list;
+    QSqlQuery query(m_db->connection());
+    QString sql = "SELECT * FROM notes_todos WHERE is_todo=1 AND is_completed=0 AND is_deleted=0"
+                  + buildTodoOrderClause(sort);
+    if (query.exec(sql)) {
+        while (query.next()) list.append(rowToTodo(queryToMap(query)));
+    }
+    return list;
 }
 
 QList<TodoData> TodoStorage::getCompletedTodos() const
@@ -201,13 +230,14 @@ QList<TodoData> TodoStorage::getDeletedTodos() const
     return list;
 }
 
-QList<TodoData> TodoStorage::getTodayTodos() const
+QList<TodoData> TodoStorage::getTodayTodos(const TodoSortParam &sort) const
 {
     QList<TodoData> list;
     qint64 todayStart = QDateTime(QDate::currentDate(), QTime(0,0)).toSecsSinceEpoch();
     qint64 todayEnd = QDateTime(QDate::currentDate(), QTime(23,59,59)).toSecsSinceEpoch();
     QSqlQuery query(m_db->connection());
-    query.prepare("SELECT * FROM notes_todos WHERE is_todo=1 AND is_deleted=0 AND is_completed=0 AND due_datetime>=:start AND due_datetime<=:end ORDER BY priority DESC");
+    query.prepare("SELECT * FROM notes_todos WHERE is_todo=1 AND is_deleted=0 AND is_completed=0 AND due_datetime>=:start AND due_datetime<=:end"
+                  + buildTodoOrderClause(sort));
     query.bindValue(":start", todayStart);
     query.bindValue(":end", todayEnd);
     if (query.exec()) {
@@ -216,12 +246,13 @@ QList<TodoData> TodoStorage::getTodayTodos() const
     return list;
 }
 
-QList<TodoData> TodoStorage::getOverdueTodos() const
+QList<TodoData> TodoStorage::getOverdueTodos(const TodoSortParam &sort) const
 {
     QList<TodoData> list;
     qint64 now = QDateTime::currentSecsSinceEpoch();
     QSqlQuery query(m_db->connection());
-    query.prepare("SELECT * FROM notes_todos WHERE is_todo=1 AND is_deleted=0 AND is_completed=0 AND due_datetime>0 AND due_datetime<:now ORDER BY due_datetime ASC");
+    query.prepare("SELECT * FROM notes_todos WHERE is_todo=1 AND is_deleted=0 AND is_completed=0 AND due_datetime>0 AND due_datetime<:now"
+                  + buildTodoOrderClause(sort));
     query.bindValue(":now", now);
     if (query.exec()) {
         while (query.next()) list.append(rowToTodo(queryToMap(query)));

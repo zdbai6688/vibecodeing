@@ -7,6 +7,9 @@
 #include <QStackedWidget>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
+#include <QComboBox>
+#include <DToolButton>
 #include <DLabel>
 #include "storage/todostorage.h"
 
@@ -27,12 +30,22 @@ signals:
     void todoSelected(int todoId);
     void todoStatusChanged();
 
+private slots:
+    void onContextMenu(const QPoint &pos);
+
 private:
     void initUI();
     void populateSection(QListWidget *list, const QList<TodoData> &todos,
                          const QString &emptyHint, int &outCount,
                          bool isPreset = false);
     void updateOverallEmptyState();
+    void setupListContextMenu(QListWidget *list);
+    void loadSortPreference();
+    void saveSortPreference();
+
+    QMenu *createTodoContextMenu(int todoId);
+    void buildTagSubMenu(QMenu *parentMenu, int todoId);
+    void buildPrioritySubMenu(QMenu *parentMenu, int todoId);
 
     /// 返回预置示例待办列表（负 ID 标记，仅用于空状态引导）
     QList<TodoData> presetExamples() const;
@@ -52,6 +65,11 @@ private:
     int m_weekCount = 0;
     int m_completedCount = 0;
     QLineEdit *m_newTodoInput;
+
+    // 排序控件
+    QComboBox *m_sortFieldCombo;
+    DToolButton *m_sortOrderBtn;
+    TodoSortParam m_sortParam;
 };
 
 #endif // TODOWIDGET_H
