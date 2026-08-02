@@ -42,7 +42,7 @@ bool Database::initialize()
     pragma.exec("PRAGMA foreign_keys=ON");
 
     // 数据库架构版本管理
-    int currentVersion = 1;
+    int currentVersion = 2;
     QSqlQuery versionQuery(m_db);
     versionQuery.exec("PRAGMA user_version");
     int dbVersion = 0;
@@ -52,9 +52,33 @@ bool Database::initialize()
 
     if (dbVersion < currentVersion) {
         qInfo() << "数据库架构升级:" << dbVersion << "->" << currentVersion;
-        // 未来版本升级逻辑可在此添加
-        // if (dbVersion < 2) { ... }
-        // if (dbVersion < 3) { ... }
+        if (dbVersion < 2) {
+            // v1 → v2: 新增 todo_tags 多对多关联表，迁移旧 tag 数据
+            QSqlQuery migrate(m_db);
+            migrate.exec(R"(
+                CREATE TABLE IF NOT EXISTS todo_tags (
+                    todo_id INTEGER NOT NULL,
+                    tag_id  INTEGER NOT NULL,
+                    PRIMARY KEY (todo_id, tag_id),
+                    FOREIGN KEY (todo_id) REFERENCES notes_todos(id),
+                    FOREIGN KEY (tag_id) REFERENCES tags(id)
+                )
+            )");
+            if (migrate.lastError().isValid()) {
+                qWarning() << "创建 todo_tags 表失败:" << migrate.lastError().text();
+            } else {
+                qInfo() << "todo_tags 表创建成功";
+                // 迁移现有 tag 数据到 todo_tags
+                QSqlQuery migrateData(m_db);
+                migrateData.exec(R"(
+                    INSERT OR IGNORE INTO todo_tags (todo_id, tag_id)
+                    SELECT n.id, t.id
+                    FROM notes_todos n, tags t
+                    WHERE n.is_todo = 1 AND n.tag != '' AND n.tag = t.name
+                )");
+                qInfo() << "标签数据迁移完成";
+            }
+        }
 
         QSqlQuery setVersion(m_db);
         setVersion.exec(QString("PRAGMA user_version=%1").arg(currentVersion));
@@ -135,6 +159,22 @@ bool Database::createTables()
         return false;
     }
 
+    // 待办-标签多对多关联表
+    const QString createTodoTags = R"(
+        CREATE TABLE IF NOT EXISTS todo_tags (
+            todo_id INTEGER NOT NULL,
+            tag_id  INTEGER NOT NULL,
+            PRIMARY KEY (todo_id, tag_id),
+            FOREIGN KEY (todo_id) REFERENCES notes_todos(id),
+            FOREIGN KEY (tag_id) REFERENCES tags(id)
+        )
+    )";
+
+    if (!query.exec(createTodoTags)) {
+        qCritical() << "创建todo_tags表失败:" << query.lastError().text();
+        return false;
+    }
+
     // 设置表
     const QString createSettings = R"(
         CREATE TABLE IF NOT EXISTS settings (
@@ -203,8 +243,6 @@ bool Database::createTables()
     if (!query.exec(createStickyNotes)) {
         qCritical() << "创建sticky_notes表失败:" << query.lastError().text();
         return false;
-
-
     }
 
     // 索引
@@ -212,6 +250,8 @@ bool Database::createTables()
     query.exec("CREATE INDEX IF NOT EXISTS idx_notes_todo ON notes_todos(is_todo)");
     query.exec("CREATE INDEX IF NOT EXISTS idx_notes_folder ON notes_todos(folder_id)");
     query.exec("CREATE INDEX IF NOT EXISTS idx_notes_modtime ON notes_todos(modification_datetime)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_todo_tags_todo ON todo_tags(todo_id)");
+    query.exec("CREATE INDEX IF NOT EXISTS idx_todo_tags_tag ON todo_tags(tag_id)");
 
     // 插入默认标签
     query.exec("INSERT OR IGNORE INTO tags (name, color, created_at) VALUES ('个人', '#1890FF', 0)");

@@ -19,6 +19,7 @@ public:
     explicit SidebarWidget(QWidget *parent = nullptr);
 
     void setActiveSection(int index);
+    bool isTodoActive() const { return m_btnTodos && m_btnTodos->isChecked(); }
     void updateBadge(int notes, int todos);
 
 signals:

@@ -32,6 +32,8 @@ public:
 
     void refresh();
     void selectTodo(int todoId);
+    void setFilterTags(const QStringList &tags);
+    QStringList filterTags() const { return m_filterTags; }
     void focusNewTodoInput();
 
 signals:
@@ -84,6 +86,7 @@ private:
     int m_overdueCount = 0;
     int m_weekCount = 0;
     int m_completedCount = 0;
+    QStringList m_filterTags;
     QLineEdit *m_newTodoInput;
     DToolButton *m_dateToggleBtn;
     QWidget *m_datePickerContainer;

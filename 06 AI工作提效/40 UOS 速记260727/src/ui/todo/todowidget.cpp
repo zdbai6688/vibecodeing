@@ -10,8 +10,11 @@
 #include <QCheckBox>
 #include <QHBoxLayout>
 #include <QLineEdit>
+#include <QLocale>
 #include <QUuid>
 #include <QMenu>
+#include <QInputDialog>
+#include <QRegularExpression>
 #include <QAction>
 #include <QMessageBox>
 #include <QSettings>
@@ -457,6 +460,21 @@ void TodoWidget::refresh()
     QList<TodoData> weekTodos = mgr->getWeekTodos(m_sortParam);
     QList<TodoData> completedTodos = mgr->getCompletedTodos();
 
+    // 如果设置了标签筛选，过滤所有分区
+    auto filterByTags = [this](QList<TodoData> &list) {
+        if (m_filterTags.isEmpty()) return;
+        list.erase(std::remove_if(list.begin(), list.end(), [this](const TodoData &t) {
+            for (const QString &ft : m_filterTags) {
+                if (!t.tags.contains(ft) && t.tag != ft) return true;
+            }
+            return false;
+        }), list.end());
+    };
+    filterByTags(overdueTodos);
+    filterByTags(todayTodos);
+    filterByTags(weekTodos);
+    filterByTags(completedTodos);
+
     // 过滤掉今日和逾期已包含的
     QList<TodoData> weekOnly;
     QSet<int> todayIds, overdueIds;
@@ -473,6 +491,12 @@ void TodoWidget::refresh()
     populateSection(m_completedList, completedTodos, tr("还没有已完成的待办"), m_completedCount);
 
     updateOverallEmptyState();
+}
+
+void TodoWidget::setFilterTags(const QStringList &tags)
+{
+    m_filterTags = tags;
+    refresh();
 }
 
 void TodoWidget::selectTodo(int todoId)
@@ -680,16 +704,46 @@ void TodoWidget::buildTagSubMenu(QMenu *parentMenu, int todoId)
 {
     QMenu *tagMenu = parentMenu->addMenu(tr("设置标签"));
     auto *app = ShorthandApplication::instance();
-    TodoData todo = app->todoManager()->getTodo(todoId);
+    QStringList currentTags = app->todoManager()->getTodoTags(todoId);
+    bool singleTagMode = currentTags.size() <= 1;
 
-    // "无标签" 选项
-    QAction *actNoTag = tagMenu->addAction(tr("无标签"));
-    actNoTag->setCheckable(true);
-    actNoTag->setChecked(todo.tag.isEmpty());
-    connect(actNoTag, &QAction::triggered, this, [this, todoId]() {
-        bool ok = ShorthandApplication::instance()->todoManager()->setTag(todoId, "");
-        if (!ok) {
-            QMessageBox::warning(const_cast<TodoWidget*>(this), tr("错误"), tr("清除标签失败"));
+    // "无标签" 选项（单选模式下可用）
+    if (singleTagMode) {
+        QAction *actNoTag = tagMenu->addAction(tr("无标签"));
+        actNoTag->setCheckable(true);
+        actNoTag->setChecked(currentTags.isEmpty());
+        connect(actNoTag, &QAction::triggered, this, [this, todoId]() {
+            bool ok = ShorthandApplication::instance()->todoManager()->setTodoTags(todoId, {});
+            if (!ok) {
+                QMessageBox::warning(const_cast<TodoWidget*>(this), tr("错误"), tr("清除标签失败"));
+            }
+            refresh();
+        });
+        tagMenu->addSeparator();
+    }
+
+    // "新建标签" 入口
+    QAction *actNew = tagMenu->addAction(tr("➕ 新建标签..."));
+    connect(actNew, &QAction::triggered, this, [this, todoId]() {
+        auto *app = ShorthandApplication::instance();
+        bool ok = false;
+        QString name = QInputDialog::getText(const_cast<TodoWidget*>(this), tr("新建标签"),
+                                              tr("请输入标签名称："),
+                                              QLineEdit::Normal, QString(), &ok);
+        if (!ok || name.trimmed().isEmpty()) return;
+        name = name.trimmed();
+
+        // 创建或获取标签
+        TagData existing = app->tagManager()->getTagByName(name);
+        if (existing.id > 0) {
+            // 标签已存在，直接关联
+            app->todoManager()->addTodoTag(todoId, existing.id);
+        } else {
+            // 新建标签并关联
+            int tagId = app->tagManager()->createTag(name);
+            if (tagId > 0) {
+                app->todoManager()->addTodoTag(todoId, tagId);
+            }
         }
         refresh();
     });
@@ -699,11 +753,28 @@ void TodoWidget::buildTagSubMenu(QMenu *parentMenu, int todoId)
     for (const TagData &tag : tags) {
         QAction *act = tagMenu->addAction(tag.name);
         act->setCheckable(true);
-        act->setChecked(todo.tag == tag.name);
+        act->setChecked(currentTags.contains(tag.name));
         connect(act, &QAction::triggered, this, [this, todoId, name = tag.name]() {
-            bool ok = ShorthandApplication::instance()->todoManager()->setTag(todoId, name);
-            if (!ok) {
-                QMessageBox::warning(const_cast<TodoWidget*>(this), tr("错误"), tr("设置标签失败"));
+            auto *app = ShorthandApplication::instance();
+            QStringList curTags = app->todoManager()->getTodoTags(todoId);
+            if (curTags.contains(name)) {
+                // 取消该标签
+                TagData t = app->tagManager()->getTagByName(name);
+                if (t.id > 0) {
+                    app->todoManager()->removeTodoTag(todoId, t.id);
+                }
+            } else {
+                // 添加该标签
+                TagData t = app->tagManager()->getTagByName(name);
+                if (t.id > 0) {
+                    app->todoManager()->addTodoTag(todoId, t.id);
+                } else {
+                    // 自动创建
+                    int tagId = app->tagManager()->createTag(name);
+                    if (tagId > 0) {
+                        app->todoManager()->addTodoTag(todoId, tagId);
+                    }
+                }
             }
             refresh();
         });
@@ -745,17 +816,71 @@ void TodoWidget::onCreateTodo()
     if (text.isEmpty()) return;
 
     int priority = 0;
-    // 解析 !! 优先级标记
+    QStringList tags;
+
+    // 解析 !高/!中/!低 优先级标记
+    QRegularExpression prioRe(QStringLiteral(R"(!([高中低]))"));
+    QRegularExpressionMatch prioMatch = prioRe.match(text);
+    if (prioMatch.hasMatch()) {
+        QString p = prioMatch.captured(1);
+        if (p == QString::fromUtf8("\xe9\xab\x98")) priority = 3;      // 高
+        else if (p == QString::fromUtf8("\xe4\xb8\xad")) priority = 2; // 中
+        else if (p == QString::fromUtf8("\xe4\xbd\x8e")) priority = 1; // 低
+        text = text.mid(0, prioMatch.capturedStart()) + text.mid(prioMatch.capturedEnd());
+        text = text.trimmed();
+    }
+    // 兼容 !! 标记（旧语法）
     while (text.startsWith("!!")) {
         priority++;
         text = text.mid(2).trimmed();
     }
     if (priority > 3) priority = 3;
 
+    // 解析 #标签 语法（多标签）
+    QRegularExpression tagRe(QStringLiteral(R"(#(\S+))"));
+    QRegularExpressionMatchIterator tagMatches = tagRe.globalMatch(text);
+    while (tagMatches.hasNext()) {
+        QRegularExpressionMatch m = tagMatches.next();
+        QString tagName = m.captured(1).trimmed();
+        if (!tagName.isEmpty()) {
+            tags.append(tagName);
+        }
+    }
+    // 从文本中移除 #标签 部分
+    text = text.remove(tagRe).trimmed();
+
+    // 解析自然语言日期（明天、周五、下周一等）
+    qint64 parsedDue = 0;
+    QDate today = QDate::currentDate();
+    if (text.contains(QString::fromUtf8("\xe6\x98\x8e\xe5\xa4\xa9"))) { // 明天
+        parsedDue = QDateTime(today.addDays(1), QTime(23, 59, 59)).toSecsSinceEpoch();
+        text.replace(QString::fromUtf8("\xe6\x98\x8e\xe5\xa4\xa9"), "");
+    } else if (text.contains(QString::fromUtf8("\xe5\x90\x8e\xe5\xa4\xa9"))) { // 后天
+        parsedDue = QDateTime(today.addDays(2), QTime(23, 59, 59)).toSecsSinceEpoch();
+        text.replace(QString::fromUtf8("\xe5\x90\x8e\xe5\xa4\xa9"), "");
+    } else {
+        // 下周五/下周一等
+        for (int d = 1; d <= 7; d++) {
+            QLocale chLocale(QLocale::Chinese); QString dayName = chLocale.dayName(d, QLocale::LongFormat);
+            if (text.contains(dayName)) {
+                int targetDay = d; // 周一=1 ... 周日=7
+                int curDay = today.dayOfWeek();
+                int daysUntil = targetDay - curDay;
+                if (daysUntil <= 0) daysUntil += 7;
+                parsedDue = QDateTime(today.addDays(daysUntil), QTime(23, 59, 59)).toSecsSinceEpoch();
+                text.replace(dayName, "");
+                break;
+            }
+        }
+    }
+    text = text.trimmed();
+    if (text.isEmpty()) return;
+
     TodoData todo;
     todo.title = text;
     todo.priority = priority;
-    todo.dueDatetime = m_pendingDueDate;
+    todo.tags = tags;
+    todo.dueDatetime = parsedDue > 0 ? parsedDue : m_pendingDueDate;
     todo.creationDatetime = QDateTime::currentSecsSinceEpoch();
     todo.modificationDatetime = todo.creationDatetime;
 
@@ -918,10 +1043,19 @@ QList<TodoData> TodoWidget::presetExamplesForSection(const QString &section) con
 
 void TodoWidget::updateOverallEmptyState()
 {
-    // 当前由 refresh() 末尾统一处理，本函数保留为接口
-    bool hasContent = m_todayCount > 0 || m_overdueCount > 0
-        || m_weekCount > 0 || m_completedCount > 0;
-    m_stack->setCurrentWidget(hasContent ? m_contentWidget : m_emptyWidget);
+    // 始终显示内容页（顶部有新建输入框），空状态在分区内显示提示
+    m_stack->setCurrentWidget(m_contentWidget);
+
+    // 无任何待办时，在今日分区显示引导文字
+    if (m_todayCount == 0 && m_overdueCount == 0
+        && m_weekCount == 0 && m_completedCount == 0) {
+        m_todayList->clear();
+        QListWidgetItem *hint = new QListWidgetItem(tr("在上方输入框输入内容，按 Enter 新建待办"));
+        hint->setFlags(Qt::NoItemFlags);
+        hint->setForeground(QColor("#999999"));
+        hint->setTextAlignment(Qt::AlignCenter);
+        m_todayList->addItem(hint);
+    }
 }
 
 // ─── 排序偏好 ────────────────────────────────────────────────

@@ -6,6 +6,7 @@
 
 #include <QObject>
 #include <QList>
+#include <QStringList>
 #include <QDateTime>
 
 class Database;
@@ -17,7 +18,8 @@ struct TodoData {
     QString content;
     int priority = 0;     // 0=无, 1=低, 2=中, 3=高
     bool isCompleted = false;
-    QString tag;
+    QString tag;          // 单标签（兼容旧数据）
+    QStringList tags;     // 多标签（v2+）
     qint64 dueDatetime = 0;
     qint64 completedDatetime = 0;
     qint64 creationDatetime = 0;
@@ -68,10 +70,18 @@ public:
     QList<TodoData> getOverdueTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getWeekTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getTodosByTag(const QString &tag) const;
+    QList<TodoData> getTodosByTags(const QStringList &tags) const; // 多标签筛选
     QList<TodoData> searchTodos(const QString &keyword) const;
 
     int pendingCount() const;
     int completedCount() const;
+
+    // 多标签支持
+    QStringList getTodoTags(int id) const;         // 获取待办的多标签
+    bool setTodoTags(int id, const QStringList &tags); // 设置待办的多标签（全量替换）
+    bool addTodoTag(int id, int tagId);             // 添加单标签
+    bool removeTodoTag(int id, int tagId);           // 移除单标签
+    QStringList getTagsStringList(int id) const;     // 获取标签名列表
 
 private:
     TodoData rowToTodo(const QVariantMap &row) const;

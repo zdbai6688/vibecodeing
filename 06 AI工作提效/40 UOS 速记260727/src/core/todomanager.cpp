@@ -113,6 +113,8 @@ bool TodoManager::batchRestoreTodos(const QList<int> &ids)
     return ok;
 }
 
+// ─── 查询方法 ─────────────────────────────────────────────────────
+
 TodoData TodoManager::getTodo(int id) const { return m_storage->getTodo(id); }
 QList<TodoData> TodoManager::getAllTodos() const { return m_storage->getAllTodos(false, false); }
 QList<TodoData> TodoManager::getPendingTodos(const TodoSortParam &sort) const { return m_storage->getPendingTodos(sort); }
@@ -121,8 +123,42 @@ QList<TodoData> TodoManager::getDeletedTodos() const { return m_storage->getDele
 QList<TodoData> TodoManager::getTodayTodos(const TodoSortParam &sort) const { return m_storage->getTodayTodos(sort); }
 QList<TodoData> TodoManager::getOverdueTodos(const TodoSortParam &sort) const { return m_storage->getOverdueTodos(sort); }
 QList<TodoData> TodoManager::getWeekTodos(const TodoSortParam &sort) const { return m_storage->getWeekTodos(sort); }
-
 QList<TodoData> TodoManager::getTodosByTag(const QString &tag) const { return m_storage->getTodosByTag(tag); }
+QList<TodoData> TodoManager::getTodosByTags(const QStringList &tags) const { return m_storage->getTodosByTags(tags); }
 QList<TodoData> TodoManager::searchTodos(const QString &keyword) const { return m_storage->searchTodos(keyword); }
 int TodoManager::pendingCount() const { return m_storage->pendingCount(); }
 int TodoManager::completedCount() const { return m_storage->completedCount(); }
+
+// ─── 多标签方法 ─────────────────────────────────────────────────────
+
+QStringList TodoManager::getTodoTags(int id) const { return m_storage->getTodoTags(id); }
+
+bool TodoManager::setTodoTags(int id, const QStringList &tags)
+{
+    bool ok = m_storage->setTodoTags(id, tags);
+    if (ok) {
+        emit todoUpdated(id);
+        emit dataChanged();
+    }
+    return ok;
+}
+
+bool TodoManager::addTodoTag(int id, int tagId)
+{
+    bool ok = m_storage->addTodoTag(id, tagId);
+    if (ok) {
+        emit todoUpdated(id);
+        emit dataChanged();
+    }
+    return ok;
+}
+
+bool TodoManager::removeTodoTag(int id, int tagId)
+{
+    bool ok = m_storage->removeTodoTag(id, tagId);
+    if (ok) {
+        emit todoUpdated(id);
+        emit dataChanged();
+    }
+    return ok;
+}

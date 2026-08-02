@@ -373,6 +373,14 @@ void MainWindow::onSwitchToCompletedTodos()
 
 void MainWindow::onSwitchToTag(const QString &tag)
 {
+    // 如果当前在待办视图，则切换到待办视图并过滤
+    if (m_sidebar->isTodoActive()) {
+        m_sidebar->setActiveSection(1);
+        onSwitchToTodos();
+        m_todoWidget->setFilterTags({tag});
+        m_todoWidget->refresh();
+        return;
+    }
     m_sidebar->setActiveSection(0);
     showMiddleWidget(m_noteList);
     m_noteList->setMode(NoteListWidget::TagFilter);

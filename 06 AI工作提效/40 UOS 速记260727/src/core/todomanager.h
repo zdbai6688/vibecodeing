@@ -39,10 +39,17 @@ public:
     QList<TodoData> getOverdueTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getWeekTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getTodosByTag(const QString &tag) const;
+    QList<TodoData> getTodosByTags(const QStringList &tags) const;
     QList<TodoData> searchTodos(const QString &keyword) const;
 
     int pendingCount() const;
     int completedCount() const;
+
+    // 多标签支持
+    QStringList getTodoTags(int id) const;
+    bool setTodoTags(int id, const QStringList &tags);
+    bool addTodoTag(int id, int tagId);
+    bool removeTodoTag(int id, int tagId);
 
 signals:
     void todoCreated(int id);
