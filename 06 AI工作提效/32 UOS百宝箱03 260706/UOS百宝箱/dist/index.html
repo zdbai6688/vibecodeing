@@ -2806,9 +2806,27 @@ async function toolAction(tool,action){
     }else if(tool==='ofd-view'){
       const file=await window.fileAPI?.selectFile({filters:[{name:'OFD文件',extensions:['ofd']}]})
       if(!file){el.innerHTML='❌ 请选择 OFD 文件';return}
+      el.innerHTML='⏳ 正在解析 OFD 文档...'
+      try{
+        const r=await window.toolAPI?.execute('ofd-parse',{file})
+        if(r?.success){
+          el.style.display='none'
+          window._ofdData=r
+          window._ofdPageIndex=0
+          document.getElementById('ofdViewer').style.display='block'
+          ofdRenderPage()
+        }else{
+          el.innerHTML='❌ '+esc(r?.error||'解析失败')+'<br><span style="font-size:11px;color:#666">提示：也可尝试 <button class="btn" onclick="toolAction(\'ofd-view\',\'legacy\')" style="padding:2px 8px;font-size:11px">使用系统转换组件打开</button></span>'
+        }
+      }catch(e){
+        el.innerHTML='❌ 解析异常: '+esc(e.message)
+      }
+    }else if(tool==='ofd-view' && action==='legacy'){
+      const file=await window.fileAPI?.selectFile({filters:[{name:'OFD文件',extensions:['ofd']}]})
+      if(!file){el.innerHTML='❌ 请选择 OFD 文件';return}
       el.innerHTML='⏳ 正在转换并打开 OFD 文档...'
       const r=await window.toolAPI?.execute('ofd-view',{file})
-        if(r?.success){
+      if(r?.success){
         const pdfPath=r.pdfPath||r.output
         el.innerHTML='✅ OFD 转换成功，正在打开预览...<br>PDF 文件: '+esc(pdfPath)
         window.docAPI?.openPdf(pdfPath)
@@ -3117,6 +3135,128 @@ function calcGrowth(){
   else el.innerHTML += ' <span style="color:#888">持平</span>'
   el.innerHTML += `<div style="color:#888;font-size:11px;margin-top:4px">(${cur} - ${base}) / ${base} × 100% = ${pct}%</div>`
 }
+// ============ OFD 原生渲染器 ============
+let _ofdData=null, _ofdPageIndex=0
+
+function ofdRenderPage(){
+  const data=window._ofdData
+  if(!data||!data.pages||!data.pages.length) return
+  const page=data.pages[_ofdPageIndex]
+  if(!page) return
+  const zoom=parseInt(document.getElementById('ofdZoom')?.value||100)/100
+  document.getElementById('ofdPageInfo').textContent=(_ofdPageIndex+1)+'/'+data.pages.length
+  document.getElementById('ofdZoomLabel').textContent=Math.round(zoom*100)+'%'
+  
+  const container=document.getElementById('ofdPage')
+  const mmToPx=96/25.4
+  const pw=page.width*mmToPx*zoom
+  const ph=page.height*mmToPx*zoom
+  
+  container.style.width=pw+'px'
+  container.style.height=ph+'px'
+  container.style.position='relative'
+  container.style.overflow='hidden'
+  container.style.fontFamily='"Noto Sans CJK SC","PingFang SC",sans-serif'
+  
+  let html=''
+  // SVG layer
+  html+='<svg style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible" xmlns="http://www.w3.org/2000/svg">'
+  for(const el of page.elements){
+    const ex=el.x*mmToPx*zoom
+    const ey=el.y*mmToPx*zoom
+    const ew=el.w*mmToPx*zoom
+    const eh=el.h*mmToPx*zoom
+    
+    if(el.type==='rect'){
+      html+='<rect x="'+ex+'" y="'+ey+'" width="'+ew+'" height="'+eh+'"'
+      if(el.fill) html+=' fill="'+el.fill+'"'
+      else html+=' fill="none"'
+      if(el.stroke) html+=' stroke="'+el.stroke+'" stroke-width="'+Math.max(el.strokeWidth||0.5,0.1)*mmToPx*zoom+'"'
+      html+='/>'
+    }else if(el.type==='line'){
+      html+='<line x1="'+el.x1*mmToPx*zoom+'" y1="'+el.y1*mmToPx*zoom+'" x2="'+el.x2*mmToPx*zoom+'" y2="'+el.y2*mmToPx*zoom+'"'
+      html+=' stroke="'+(el.stroke||'#000')+'" stroke-width="'+Math.max(el.strokeWidth||0.5,0.1)*mmToPx*zoom+'"'
+      html+='/>'
+    }else if(el.type==='circle'){
+      html+='<circle cx="'+el.cx*mmToPx*zoom+'" cy="'+el.cy*mmToPx*zoom+'" r="'+el.r*mmToPx*zoom+'"'
+      if(el.fill) html+=' fill="'+el.fill+'"'
+      else html+=' fill="none"'
+      if(el.stroke) html+=' stroke="'+el.stroke+'" stroke-width="'+Math.max(el.strokeWidth||0.5,0.1)*mmToPx*zoom+'"'
+      html+='/>'
+    }else if(el.type==='ellipse'){
+      html+='<ellipse cx="'+el.cx*mmToPx*zoom+'" cy="'+el.cy*mmToPx*zoom+'" rx="'+el.rx*mmToPx*zoom+'" ry="'+el.ry*mmToPx*zoom+'"'
+      if(el.fill) html+=' fill="'+el.fill+'"'
+      else html+=' fill="none"'
+      if(el.stroke) html+=' stroke="'+el.stroke+'" stroke-width="'+Math.max(el.strokeWidth||0.5,0.1)*mmToPx*zoom+'"'
+      html+='/>'
+    }else if(el.type==='path'){
+      const bx=el.x*mmToPx*zoom
+      const by=el.y*mmToPx*zoom
+      html+='<g transform="translate('+bx+','+by+') scale('+zoom+')">'
+      html+='<path d="'+el.d+'"'
+      if(el.fill) html+=' fill="'+el.fill+'"'
+      else html+=' fill="none"'
+      if(el.stroke) html+=' stroke="'+el.stroke+'" stroke-width="'+(el.strokeWidth||0.5)+'"'
+      html+=' stroke-linejoin="round" stroke-linecap="round"/>'
+      html+='</g>'
+    }
+  }
+  html+='</svg>'
+  
+  // Text layer
+  html+='<div style="position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden">'
+  for(const el of page.elements){
+    if(el.type==='text' && el.text){
+      const ex=el.x*mmToPx*zoom
+      const ey=el.y*mmToPx*zoom
+      const fs=(el.fontSize||12)*mmToPx*zoom
+      html+='<div style="position:absolute;left:'+ex+'px;top:'+ey+'px;'
+      html+='font-size:'+fs+'px;'
+      html+='font-family:'+(el.fontFamily||'inherit')+';'
+      html+='color:'+(el.color||'#000')+';'
+      html+='white-space:pre-wrap;'
+      if(el.bold) html+='font-weight:bold;'
+      if(el.italic) html+='font-style:italic;'
+      html+='">'+esc(el.text)+'</div>'
+    }
+  }
+  html+='</div>'
+  
+  // Image layer
+  for(const el of page.elements){
+    if(el.type==='image' && el.dataUrl){
+      const ex=el.x*mmToPx*zoom
+      const ey=el.y*mmToPx*zoom
+      html+='<img src="'+el.dataUrl+'" style="position:absolute;left:'+ex+'px;top:'+ey+'px;width:'+Math.max(el.w*mmToPx*zoom,1)+'px;height:'+Math.max(el.h*mmToPx*zoom,1)+'px;object-fit:fill"/>'
+    }
+  }
+  
+  container.innerHTML=html
+}
+
+function ofdPrevPage(){
+  if(!window._ofdData) return
+  if(_ofdPageIndex>0){_ofdPageIndex--;ofdRenderPage()}
+}
+function ofdNextPage(){
+  if(!window._ofdData) return
+  if(_ofdPageIndex<(window._ofdData.pages.length-1)){_ofdPageIndex++;ofdRenderPage()}
+}
+function ofdExportPdf(){
+  if(!window._ofdData) return
+  const el=document.getElementById('toolResult')
+  if(!el) return
+  el.style.display='block'
+  el.innerHTML='⏳ 正在转换为 PDF...'
+  window.toolAPI?.execute('ofd-view',{file:window._ofdData.file||''}).then(r=>{
+    if(r?.success){
+      el.innerHTML='✅ PDF 转换成功<br><button class="btn" onclick="window.docAPI?.openPdf(\''+String(r.pdfPath||'').replace(/'/g,'')+'\')" style="margin-top:8px">📖 打开 PDF</button>'
+    }else{
+      el.innerHTML='❌ 转换失败: '+(r?.error||'需要安装 ofd 转换组件')
+    }
+  })
+}
+
 function calcPull(){
   const delta=parseFloat(document.getElementById('pullDelta')?.value)||0
   const base=parseFloat(document.getElementById('pullBase')?.value)||0
