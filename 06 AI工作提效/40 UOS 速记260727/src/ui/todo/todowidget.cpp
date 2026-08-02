@@ -480,6 +480,12 @@ void TodoWidget::selectTodo(int todoId)
     emit todoSelected(todoId);
 }
 
+void TodoWidget::focusNewTodoInput()
+{
+    m_newTodoInput->setFocus();
+    m_newTodoInput->selectAll();
+}
+
 void TodoWidget::populateSection(QListWidget *list, const QList<TodoData> &todos,
                                   const QString &emptyHint, int &outCount, bool isPreset)
 {

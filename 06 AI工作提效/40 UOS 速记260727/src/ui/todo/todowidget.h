@@ -32,6 +32,7 @@ public:
 
     void refresh();
     void selectTodo(int todoId);
+    void focusNewTodoInput();
 
 signals:
     void todoSelected(int todoId);

@@ -245,6 +245,12 @@ void MainWindow::showMiddleWidget(QWidget *w)
 
 void MainWindow::onNewNote()
 {
+    // 根据当前视图创建对应类型：待办页面聚焦待办输入框，其他页面创建笔记
+    if (m_middleStack->currentWidget() == m_todoWidget) {
+        m_todoWidget->focusNewTodoInput();
+        return;
+    }
+
     NoteData note;
     note.title = tr("无标题笔记");
     note.content = "";
