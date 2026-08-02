@@ -156,6 +156,21 @@ ipcMain.handle('save-file', async (_, options) => {
   return r.canceled ? null : r.filePath
 })
 
+ipcMain.handle('copy-file', async (_, options) => {
+  const { source, dest } = options || {}
+  if (!source || !dest) return { success: false, error: '参数不足' }
+  if (!fs.existsSync(source)) return { success: false, error: '源文件不存在' }
+  if (!isPathSafe(dest)) return { success: false, error: '不允许写入此路径' }
+  try {
+    fs.mkdirSync(path.dirname(dest), { recursive: true })
+    fs.copyFileSync(source, dest)
+    return { success: true, output: dest }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+
+})
+
 /** 检查路径是否在允许的目录内 */
 function isPathSafe(targetPath) {
   try {
@@ -1995,22 +2010,174 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
         if (!fs.existsSync(pdfPath)) return { success: false, error: 'OFD 转换 PDF 失败' }
         return { success: true, output: pdfPath, pdfPath: pdfPath }
       }
+      case 'ofd-parse': {
+        const { file } = params
+        if (!file) return { success: false, error: '请选择 OFD 文件' }
+        const parserScript = path.join(__dirname, '../resources/ofd_parser.py')
+        if (!fs.existsSync(parserScript)) return { success: false, error: 'OFD 解析脚本不存在' }
+        const r = execSync('python3 "' + parserScript + '" ofd-parse "' + JSON.stringify(params).replace(/\"/g, '\\\\"') + '"', { timeout: 120000, encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 })
+        return JSON.parse(r.toString())
+      }
       case 'doc-convert': {
         const { file, format, outputDir } = params
         if (!file) return { success: false, error: '请选择文档文件' }
-        // hasBin() from module level
+        const fmt = String(format || 'pdf').toLowerCase()
+        const sourceExt = path.extname(file).toLowerCase().replace('.', '')
+        const imageFormats = ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tiff']
+        const dir = outputDir || os.tmpdir()
+
+        // Route: PDF → image (pdf2image via pdftoppm)
+        if (sourceExt === 'pdf' && imageFormats.includes(fmt)) {
+          if (!hasBin('pdftoppm'))
+            return { success: false, error: '未检测到 pdftoppm（poppler-utils），请安装: sudo apt install poppler-utils', need_install: true }
+          const base = path.basename(file, '.pdf')
+          const ppmFmt = (fmt === 'jpg' || fmt === 'jpeg') ? 'jpeg' : fmt
+          fs.mkdirSync(dir, { recursive: true })
+          execFileSync('pdftoppm', ['-' + ppmFmt, '-r', '150', String(file), String(path.join(dir, base + '-page'))], { timeout: 120000 })
+          const filesOut = fs.readdirSync(dir).filter(f => f.startsWith(base + '-page') && f.endsWith('.' + ppmFmt)).sort()
+          if (!filesOut.length) return { success: false, error: 'PDF 转图片失败' }
+          return { success: true, output: dir, files: filesOut.map(f => path.join(dir, f)), count: filesOut.length }
+        }
+
+        // Route: PDF → text (pdf2text via pdftotext)
+        if (sourceExt === 'pdf' && fmt === 'txt') {
+          if (!hasBin('pdftotext'))
+            return { success: false, error: '未检测到 pdftotext（poppler-utils），请安装: sudo apt install poppler-utils', need_install: true }
+          const outPath = path.join(dir, path.basename(file, '.pdf') + '.txt')
+          fs.mkdirSync(dir, { recursive: true })
+          execFileSync('pdftotext', ['-layout', String(file), String(outPath)], { timeout: 120000 })
+          if (!fs.existsSync(outPath)) return { success: false, error: '文本提取失败' }
+          return { success: true, output: outPath }
+        }
+
+        // Default: LibreOffice 转换（office 格式互转，PDF→PDF 等）
         const bin = hasBin('soffice') ? 'soffice' : (hasBin('libreoffice') ? 'libreoffice' : null)
         if (!bin) return { success: false, error: '未检测到 LibreOffice，请安装: sudo apt install libreoffice', need_install: true }
-        const fmt = String(format || 'pdf').toLowerCase()
         const extMap = { pdf:'pdf', docx:'docx', doc:'doc', xlsx:'xlsx', xls:'xls', pptx:'pptx', ppt:'ppt', odt:'odt', ods:'ods', odp:'odp', txt:'txt', html:'html', csv:'csv' }
         const ext = extMap[fmt] || 'pdf'
-        const dir = outputDir || os.tmpdir()
         fs.mkdirSync(dir, { recursive: true })
         execFileSync(bin, ['--headless', '--convert-to', ext, '--outdir', String(dir), String(file)], { timeout: 180000 })
         const base = path.basename(file, path.extname(file))
         const converted = path.join(dir, base + '.' + ext)
         if (!fs.existsSync(converted)) return { success: false, error: '转换失败，请检查源文件格式是否受 LibreOffice 支持' }
         return { success: true, output: converted }
+      }
+
+
+      case 'pdf-bleach': {
+        const r = execSync('python3 "' + helper + '" pdf-bleach "' + JSON.stringify(params).replace(/"/g, '\\"') + '"', { timeout: 300000, encoding: 'utf-8' })
+        return JSON.parse(r.toString())
+      }
+      case 'pdf-add-pagenum': {
+        const r = execSync('python3 "' + helper + '" pdf-add-pagenum "' + JSON.stringify(params).replace(/"/g, '\\"') + '"', { timeout: 300000, encoding: 'utf-8' })
+        return JSON.parse(r.toString())
+      }
+      case 'pdf-insert-blank': {
+        const { file, positions, output } = params
+        if (!file) return { success: false, error: '请选择 PDF 文件' }
+        if (!positions || !Array.isArray(positions)) return { success: false, error: '请指定插入位置' }
+        const outPath = output || path.join(os.tmpdir(), path.basename(file, '.pdf') + '_inserted.pdf')
+        const dir = path.join(os.tmpdir(), '.uos_insert_' + Date.now())
+        fs.mkdirSync(dir, { recursive: true })
+        try {
+          // Get page count
+          const info = execSync('pdfinfo "' + file + '" 2>/dev/null | grep "Pages:"', { timeout: 10000, encoding: 'utf-8' }).toString()
+          const pageCount = parseInt((info.match(/Pages:\s*(\d+)/) || [0,0])[1], 10) || 1
+          // Get page size from first page
+          const sizeInfo = execSync('pdfinfo "' + file + '" 2>/dev/null | grep "Page size:"', { timeout: 10000, encoding: 'utf-8' }).toString()
+          const sizeMatch = sizeInfo.match(/([\d.]+)\s*x\s*([\d.]+)/)
+          const pageW = sizeMatch ? parseFloat(sizeMatch[1]) : 595
+          const pageH = sizeMatch ? parseFloat(sizeMatch[2]) : 842
+
+          // Generate blank page PDF using ghostscript
+          const blankPdf = path.join(dir, '_blank.pdf')
+          const gsCmd = 'gs -q -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile="' + blankPdf + '" -c "<< /PageSize [' + pageW + ' ' + pageH + '] >> setpagedevice" -c "newpath showpage"'
+          execSync(gsCmd, { timeout: 30000 })
+
+          // Sort insertion positions (deduplicate and sort)
+          const insertPoints = [...new Set(positions.map(p => parseInt(p, 10)).filter(p => p >= 0 && p <= pageCount))].sort((a,b) => a-b)
+          
+          if (insertPoints.length === 0) return { success: false, error: '无效的插入位置' }
+
+          // Split and rebuild
+          // Strategy: split into segments at insertion points, insert blank pages between
+          let segments = [0] // Starting page (1-based)
+          for (const pos of insertPoints) {
+            if (!segments.includes(pos)) segments.push(pos)
+          }
+          segments.push(pageCount)
+          segments = [...new Set(segments)].sort((a,b) => a-b)
+
+          const pdfParts = []
+          for (let i = 0; i < segments.length - 1; i++) {
+            const segStart = segments[i] + 1
+            const segEnd = segments[i+1]
+            if (segStart > segEnd) continue
+            const partPdf = path.join(dir, 'part_' + i + '.pdf')
+            execFileSync('pdfseparate', ['-f', String(segStart), '-l', String(segEnd), file, partPdf], { timeout: 60000 })
+            pdfParts.push(partPdf)
+            
+            // Add blank page after this segment if the end of this segment is an insert point
+            const isLastSegment = (i === segments.length - 2)
+            const insertAfter = segments[i+1]
+            if (!isLastSegment && insertPoints.includes(segments[i+1])) {
+              const blankAtPos = path.join(dir, 'blank_' + i + '.pdf')
+              execFileSync('cp', [blankPdf, blankAtPos])
+              pdfParts.push(blankAtPos)
+            }
+          }
+
+          // Merge all parts with pdfunite
+          if (pdfParts.length === 0) return { success: false, error: 'PDF 构建失败' }
+          execFileSync('pdfunite', [...pdfParts, outPath], { timeout: 60000 })
+          
+          return { success: true, output: outPath, totalPages: pageCount + insertPoints.length }
+        } finally {
+          try { fs.rmSync(dir, { recursive: true, force: true }) } catch {}
+        }
+      }
+      case 'pdf-batch-export': {
+        const { files, outputDir, format, dpi: batchDpi, action: batchAction } = params
+        if (!files || !Array.isArray(files) || files.length === 0) return { success: false, error: '请选择至少一个 PDF 文件' }
+        const dir = outputDir || os.tmpdir()
+        fs.mkdirSync(dir, { recursive: true })
+        
+        const results = []
+        let totalOk = 0, totalFail = 0
+        
+        for (const f of files) {
+          const base = path.basename(f, '.pdf')
+          try {
+            if (batchAction === 'to-image' || format === 'image') {
+              if (!hasBin('pdftoppm')) {
+                results.push({ file: f, success: false, error: '未检测到 pdftoppm' })
+                totalFail++
+                continue
+              }
+              const fmt = String(batchDpi ? 'png' : 'png')
+              const r = parseInt(batchDpi, 10) || 150
+              execFileSync('pdftoppm', ['-png', '-r', String(r), f, path.join(dir, base + '-page')], { timeout: 120000 })
+              const pages = fs.readdirSync(dir).filter(n => n.startsWith(base + '-page') && n.endsWith('.png')).sort()
+              results.push({ file: base + '.pdf', success: true, count: pages.length, outputDir: dir })
+              totalOk++
+            } else if (batchAction === 'to-text' || format === 'text') {
+              if (!hasBin('pdftotext')) {
+                results.push({ file: f, success: false, error: '未检测到 pdftotext' })
+                totalFail++
+                continue
+              }
+              const outPath = path.join(dir, base + '.txt')
+              execFileSync('pdftotext', ['-layout', f, outPath], { timeout: 120000 })
+              results.push({ file: base + '.pdf', success: true, output: outPath })
+              totalOk++
+            }
+          } catch (e) {
+            results.push({ file: base + '.pdf', success: false, error: e.message })
+            totalFail++
+          }
+        }
+        
+        return { success: true, results, totalOk, totalFail }
       }
       case 'image-resize': {
         const r = execSync('python3 "' + helper + '" image-resize "' + JSON.stringify(params).replace(/"/g, '\\"') + '"', { timeout: 30000, encoding: 'utf-8' })
@@ -2404,6 +2571,17 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
         }).filter(Boolean)
         
         return { success: true, files }
+      }
+
+      case 'markdown-render': {
+        // Markdown → HTML 渲染，使用自带的轻量渲染器
+        try {
+          const md = require(__dirname + '/../dist/markdown-render.js')
+          const text = params.text || ''
+          return { success: true, html: md.renderMarkdown(text) }
+        } catch(e) {
+          return { success: false, error: '渲染 Markdown 失败: ' + e.message }
+        }
       }
 
       default:

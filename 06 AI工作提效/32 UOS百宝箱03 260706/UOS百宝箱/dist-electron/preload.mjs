@@ -57,6 +57,7 @@ contextBridge.exposeInMainWorld('fileAPI', {
   selectFile: (filters) => ipcRenderer.invoke('select-file', filters),
   saveFileDialog: (name, filters) => ipcRenderer.invoke('save-file-dialog', name, filters),
   saveFile: (options) => ipcRenderer.invoke('save-file', options),
+  copyFile: (options) => ipcRenderer.invoke('copy-file', options),
   readFile: (fp) => ipcRenderer.invoke('read-file', fp),
   writeFile: (fp, data) => ipcRenderer.invoke('write-file', fp, data),
   openPath: (fp) => ipcRenderer.invoke('open-file-path', fp),

@@ -2168,7 +2168,11 @@ const TOOLS = [
     {id:'pdf-to-text',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,name:'PDF 提取文本',desc:'从 PDF 中提取文字内容'},
     {id:'ofd-view',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,name:'OFD 浏览器',desc:'预览 OFD 格式文档'},
     {id:'doc-convert',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,name:'文档转换器',desc:'PDF/Excel 等格式互转'},
-    {id:'markdown-editor',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,name:'Markdown 编辑器',desc:'MD 实时预览编辑'}
+    {id:'markdown-editor',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,name:'Markdown 编辑器',desc:'MD 实时预览编辑'},
+    {id:'pdf-bleach',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="12" cy="12" r="9"/><path d="M5 12h14M12 5c3 2 5 4.5 5 7-2.5 2-5 2-8 0"/></svg>`,name:'PDF 漂白',desc:'去除扫描件灰色背景'},
+    {id:'pdf-add-pagenum',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v8"/><text x="8" y="22" font-size="8" fill="var(--primary)" stroke="none">1</text></svg>`,name:'PDF 加页码',desc:'每页底部添加页码'},
+    {id:'pdf-insert-blank',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,name:'PDF 插入空白页',desc:'在指定位置插入空白页面'},
+    {id:'pdf-batch-export',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M4 20h16"/><path d="M4 4h16v4"/><path d="M4 16h16"/><path d="M8 12h8"/></svg>`,name:'PDF 批量导出',desc:'批量处理多个 PDF 文件'},
   ]},
   {cat:'🖼️',name:'图片/扫描',items:[
     {id:'scan-doc',ico:'📸',name:'扫描文档',desc:'图片转扫描件效果'},
@@ -2228,7 +2232,12 @@ function showToolModal(id,need){
     'pdf-split':baseModal('✂️ PDF 拆分','选择 PDF 文件按页拆分',[{v:'split',l:'📂 选择 PDF 文件'}]),
     'ofd-view':{title:'📖 OFD 浏览器',content:'<div class="sub">国产 OFD 版式文档预览（自动调用系统 OFD→PDF 转换组件）</div><div class="actions"><button class="btn" onclick="toolAction(\'ofd-view\',\'view\')">📂 选择 OFD 文件并预览</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>'},
     'doc-convert':{title:'🔄 文档转换器',content:'<div class="sub">基于 LibreOffice 的文档格式转换（Word/Excel/PPT/PDF 等互转）</div><div style="margin:10px 0"><label style="font-size:12px;color:var(--text-sec)">目标格式:</label> <select id="docConvertFormat" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card-bg);color:var(--text)"><option value="pdf">PDF</option><option value="docx">DOCX</option><option value="xlsx">XLSX</option><option value="pptx">PPTX</option><option value="odt">ODT</option><option value="txt">TXT</option><option value="html">HTML</option></select></div><div class="actions"><button class="btn" onclick="toolAction(\'doc-convert\',\'convert\')">📂 选择文件并转换</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>'},
-    'markdown-editor':{title:'📝 Markdown 编辑器',content:'<div class="sub">实时预览编辑，支持打开 / 保存 / 导出 HTML</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><button class="btn" onclick="mdOpenFile()">📂 打开</button><button class="btn" onclick="mdSaveFile()">💾 保存</button><button class="btn" onclick="mdExportHtml()">🌐 导出 HTML</button><span style="flex:1"></span><button class="btn" onclick="mdInsert(\'**\',\'**\')">B</button><button class="btn" onclick="mdInsert(\'*\',\'*\')">I</button><button class="btn" onclick="mdInsert(\'`\',\'`\')">代码</button><button class="btn" onclick="mdInsert(\'[\',\'](url)\')">链接</button><button class="btn" onclick="mdInsert(\'\\n- \',\'\')">列表</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><textarea id="mdInput" style="width:100%;height:340px;resize:vertical;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:10px;font-family:monospace;font-size:13px;background:var(--card-bg);color:var(--text)" placeholder="在此输入 Markdown 内容..."></textarea><div id="mdPreview" style="height:340px;overflow-y:auto;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:12px;font-size:13px;background:#fff;color:#24292e;line-height:1.65"></div></div>'},
+    'markdown-editor':{title:'📝 Markdown 编辑器',content:'<div class="sub">实时预览编辑，支持打开 / 保存 / 导出 HTML</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><button class="btn" onclick="mdOpenFile()">📂 打开</button><button class="btn" onclick="mdSaveFile()">💾 保存</button><button class="btn" onclick="mdExportHtml()">🌐 导出 HTML</button><span style="flex:1"></span><button class="btn" onclick="mdInsert(\'\n# \',\'\')" style="font-weight:700">H1</button><button class="btn" onclick="mdInsert(\'\n## \',\'\')" style="font-weight:700">H2</button><button class="btn" onclick="mdInsert(\'**\',\'**\')">B</button><button class="btn" onclick="mdInsert(\'*\',\'*\')">I</button><button class="btn" onclick="mdInsert(\'\n> \',\'\')" style="font-size:13px">❝ 引用</button><button class="btn" onclick="mdInsert(\'\n- \',\'\')">列表</button><button class="btn" onclick="mdInsert(\'`\',\'`\')">代码</button><button class="btn" onclick="mdInsert(\'[\',\'](url)\')">链接</button><button class="btn" onclick="mdInsert(\'![\',\'](url)\')">🖼 图片</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><textarea id="mdInput" style="width:100%;height:340px;resize:vertical;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:10px;font-family:monospace;font-size:13px;background:var(--card-bg);color:var(--text)" placeholder="在此输入 Markdown 内容..."></textarea><div id="mdPreview" style="height:340px;overflow-y:auto;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:12px;font-size:13px;background:#fff;color:#24292e;line-height:1.65"></div></div>'},
+    'pdf-bleach':{title:'✨ PDF 漂白',content:'<div class="sub">去除扫描件灰色背景，使文档更清晰易读（基于 Ghostscript + PIL）</div><div style="margin:10px 0;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg)"><div style="font-size:12px;font-weight:600;margin-bottom:6px">漂白参数</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:11px;color:var(--text-sec)">阈值:</label><input type="range" id="bleachThreshold" min="128" max="254" value="200" style="width:100px" onchange="document.getElementById(\'bleachThresholdLabel\').textContent=this.value"><span id="bleachThresholdLabel" style="font-size:11px;min-width:24px">200</span><label style="font-size:11px;color:var(--text-sec);margin-left:8px">灰度:</label><input type="checkbox" id="bleachGray" checked></div><div style="font-size:11px;color:var(--text-ter);margin-top:4px">阈值越高，保留的浅色内容越多</div></div><div class="actions"><button class="btn" onclick="toolAction(\'pdf-bleach\',\'bleach\')">📂 选择 PDF 并漂白</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>'},
+    'pdf-add-pagenum':{title:'🔢 PDF 加页码',content:'<div class="sub">在 PDF 每页底部添加页码标注</div><div style="margin:10px 0;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg)"><div style="font-size:12px;font-weight:600;margin-bottom:6px">页码格式</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:11px;color:var(--text-sec)">格式:</label><input type="text" id="pagenumFormat" value="第{n}页 / 共{total}页" style="padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px;width:180px"><span style="font-size:11px;color:var(--text-ter)">{n}=页码, {total}=总页数</span></div></div><div class="actions"><button class="btn" onclick="toolAction(\'pdf-add-pagenum\',\'add\')">📂 选择 PDF 并加页码</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>'},
+    'pdf-insert-blank':{title:'📄 PDF 插入空白页',content:'<div class="sub">在 PDF 指定位置后插入空白页面</div><div style="margin:10px 0;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg)"><div style="font-size:12px;font-weight:600;margin-bottom:6px">插入位置（页码，从 1 开始，多个用逗号分隔）</div><input type="text" id="insertPositions" value="1" placeholder="例: 1,3,5 表示在第1/3/5页后面插入" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:12px"><div style="font-size:11px;color:var(--text-ter);margin-top:4px">输入 0 表示在文档开头插入</div></div><div class="actions"><button class="btn" onclick="toolAction(\'pdf-insert-blank\',\'insert\')">📂 选择 PDF 并插空白页</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>'},
+    'pdf-batch-export':{title:'📦 PDF 批量导出',content:'<div class="sub">选择多个 PDF 文件，统一批量处理</div><div style="margin:10px 0;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg)"><div style="font-size:12px;font-weight:600;margin-bottom:6px">导出格式</div><select id="batchExportFormat" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card-bg);color:var(--text)"><option value="to-image">导出为图片 (PNG)</option><option value="to-text">导出为文本 (TXT)</option></select></div><div class="actions"><button class="btn" onclick="toolAction(\'pdf-batch-export\',\'batch\')">📂 选择多个 PDF 文件并导出</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>'},
+
     'scan-doc':baseModal('📸 扫描文档','图片转扫描件效果（黑白扫描样式）',[{v:'scan',l:'📂 选择图片生成扫描件'}]),
     'image-resize':{title:'📐 图片处理',content:`<div class="sub">批量调整尺寸 / 格式转换（支持 JPG/PNG/BMP/WEBP）</div>
       <div style="margin:8px 0;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg)">
@@ -2799,7 +2808,7 @@ async function toolAction(tool,action){
       if(!file){el.innerHTML='❌ 请选择 OFD 文件';return}
       el.innerHTML='⏳ 正在转换并打开 OFD 文档...'
       const r=await window.toolAPI?.execute('ofd-view',{file})
-      if(r?.success){
+        if(r?.success){
         const pdfPath=r.pdfPath||r.output
         el.innerHTML='✅ OFD 转换成功，正在打开预览...<br>PDF 文件: '+esc(pdfPath)
         window.docAPI?.openPdf(pdfPath)
@@ -2813,7 +2822,76 @@ async function toolAction(tool,action){
       const format=fmtEl?fmtEl.value:'pdf'
       el.innerHTML='⏳ 正在转换文档（'+esc(format.toUpperCase())+'）...<br>大文件可能需要较长时间，请耐心等待'
       const r=await window.toolAPI?.execute('doc-convert',{file,format})
-      el.innerHTML=r?.success?('✅ 转换成功!<br>输出文件: '+esc(r.output)+'<br><button class="btn" onclick="openConvertedFile(\''+String(r.output).replace(/'/g,'')+'\')" style="margin-top:8px">📂 打开所在目录</button>'):('❌ 失败: '+esc(r?.error||'未知错误'))
+      if(r?.success){
+        if(r.files && r.count>0){
+          var _outDir=String(r.output).replace(/'/g,'')
+          el.innerHTML='✅ 转换成功! 共 '+r.count+' 页<br>输出目录: '+esc(r.output)+'<br><button class="btn" onclick="openConvertedFile(\''+_outDir+'\')" style="margin-top:8px">📂 打开所在目录</button>'
+        }else{
+          var _outPath=String(r.output).replace(/'/g,'')
+          el.innerHTML='✅ 转换成功!<br><span style="font-size:11px;color:var(--text-sec)">'+esc(r.output)+'</span><br><button class="btn" onclick="saveConvertedFile(\''+_outPath+'\')" style="margin-top:8px">💾 保存到…</button> <button class="btn" onclick="openConvertedFile(\''+_outPath+'\')" style="margin-top:8px">📂 打开所在目录</button>'
+        }
+      }else{
+        el.innerHTML='❌ 失败: '+esc(r?.error||'未知错误')
+      }
+    }else if(tool==='pdf-bleach'){
+      const file=await window.fileAPI?.selectFile({filters:[{name:'PDF文件',extensions:['pdf']}]})
+      if(!file){el.innerHTML='❌ 请选择 PDF 文件';return}
+      const threshold=parseInt(document.getElementById('bleachThreshold')?.value||'200',10)
+      const grayscale=document.getElementById('bleachGray')?.checked||false
+      el.innerHTML='⏳ 正在漂白 PDF（每页需几秒，请耐心等待）...'
+      const r=await window.toolAPI?.execute('pdf-bleach',{file,threshold,grayscale})
+      if(r?.success){
+        var _bp=String(r.output).replace(/'/g,'')
+        el.innerHTML='✅ 漂白成功! 共 '+r.pages+' 页<br>输出文件: '+esc(r.output)+'<br><button class="btn" onclick="saveConvertedFile(\''+_bp+'\')" style="margin-top:8px">💾 保存到…</button> <button class="btn" onclick="openConvertedFile(\''+_bp+'\')" style="margin-top:8px">📂 打开所在目录</button>'
+      }else{
+        el.innerHTML='❌ 漂白失败: '+esc(r?.error||'未知错误')
+      }
+    }else if(tool==='pdf-add-pagenum'){
+      const file=await window.fileAPI?.selectFile({filters:[{name:'PDF文件',extensions:['pdf']}]})
+      if(!file){el.innerHTML='❌ 请选择 PDF 文件';return}
+      const fmt=document.getElementById('pagenumFormat')?.value||'第{n}页 / 共{total}页'
+      el.innerHTML='⏳ 正在添加页码（每页需几秒，请耐心等待）...'
+      const r=await window.toolAPI?.execute('pdf-add-pagenum',{file,format:fmt})
+      if(r?.success){
+        var _pp=String(r.output).replace(/'/g,'')
+        el.innerHTML='✅ 页码添加成功! 共 '+r.pages+' 页<br>输出文件: '+esc(r.output)+'<br><button class="btn" onclick="saveConvertedFile(\''+_pp+'\')" style="margin-top:8px">💾 保存到…</button> <button class="btn" onclick="openConvertedFile(\''+_pp+'\')" style="margin-top:8px">📂 打开所在目录</button>'
+      }else{
+        el.innerHTML='❌ 添加页码失败: '+esc(r?.error||'未知错误')
+      }
+    }else if(tool==='pdf-insert-blank'){
+      const file=await window.fileAPI?.selectFile({filters:[{name:'PDF文件',extensions:['pdf']}]})
+      if(!file){el.innerHTML='❌ 请选择 PDF 文件';return}
+      const posStr=document.getElementById('insertPositions')?.value||'1'
+      const positions=posStr.split(',').map(s=>parseInt(s.trim(),10)).filter(n=>!isNaN(n)&&n>=0)
+      if(positions.length===0){el.innerHTML='❌ 请输入有效的插入位置';return}
+      el.innerHTML='⏳ 正在插入空白页...'
+      const r=await window.toolAPI?.execute('pdf-insert-blank',{file,positions})
+      if(r?.success){
+        var _ip=String(r.output).replace(/'/g,'')
+        el.innerHTML='✅ 空白页插入成功! 共 '+r.totalPages+' 页<br>输出文件: '+esc(r.output)+'<br><button class="btn" onclick="saveConvertedFile(\''+_ip+'\')" style="margin-top:8px">💾 保存到…</button> <button class="btn" onclick="openConvertedFile(\''+_ip+'\')" style="margin-top:8px">📂 打开所在目录</button>'
+      }else{
+        el.innerHTML='❌ 插入失败: '+esc(r?.error||'未知错误')
+      }
+    }else if(tool==='pdf-batch-export'){
+      const files=await window.fileAPI?.selectFile({multiSelections:true,filters:[{name:'PDF文件',extensions:['pdf']}]})
+      if(!files||files.length===0){el.innerHTML='❌ 请选择至少一个 PDF 文件';return}
+      const fmtEl=document.getElementById('batchExportFormat')
+      const batchAction=fmtEl?fmtEl.value:'to-image'
+      const dir=await window.fileAPI?.selectDirectory()
+      if(!dir){el.innerHTML='';return}
+      el.innerHTML='⏳ 正在批量处理 '+files.length+' 个文件...'
+      const r=await window.toolAPI?.execute('pdf-batch-export',{files,outputDir:dir,action:batchAction})
+      if(r?.success){
+        let html='✅ 批量处理完成!<br>成功: '+r.totalOk+' 个, 失败: '+r.totalFail+' 个<br><br>'
+        for(const item of r.results||[]){
+          html+=item.success?('✅ '+esc(item.file)+' => <span style="font-size:11px">'+(item.count?item.count+'页':'OK')+'</span><br>'):('\u274c '+esc(item.file)+': '+esc(item.error)+'<br>')
+        }
+        el.innerHTML=html
+      }else{
+        el.innerHTML='❌ 批量处理异常: '+esc(r?.error||'未知错误')
+      }
+    
+
     }else if(tool==='image-resize'){
       const files=await window.fileAPI?.selectFile({multiSelections:true,filters:[{name:'图片文件',extensions:['jpg','jpeg','png','bmp','webp']}]})
       if(!files||files.length===0){el.innerHTML='❌ 请选择图片文件';return}
@@ -2964,6 +3042,19 @@ async function previewPdfText(fp){
     const content=await window.fileAPI.readFile(fp)
     el.innerHTML='<div style="font-size:13px;font-weight:600;margin-bottom:6px">📄 '+esc(fp.split('/').pop())+'</div><div style="max-height:320px;overflow-y:auto;white-space:pre-wrap;background:#1e1e1e;color:#e8e8e8;padding:10px;border-radius:6px;font-family:monospace;font-size:12px">'+esc(content)+'</div>'
   }catch(e){el.innerHTML='❌ 读取失败: '+esc(e.message)}
+}
+async function saveConvertedFile(fromPath){
+  var _ext=(fromPath.match(/\.(\w+)$/)||['',''])[1]
+  var _name=(fromPath.match(/\/([^/]+)$/)||['','file.'+_ext])[1]
+  var _savePath=await window.fileAPI?.saveFileDialog(_name,[{name:'文件',extensions:[_ext||'*']}])
+  if(_savePath){
+    var _r=await window.fileAPI?.copyFile({source:fromPath,dest:_savePath})
+    if(_r?.success){
+      alert('✅ 文件已保存到:\n'+_savePath)
+    }else{
+      alert('❌ 保存失败: '+(_r?.error||'未知错误'))
+    }
+  }
 }
 function openConvertedFile(fp){
   window.fileAPI?.openPath(fp)
