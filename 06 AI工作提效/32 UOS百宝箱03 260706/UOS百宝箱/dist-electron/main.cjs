@@ -214,7 +214,7 @@ ipcMain.handle('open-pdf-viewer', async (_, filePath) => {
     const win = new BrowserWindow({
       width: 960, height: 720,
       title: '文档预览 - ' + path.basename(target),
-      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
+      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: false, plugins: true }
     })
     win.loadFile(target)
     win.on('closed', () => {})
