@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 UnionTech Software Technology Co., Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef TODOWIDGET_H
 #define TODOWIDGET_H
 
@@ -9,6 +12,8 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QComboBox>
+#include <QCheckBox>
+#include <QPushButton>
 #include <DToolButton>
 #include <DLabel>
 #include "storage/todostorage.h"
@@ -47,6 +52,13 @@ private:
     void buildTagSubMenu(QMenu *parentMenu, int todoId);
     void buildPrioritySubMenu(QMenu *parentMenu, int todoId);
 
+    // 批量操作
+    void enterMultiSelectMode();
+    void exitMultiSelectMode();
+    void updateSelectionState();
+    void onBatchDelete();
+    QList<int> getSelectedTodoIds() const;
+
     /// 返回预置示例待办列表（负 ID 标记，仅用于空状态引导）
     QList<TodoData> presetExamples() const;
     /// 按 section 名称过滤预置示例
@@ -70,6 +82,14 @@ private:
     QComboBox *m_sortFieldCombo;
     DToolButton *m_sortOrderBtn;
     TodoSortParam m_sortParam;
+
+    // 批量操作控件
+    bool m_multiSelectMode = false;
+    QWidget *m_batchToolbar;
+    QPushButton *m_selectModeBtn;
+    QPushButton *m_selectAllBtn;
+    QPushButton *m_batchDeleteBtn;
+    DLabel *m_selectionCountLabel;
 };
 
 #endif // TODOWIDGET_H

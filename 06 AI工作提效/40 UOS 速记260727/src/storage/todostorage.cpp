@@ -9,6 +9,7 @@
 #include <QSqlRecord>
 #include <QDebug>
 #include <QDate>
+#include <QSqlDatabase>
 
 // Helper: QSqlQuery → QVariantMap
 static QVariantMap queryToMap(const QSqlQuery &query)
@@ -142,7 +143,11 @@ bool TodoStorage::deleteTodo(int id)
     query.bindValue(":d", QDateTime::currentSecsSinceEpoch());
     query.bindValue(":m", QDateTime::currentSecsSinceEpoch());
     query.bindValue(":id", id);
-    return query.exec();
+    if (!query.exec()) {
+        qWarning() << "删除待办失败:" << query.lastError().text();
+        return false;
+    }
+    return true;
 }
 
 bool TodoStorage::restoreTodo(int id)
@@ -157,10 +162,69 @@ bool TodoStorage::restoreTodo(int id)
 bool TodoStorage::permanentDelete(int id)
 {
     QSqlQuery query(m_db->connection());
-    query.prepare("DELETE FROM notes_todos WHERE id=:id AND is_todo=1 AND is_deleted=1");
+    query.prepare("DELETE FROM notes_todos WHERE id=:id AND is_deleted=1 AND is_todo=1");
     query.bindValue(":id", id);
     return query.exec();
 }
+
+// ─── 批量操作 ─────────────────────────────────────────────────────
+
+bool TodoStorage::batchDeleteTodos(const QList<int> &ids)
+{
+    if (ids.isEmpty()) return true;
+
+    QSqlDatabase db = QSqlDatabase::database(m_db->connection().connectionName());
+    if (!db.transaction()) {
+        qWarning() << "batchDeleteTodos: 无法开始事务";
+        return false;
+    }
+
+    QSqlQuery query(m_db->connection());
+    query.prepare("UPDATE notes_todos SET is_deleted=1, deletion_datetime=:d, modification_datetime=:m WHERE id=:id AND is_todo=1");
+
+    qint64 now = QDateTime::currentSecsSinceEpoch();
+    for (int id : ids) {
+        query.bindValue(":d", now);
+        query.bindValue(":m", now);
+        query.bindValue(":id", id);
+        if (!query.exec()) {
+            qWarning() << "batchDeleteTodos: 删除待办" << id << "失败:" << query.lastError().text();
+            db.rollback();
+            return false;
+        }
+    }
+
+    return db.commit();
+}
+
+bool TodoStorage::batchRestoreTodos(const QList<int> &ids)
+{
+    if (ids.isEmpty()) return true;
+
+    QSqlDatabase db = QSqlDatabase::database(m_db->connection().connectionName());
+    if (!db.transaction()) {
+        qWarning() << "batchRestoreTodos: 无法开始事务";
+        return false;
+    }
+
+    QSqlQuery query(m_db->connection());
+    query.prepare("UPDATE notes_todos SET is_deleted=0, deletion_datetime=0, modification_datetime=:m WHERE id=:id AND is_todo=1");
+
+    qint64 now = QDateTime::currentSecsSinceEpoch();
+    for (int id : ids) {
+        query.bindValue(":m", now);
+        query.bindValue(":id", id);
+        if (!query.exec()) {
+            qWarning() << "batchRestoreTodos: 恢复待办" << id << "失败:" << query.lastError().text();
+            db.rollback();
+            return false;
+        }
+    }
+
+    return db.commit();
+}
+
+// ─── 查询 ─────────────────────────────────────────────────────────
 
 TodoData TodoStorage::getTodo(int id) const
 {
@@ -176,16 +240,13 @@ TodoData TodoStorage::getTodo(int id) const
 QList<TodoData> TodoStorage::getAllTodos(bool includeCompleted, bool includeDeleted) const
 {
     QList<TodoData> list;
-    QString sql = "SELECT * FROM notes_todos WHERE is_todo=1";
-    if (!includeDeleted) sql += " AND is_deleted=0";
-    if (!includeCompleted) sql += " AND is_completed=0";
-    sql += " ORDER BY priority DESC, due_datetime ASC, modification_datetime DESC";
-
     QSqlQuery query(m_db->connection());
+    QString sql = "SELECT * FROM notes_todos WHERE is_todo=1";
+    if (!includeCompleted) sql += " AND is_completed=0";
+    if (!includeDeleted) sql += " AND is_deleted=0";
+    sql += " ORDER BY modification_datetime DESC";
     if (query.exec(sql)) {
-        while (query.next()) {
-            list.append(rowToTodo(queryToMap(query)));
-        }
+        while (query.next()) list.append(rowToTodo(queryToMap(query)));
     }
     return list;
 }
@@ -254,6 +315,25 @@ QList<TodoData> TodoStorage::getOverdueTodos(const TodoSortParam &sort) const
     query.prepare("SELECT * FROM notes_todos WHERE is_todo=1 AND is_deleted=0 AND is_completed=0 AND due_datetime>0 AND due_datetime<:now"
                   + buildTodoOrderClause(sort));
     query.bindValue(":now", now);
+    if (query.exec()) {
+        while (query.next()) list.append(rowToTodo(queryToMap(query)));
+    }
+    return list;
+}
+
+QList<TodoData> TodoStorage::getWeekTodos(const TodoSortParam &sort) const
+{
+    QList<TodoData> list;
+    QDate today = QDate::currentDate();
+    QDate weekStart = today.addDays(-(int)today.dayOfWeek() + 1); // 周一
+    QDate weekEnd = today.addDays(7 - (int)today.dayOfWeek());     // 周日
+    qint64 startSecs = QDateTime(weekStart, QTime(0, 0, 0)).toSecsSinceEpoch();
+    qint64 endSecs = QDateTime(weekEnd, QTime(23, 59, 59)).toSecsSinceEpoch();
+    QSqlQuery query(m_db->connection());
+    query.prepare("SELECT * FROM notes_todos WHERE is_todo=1 AND is_deleted=0 AND is_completed=0 AND due_datetime>0 AND due_datetime>=:start AND due_datetime<=:end"
+                  + buildTodoOrderClause(sort));
+    query.bindValue(":start", startSecs);
+    query.bindValue(":end", endSecs);
     if (query.exec()) {
         while (query.next()) list.append(rowToTodo(queryToMap(query)));
     }

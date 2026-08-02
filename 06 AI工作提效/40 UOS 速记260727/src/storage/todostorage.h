@@ -55,6 +55,10 @@ public:
     bool restoreTodo(int id);
     bool permanentDelete(int id);
 
+    // 批量操作
+    bool batchDeleteTodos(const QList<int> &ids);
+    bool batchRestoreTodos(const QList<int> &ids);
+
     TodoData getTodo(int id) const;
     QList<TodoData> getAllTodos(bool includeCompleted = false, bool includeDeleted = false) const;
     QList<TodoData> getPendingTodos(const TodoSortParam &sort = TodoSortParam()) const;
@@ -62,6 +66,7 @@ public:
     QList<TodoData> getDeletedTodos() const;
     QList<TodoData> getTodayTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getOverdueTodos(const TodoSortParam &sort = TodoSortParam()) const;
+    QList<TodoData> getWeekTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getTodosByTag(const QString &tag) const;
     QList<TodoData> searchTodos(const QString &keyword) const;
 
