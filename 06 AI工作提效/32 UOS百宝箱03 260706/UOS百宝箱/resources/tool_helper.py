@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""UOS运维工具箱 - 工具辅助脚本（图片处理、OCR）"""
+"""UOS运维工具箱 - 工具辅助脚本（图片处理、OCR、音频/视频处理）"""
 import sys, json, os, subprocess
 
 def check_tesseract():
@@ -36,6 +36,23 @@ def _image_save(img, out, fmt):
     if fmt in ('jpg', 'jpeg') and img.mode in ('RGBA', 'LA', 'P'):
         img = img.convert('RGB')
     img.save(out)
+
+def _ff_esc(arg):
+    """为 ffmpeg 命令行转义参数"""
+    return '"' + str(arg).replace('"', '\\"') + '"'
+
+def _run_ff(args, timeout=300):
+    """运行 ffmpeg 命令，args 为字符串列表"""
+    cmd = 'ffmpeg -y ' + ' '.join(args)
+    subprocess.run(cmd, shell=True, timeout=timeout, capture_output=True, text=True, check=True)
+
+def _audio_ext(action):
+    """根据音频操作返回输出扩展名"""
+    exts = {
+        'to-mp3': '.mp3', 'to-wav': '.wav', 'to-flac': '.flac',
+        'to-aac': '.aac', 'to-ogg': '.ogg', 'compress': '.mp3'
+    }
+    return exts.get(action, '.mp3')
 
 def main():
     if len(sys.argv) < 2:
@@ -82,19 +99,92 @@ def main():
                 return
             base, ext = os.path.splitext(f)
             src_ext = ext.lower().lstrip('.')
-            # 目标格式与源格式相同时追加后缀，避免覆盖原文件
             out = f"{base}.{fmt}" if fmt != src_ext else f"{base}_converted.{fmt}"
             img = Image.open(f)
             _image_save(img, out, fmt)
             print(json.dumps({"success": True, "output": out}))
-            
+
+        elif cmd == 'video-process':
+            f = params['file']
+            action = params.get('action', '')
+            output = params.get('output', '')
+            start = params.get('start')
+            duration = params.get('duration')
+            if not f or not os.path.isfile(f):
+                print(json.dumps({"success": False, "error": "文件不存在或未选择"}))
+                return
+            out_path = output or os.path.join('/tmp', 'processed_' + os.path.basename(f))
+            if action == 'trim':
+                if start is None or duration is None:
+                    print(json.dumps({"success": False, "error": "请提供开始时间和时长"}))
+                    return
+                s = float(start); d = float(duration)
+                if s < 0 or d <= 0:
+                    print(json.dumps({"success": False, "error": "无效的开始时间或时长"}))
+                    return
+                base, ext = os.path.splitext(out_path)
+                final_ext = ext if ext else '.mp4'
+                out = base + '_trim' + final_ext
+                _run_ff(['-ss', str(s), '-t', str(d), '-i', _ff_esc(f), '-c', 'copy', _ff_esc(out)])
+                print(json.dumps({"success": True, "output": out}))
+            elif action == 'compress':
+                out = os.path.splitext(out_path)[0] + '_compressed.mp4'
+                _run_ff(['-i', _ff_esc(f), '-vcodec', 'libx264', '-crf', '28', _ff_esc(out)])
+                print(json.dumps({"success": True, "output": out}))
+            elif action == 'to-mp4':
+                out = os.path.splitext(out_path)[0] + '.mp4'
+                _run_ff(['-i', _ff_esc(f), '-c:v', 'libx264', '-c:a', 'aac', _ff_esc(out)])
+                print(json.dumps({"success": True, "output": out}))
+            else:
+                print(json.dumps({"success": False, "error": f"未知操作: {action}"}))
+
+        elif cmd == 'audio-process':
+            f = params['file']
+            action = params.get('action', '')
+            output = params.get('output', '')
+            start = params.get('start')
+            duration = params.get('duration')
+            if not f or not os.path.isfile(f):
+                print(json.dumps({"success": False, "error": "文件不存在或未选择"}))
+                return
+            out_path = output or os.path.join('/tmp', 'processed_' + os.path.basename(f))
+            if action == 'trim':
+                if start is None or duration is None:
+                    print(json.dumps({"success": False, "error": "请提供开始时间和时长"}))
+                    return
+                s = float(start); d = float(duration)
+                if s < 0 or d <= 0:
+                    print(json.dumps({"success": False, "error": "无效的开始时间或时长"}))
+                    return
+                base, ext = os.path.splitext(out_path)
+                final_ext = ext if ext else '.mp3'
+                out = base + '_trim' + final_ext
+                _run_ff(['-ss', str(s), '-t', str(d), '-i', _ff_esc(f), '-c', 'copy', _ff_esc(out)])
+                print(json.dumps({"success": True, "output": out}))
+            else:
+                enc_ext = _audio_ext(action)
+                if not enc_ext:
+                    print(json.dumps({"success": False, "error": f"未知操作: {action}"}))
+                    return
+                out = os.path.splitext(out_path)[0] + enc_ext
+                encoder_flags = {
+                    'to-mp3': ['-codec:a', 'libmp3lame', '-qscale:a', '2'],
+                    'to-wav': ['-codec:a', 'pcm_s16le'],
+                    'to-flac': ['-codec:a', 'flac'],
+                    'to-aac': ['-codec:a', 'aac', '-b:a', '192k'],
+                    'to-ogg': ['-codec:a', 'libvorbis', '-qscale:a', '4'],
+                    'compress': ['-codec:a', 'libmp3lame', '-b:a', '128k'],
+                }
+                flags = encoder_flags.get(action, encoder_flags['compress'])
+                _run_ff(['-i', _ff_esc(f)] + flags + [_ff_esc(out)])
+                print(json.dumps({"success": True, "output": out}))
+
         elif cmd == 'scan-effect':
             from PIL import Image, ImageOps, ImageEnhance
             f = params['file']
             base, ext = os.path.splitext(f)
             out = f"{base}_scanned.png"
             img = Image.open(f).convert('L')
-            # 灰度 + 自动对比度 + 轻微锐化，模拟扫描件效果
             img = ImageOps.autocontrast(img, cutoff=2)
             img = ImageEnhance.Contrast(img).enhance(1.6)
             img = ImageEnhance.Sharpness(img).enhance(1.5)
@@ -110,7 +200,6 @@ def main():
             f = params['file']
             lang = params.get('lang', 'chi_sim+eng')
             img = Image.open(f)
-            # 使用 chi_sim+eng 进行中文+英文识别
             text = pytesseract.image_to_string(img, lang=lang)
             print(json.dumps({"success": True, "output": text.strip()}))
             
@@ -139,7 +228,6 @@ def main():
             except Exception as e:
                 print(json.dumps({"success": False, "error": str(e)}))
         elif cmd == 'install-tesseract':
-            # 需要 sudo 权限，由 JS 层处理
             print(json.dumps({"success": False, "error": "请使用系统包管理器安装: sudo apt-get install tesseract-ocr tesseract-ocr-chi-sim tesseract-ocr-eng"}))
             
         else:

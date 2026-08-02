@@ -2029,56 +2029,16 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
         return JSON.parse(r.toString())
       }
       case 'video-process': {
-        const { file, action, output, start, duration } = params
+        const { file, action, start, duration } = params
         if (!file) return { success: false, error: '请选择视频文件' }
-        const outPath = output || '/tmp/processed_' + path.basename(file)
-        const ff = (f) => '"' + String(f).replace(/"/g, '\\"') + '"'
-        if (action === 'trim') {
-          const s = parseFloat(start); const d = parseFloat(duration)
-          if (isNaN(s) || s < 0) return { success: false, error: '请填写有效的开始时间（秒）' }
-          if (isNaN(d) || d <= 0) return { success: false, error: '请填写有效的裁剪时长（秒）' }
-          const out = outPath.replace(/\.[^.]*$/, path.extname(file) || '.mp4')
-          execSync('ffmpeg -y -ss ' + s + ' -t ' + d + ' -i ' + ff(file) + ' -c copy ' + ff(out) + ' 2>&1', { timeout: 300000 })
-          return { success: true, output: out }
-        }
-        let finalOut = outPath
-        if (action === 'compress') {
-          execSync('ffmpeg -y -i ' + ff(file) + ' -vcodec libx264 -crf 28 ' + ff(finalOut) + ' 2>&1', { timeout: 300000 })
-        } else if (action === 'to-mp4') {
-          finalOut = outPath.replace(/\.[^.]*$/, '.mp4')
-          execSync('ffmpeg -y -i ' + ff(file) + ' -c:v libx264 -c:a aac ' + ff(finalOut) + ' 2>&1', { timeout: 300000 })
-        } else {
-          return { success: false, error: '未知操作: ' + action }
-        }
-        return { success: true, output: finalOut }
+        const r = execSync('python3 "' + helper + '" video-process "' + JSON.stringify({ file, action, start, duration }).replace(/"/g, '\\"') + '"', { timeout: 300000, encoding: 'utf-8' })
+        return JSON.parse(r.toString())
       }
       case 'audio-process': {
-        const { file, action, output, start, duration } = params
+        const { file, action, start, duration } = params
         if (!file) return { success: false, error: '请选择音频文件' }
-        const outPath = output || '/tmp/processed_' + path.basename(file)
-        const ff = (f) => '"' + String(f).replace(/"/g, '\\"') + '"'
-        if (action === 'trim') {
-          const s = parseFloat(start); const d = parseFloat(duration)
-          if (isNaN(s) || s < 0) return { success: false, error: '请填写有效的开始时间（秒）' }
-          if (isNaN(d) || d <= 0) return { success: false, error: '请填写有效的裁剪时长（秒）' }
-          const out = outPath.replace(/\.[^.]*$/, path.extname(file) || '.mp3')
-          execSync('ffmpeg -y -ss ' + s + ' -t ' + d + ' -i ' + ff(file) + ' -c copy ' + ff(out) + ' 2>&1', { timeout: 300000 })
-          return { success: true, output: out }
-        }
-        const audioEncoders = {
-          'to-mp3': ['-codec:a', 'libmp3lame', '-qscale:a', '2', '.mp3'],
-          'to-wav': ['-codec:a', 'pcm_s16le', '.wav'],
-          'to-flac': ['-codec:a', 'flac', '.flac'],
-          'to-aac': ['-codec:a', 'aac', '-b:a', '192k', '.aac'],
-          'to-ogg': ['-codec:a', 'libvorbis', '-qscale:a', '4', '.ogg'],
-          'compress': ['-codec:a', 'libmp3lame', '-bitrate:a', '128k', '.mp3']
-        }
-        const cfg = audioEncoders[action]
-        if (!cfg) return { success: false, error: '未知操作: ' + action }
-        const ext = cfg[cfg.length - 1]
-        const out = outPath.replace(/\.[^.]*$/, ext)
-        execSync('ffmpeg -y -i ' + ff(file) + ' ' + cfg.slice(0, -1).join(' ') + ' ' + ff(out) + ' 2>&1', { timeout: 300000 })
-        return { success: true, output: out }
+        const r = execSync('python3 "' + helper + '" audio-process "' + JSON.stringify({ file, action, start, duration }).replace(/"/g, '\\"') + '"', { timeout: 300000, encoding: 'utf-8' })
+        return JSON.parse(r.toString())
       }
       case 'security-sync': {
         const { action: secAction, vuln_id, sys_type, edition, version, arch, output_dir,
