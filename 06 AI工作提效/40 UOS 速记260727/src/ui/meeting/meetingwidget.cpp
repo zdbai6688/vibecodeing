@@ -256,12 +256,13 @@ void MeetingWidget::showMeetingDetail(int meetingId)
     // 加载 AI 摘要
     m_summaryEdit->setPlainText(meeting.aiSummary);
 
-    // 重置高亮
+    // 重置高亮并缓存音频路径
     m_highlightedSegmentIndex = -1;
+    m_currentAudioFilePath = meeting.audioFilePath;
 
     // 如果有音频文件，预加载
-    if (!meeting.audioFilePath.isEmpty() && QFile::exists(meeting.audioFilePath)) {
-        m_player->load(meeting.audioFilePath);
+    if (!m_currentAudioFilePath.isEmpty() && QFile::exists(m_currentAudioFilePath)) {
+        m_player->load(m_currentAudioFilePath);
         if (!m_player->isPlaying()) {
             m_player->stop();
             m_positionLabel->setText(tr("00:00 / 00:00"));
@@ -495,14 +496,11 @@ void MeetingWidget::onTranscriptAnchorClicked(const QUrl &link)
     qint64 ts = path.toLongLong(&ok);
 
     if (!ok || m_currentMeetingId <= 0) return;
-
-    auto *app = ShorthandApplication::instance();
-    MeetingData meeting = app->meetingManager()->getMeeting(m_currentMeetingId);
-    if (meeting.audioFilePath.isEmpty() || !QFile::exists(meeting.audioFilePath)) return;
+    if (m_currentAudioFilePath.isEmpty() || !QFile::exists(m_currentAudioFilePath)) return;
 
     // 跳转到对应时间位置
     if (!m_player->isLoaded()) {
-        m_player->load(meeting.audioFilePath);
+        m_player->load(m_currentAudioFilePath);
     }
     m_player->seekTo(ts);
 
@@ -514,23 +512,54 @@ void MeetingWidget::onTranscriptAnchorClicked(const QUrl &link)
 
 void MeetingWidget::onPlaybackPositionChanged(qint64 posMs)
 {
-    // 更新位置标签
-    auto *app = ShorthandApplication::instance();
-    MeetingData meeting = app->meetingManager()->getMeeting(m_currentMeetingId);
-    if (!meeting.audioFilePath.isEmpty() && m_player->isLoaded()) {
+    // 更新位置标签（使用缓存的音频路径，避免每帧查询数据库）
+    if (!m_currentAudioFilePath.isEmpty() && m_player->isLoaded()) {
         m_positionLabel->setText(QString("%1 / %2")
             .arg(formatTime(posMs)).arg(formatTime(m_player->durationMs())));
     }
 
     // 高亮当前对应的转写段
-    highlightTranscriptAtPosition(posMs);
+    if (m_currentTranscripts.isEmpty()) return;
+
+    // 找到 posMs 所在的 segment 索引（反向线性查找，转写数据按时间递增排列）
+    int newIndex = -1;
+    for (int i = m_currentTranscripts.size() - 1; i >= 0; --i) {
+        if (m_currentTranscripts[i].timestampMs <= posMs) {
+            newIndex = i;
+            break;
+        }
+    }
+
+    if (newIndex == m_highlightedSegmentIndex) return;
+    m_highlightedSegmentIndex = newIndex;
+
+    m_transcriptEdit->setHtml(buildTranscriptHtml(newIndex));
+
+    // 滚动到高亮行
+    if (newIndex >= 0) {
+        QTextDocument *doc = m_transcriptEdit->document();
+        QTextBlock block = doc->findBlockByNumber(newIndex);
+        if (block.isValid()) {
+            QTextCursor scrollCursor(block);
+            m_transcriptEdit->setTextCursor(scrollCursor);
+            m_transcriptEdit->ensureCursorVisible();
+        }
+    }
 }
 
 // ─── 构建转写 HTML（可点击时间戳） ───────────────────────────
 
-QString MeetingWidget::buildTranscriptHtml() const
+QString MeetingWidget::buildTranscriptHtml(int highlightIndex) const
 {
     if (m_currentTranscripts.isEmpty()) return QString();
+
+    // 从系统调色板获取实际颜色值（QTextDocument HTML 不支持 palette() 函数）
+    QColor hlBg = palette().color(QPalette::Highlight);
+    QColor hlText = palette().color(QPalette::HighlightedText);
+    QColor linkClr = palette().color(QPalette::Link);
+    QString hlBgName = hlBg.name();
+    QString hlTextName = hlText.name();
+    QString linkColorName = linkClr.name();
 
     QString html;
     html += QStringLiteral("<html><body style='font-size:13px; line-height:1.6;'>");
@@ -549,89 +578,33 @@ QString MeetingWidget::buildTranscriptHtml() const
                              .arg(t.speaker.toHtmlEscaped());
         }
 
-        // 构建单条转写：可点击时间戳 + 说话人 + 文本
-        html += QStringLiteral(
-            "<p id='seg_%1' style='margin:4px 0; padding:4px 8px; border-radius:4px;'>"
-            "<a href='%2' style='color:palette(highlight); text-decoration:none; font-weight:600;'>[%3]</a> "
-            "%4%5</p>"
-        ).arg(i)
-         .arg(tsLink, tsStr)
-         .arg(speakerTag, t.text.toHtmlEscaped());
-    }
-
-    html += QStringLiteral("</body></html>");
-    return html;
-}
-
-// ─── 高亮当前播放位置对应的转写段 ────────────────────────────
-
-void MeetingWidget::highlightTranscriptAtPosition(qint64 posMs)
-{
-    if (m_currentTranscripts.isEmpty()) return;
-
-    // 找到 posMs 所在的 segment 索引（二分查找优化）
-    int newIndex = -1;
-    for (int i = m_currentTranscripts.size() - 1; i >= 0; --i) {
-        if (m_currentTranscripts[i].timestampMs <= posMs) {
-            newIndex = i;
-            break;
-        }
-    }
-
-    // 如果没变化则跳过
-    if (newIndex == m_highlightedSegmentIndex) return;
-
-    m_highlightedSegmentIndex = newIndex;
-
-    // 重新构建 HTML 时标记当前段高亮
-    QString html;
-    html += QStringLiteral("<html><body style='font-size:13px; line-height:1.6;'>");
-
-    for (int i = 0; i < m_currentTranscripts.size(); ++i) {
-        const TranscriptData &t = m_currentTranscripts[i];
-        QString tsStr = t.formattedTimestamp();
-        QString tsLink = QStringLiteral("seek://%1").arg(t.timestampMs);
-
-        QString speakerTag;
-        if (!t.speaker.isEmpty()) {
-            speakerTag = QStringLiteral("<span style='color:#666; font-size:11px; font-weight:600;'>%1 </span>")
-                             .arg(t.speaker.toHtmlEscaped());
-        }
-
         QString bgStyle;
-        QString linkColor = QStringLiteral("palette(highlight)");
-        QString textColor;
+        QString curLinkColor = linkColorName;
+        QString textStyle;
+        bool isHighlight = (i == highlightIndex);
 
-        if (i == newIndex) {
-            bgStyle = QStringLiteral("background:palette(highlight); color:palette(highlightedText);");
-            linkColor = QStringLiteral("palette(highlightedText)");
-            textColor = QStringLiteral("color:palette(highlightedText);");
+        if (isHighlight) {
+            bgStyle = QStringLiteral("background:%1; color:%2;").arg(hlBgName, hlTextName);
+            curLinkColor = hlTextName;
+            textStyle = QStringLiteral("color:%1;").arg(hlTextName);
         }
 
+        // 构建单条转写：可点击时间戳 + 说话人 + 文本
         html += QStringLiteral(
             "<p id='seg_%1' style='margin:4px 0; padding:4px 8px; border-radius:4px; %2'>"
             "<a href='%3' style='color:%4; text-decoration:none; font-weight:600;'>[%5]</a> "
             "<span style='%6'>%7%8</span></p>"
         ).arg(i)
          .arg(bgStyle)
-         .arg(tsLink, linkColor, tsStr)
-         .arg(textColor, speakerTag, t.text.toHtmlEscaped());
+         .arg(tsLink, curLinkColor, tsStr)
+         .arg(textStyle, speakerTag, t.text.toHtmlEscaped());
     }
 
     html += QStringLiteral("</body></html>");
-    m_transcriptEdit->setHtml(html);
-
-    // 滚动到高亮行
-    if (newIndex >= 0) {
-        QTextDocument *doc = m_transcriptEdit->document();
-        QTextBlock block = doc->findBlockByNumber(newIndex);
-        if (block.isValid()) {
-            QTextCursor scrollCursor(block);
-            m_transcriptEdit->setTextCursor(scrollCursor);
-            m_transcriptEdit->ensureCursorVisible();
-        }
-    }
+    return html;
 }
+
+
 
 QString MeetingWidget::formatTime(qint64 ms) const
 {

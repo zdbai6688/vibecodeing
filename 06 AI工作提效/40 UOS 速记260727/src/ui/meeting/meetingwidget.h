@@ -42,8 +42,7 @@ private:
     void showMeetingList();
     void showMeetingDetail(int meetingId);
     void populateMeetingList(const QList<MeetingData> &meetings);
-    QString buildTranscriptHtml() const;
-    void highlightTranscriptAtPosition(qint64 posMs);
+    QString buildTranscriptHtml(int highlightIndex = -1) const;
     QString formatTime(qint64 ms) const;
 
     QStackedWidget *m_stack;
@@ -68,6 +67,7 @@ private:
     AudioPlayer *m_player;
 
     int m_currentMeetingId = -1;
+    QString m_currentAudioFilePath;
     QList<TranscriptData> m_currentTranscripts;
     int m_highlightedSegmentIndex = -1;
 };
