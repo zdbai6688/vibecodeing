@@ -82,6 +82,11 @@ contextBridge.exposeInMainWorld('terminalAPI', {
   exec: (cmd) => ipcRenderer.invoke('terminal-exec', cmd)
 })
 
+// 文档处理 API（PDF/OFD 预览）
+contextBridge.exposeInMainWorld('docAPI', {
+  openPdf: (filePath) => ipcRenderer.invoke('open-pdf-viewer', filePath)
+})
+
 // 实用工具 API
 contextBridge.exposeInMainWorld('toolAPI', {
   execute: (tool, params) => ipcRenderer.invoke('execute-tool', tool, params)
@@ -123,7 +128,13 @@ contextBridge.exposeInMainWorld('localsendAPI', {
   start: (dir, port) => ipcRenderer.invoke('localsend-start', dir, port),
   stop: () => ipcRenderer.invoke('localsend-stop'),
   getStatus: () => ipcRenderer.invoke('localsend-status'),
-  getIP: () => ipcRenderer.invoke('localsend-get-ip')
+  getIP: () => ipcRenderer.invoke('localsend-get-ip'),
+  discover: () => ipcRenderer.invoke('execute-tool', 'localsend-discovery', {}),
+  send: (opts) => ipcRenderer.invoke('execute-tool', 'localsend-send', opts),
+  receive: (opts) => ipcRenderer.invoke('execute-tool', 'localsend-receive', opts),
+  stopReceive: () => ipcRenderer.invoke('execute-tool', 'localsend-stop', {}),
+  receiveStatus: () => ipcRenderer.invoke('execute-tool', 'localsend-status', {}),
+  openDir: (dir) => ipcRenderer.invoke('shell-open-path', dir)
 })
 
 // 软件包管理器 API
@@ -238,6 +249,11 @@ contextBridge.exposeInMainWorld('captureAPI', {
   startRecording: () => ipcRenderer.invoke('capture-start-recording'),
   stopRecording: () => ipcRenderer.invoke('capture-stop-recording'),
   getRecordingStatus: () => ipcRenderer.invoke('capture-recording-status')
+})
+
+// 剪贴板图片 API（OCR 截图/粘贴识别用）
+contextBridge.exposeInMainWorld('clipboardAPI', {
+  getImage: () => ipcRenderer.invoke('clipboard-image')
 })
 
 // 快捷键管理 API

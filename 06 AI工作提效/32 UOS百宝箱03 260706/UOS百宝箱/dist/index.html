@@ -2164,6 +2164,8 @@ const TOOLS = [
   {cat:'📄',name:'PDF/OFD/文档',items:[
     {id:'pdf-merge',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16 13 8 13"/><line x1="16 17 8 17"/></svg>`,name:'PDF 合并',desc:'合并多个 PDF 文件为一个'},
     {id:'pdf-split',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>`,name:'PDF 拆分',desc:'按页拆分 PDF 文件'},
+    {id:'pdf-to-image',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,name:'PDF 转图片',desc:'PDF 页面批量导出为图片'},
+    {id:'pdf-to-text',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,name:'PDF 提取文本',desc:'从 PDF 中提取文字内容'},
     {id:'ofd-view',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,name:'OFD 浏览器',desc:'预览 OFD 格式文档'},
     {id:'doc-convert',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,name:'文档转换器',desc:'PDF/Excel 等格式互转'},
     {id:'markdown-editor',ico:`<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:none;stroke:var(--primary);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;display:block"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,name:'Markdown 编辑器',desc:'MD 实时预览编辑'}
@@ -2224,14 +2226,62 @@ function showToolModal(id,need){
   const MODALS={
     'pdf-merge':baseModal('📑 PDF 合并','选择多个 PDF 文件合并为一个',[{v:'merge',l:'📂 选择文件并合并'}]),
     'pdf-split':baseModal('✂️ PDF 拆分','选择 PDF 文件按页拆分',[{v:'split',l:'📂 选择 PDF 文件'}]),
-    'ofd-view':{title:'📖 OFD 浏览器',content:'<div class="sub">预览 OFD 格式文档</div><div class="sub" style="margin-top:12px;color:var(--text-sec)">需要安装 ofd 查看器组件，命令行执行:<br><code style="background:#333;color:#fff;padding:4px 8px;border-radius:4px">sudo apt install ofd-lib</code></div>'},
-    'doc-convert':{title:'🔄 文档转换器',content:'<div class="sub">PDF/Excel 等格式互转</div><div class="sub" style="margin-top:12px;color:var(--text-sec)">需要安装 LibreOffice:<br><code style="background:#333;color:#fff;padding:4px 8px;border-radius:4px">sudo apt install libreoffice</code></div>'},
-    'markdown-editor':{title:'📝 Markdown 编辑器',content:'<div class="sub">实时预览编辑</div><textarea id="mdInput" style="width:100%;height:200px;border:1px solid var(--border);border-radius:6px;padding:8px;font-family:monospace;font-size:13px" placeholder="输入 Markdown 内容..."></textarea><div id="mdPreview" style="margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:6px;min-height:100px;font-size:13px"></div>'},
-    'scan-doc':{title:'📸 扫描文档',content:'<div class="sub">图片转扫描件效果</div><div class="sub" style="margin-top:12px;color:var(--text-sec)">需要安装 ImageMagick:<br><code style="background:#333;color:#fff;padding:4px 8px;border-radius:4px">sudo apt install imagemagick</code></div>'},
-    'image-resize':baseModal('📐 图片处理','批量调整图片尺寸/转换格式',[{v:'resize',l:'📂 选择图片并调整'},{v:'convert',l:'📂 选择图片并转换格式'}]),
-    'ocr':baseModal('🔍 OCR 文字识别','从图片中识别文字',[{v:'ocr',l:'📂 选择图片识别'}]),
-    'video-process':baseModal('🎥 视频处理器','剪辑/压缩/格式转换（支持 MP4/AVI/MKV 等）',[{v:'compress',l:'📂 压缩视频'},{v:'to-mp4',l:'📂 转 MP4 格式'}]),
-    'audio-process':baseModal('🎵 音频处理器','剪辑/格式转换/音质增强',[{v:'to-mp3',l:'📂 转 MP3 格式'},{v:'compress',l:'📂 压缩音频'}]),
+    'ofd-view':{title:'📖 OFD 浏览器',content:'<div class="sub">国产 OFD 版式文档预览（自动调用系统 OFD→PDF 转换组件）</div><div class="actions"><button class="btn" onclick="toolAction(\'ofd-view\',\'view\')">📂 选择 OFD 文件并预览</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>'},
+    'doc-convert':{title:'🔄 文档转换器',content:'<div class="sub">基于 LibreOffice 的文档格式转换（Word/Excel/PPT/PDF 等互转）</div><div style="margin:10px 0"><label style="font-size:12px;color:var(--text-sec)">目标格式:</label> <select id="docConvertFormat" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card-bg);color:var(--text)"><option value="pdf">PDF</option><option value="docx">DOCX</option><option value="xlsx">XLSX</option><option value="pptx">PPTX</option><option value="odt">ODT</option><option value="txt">TXT</option><option value="html">HTML</option></select></div><div class="actions"><button class="btn" onclick="toolAction(\'doc-convert\',\'convert\')">📂 选择文件并转换</button></div><div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>'},
+    'markdown-editor':{title:'📝 Markdown 编辑器',content:'<div class="sub">实时预览编辑，支持打开 / 保存 / 导出 HTML</div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"><button class="btn" onclick="mdOpenFile()">📂 打开</button><button class="btn" onclick="mdSaveFile()">💾 保存</button><button class="btn" onclick="mdExportHtml()">🌐 导出 HTML</button><span style="flex:1"></span><button class="btn" onclick="mdInsert(\'**\',\'**\')">B</button><button class="btn" onclick="mdInsert(\'*\',\'*\')">I</button><button class="btn" onclick="mdInsert(\'`\',\'`\')">代码</button><button class="btn" onclick="mdInsert(\'[\',\'](url)\')">链接</button><button class="btn" onclick="mdInsert(\'\\n- \',\'\')">列表</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><textarea id="mdInput" style="width:100%;height:340px;resize:vertical;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:10px;font-family:monospace;font-size:13px;background:var(--card-bg);color:var(--text)" placeholder="在此输入 Markdown 内容..."></textarea><div id="mdPreview" style="height:340px;overflow-y:auto;box-sizing:border-box;border:1px solid var(--border);border-radius:6px;padding:12px;font-size:13px;background:#fff;color:#24292e;line-height:1.65"></div></div>'},
+    'scan-doc':baseModal('📸 扫描文档','图片转扫描件效果（黑白扫描样式）',[{v:'scan',l:'📂 选择图片生成扫描件'}]),
+    'image-resize':{title:'📐 图片处理',content:`<div class="sub">批量调整尺寸 / 格式转换（支持 JPG/PNG/BMP/WEBP）</div>
+      <div style="margin:8px 0;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg)">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">📏 调整尺寸（留空则保持原图）</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="number" id="imgWidth" min="1" placeholder="宽度(px)" style="width:120px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+          <span style="color:var(--text-sec);font-size:12px">×</span>
+          <input type="number" id="imgHeight" min="1" placeholder="高度(px)" style="width:120px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+          <span style="color:var(--text-ter);font-size:11px">只填一项自动按比例缩放</span>
+        </div>
+        <div style="font-size:12px;font-weight:600;margin:10px 0 6px">🔄 转换格式</div>
+        <select id="imgFormat" style="padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+          <option value="png">PNG</option><option value="jpg">JPG</option><option value="webp">WEBP</option><option value="bmp">BMP</option>
+        </select>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="toolAction('image-resize','resize')">📏 选择图片并调整尺寸</button>
+        <button class="btn" onclick="toolAction('image-resize','convert')">🔄 选择图片并转换格式</button>
+      </div>
+      <div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>`},
+    'ocr':baseModal('🔍 OCR 文字识别','从图片中提取文字（支持本地图片 / 截图 / 剪贴板）',[{v:'file',l:'📂 选择图片'},{v:'area',l:'📷 截图识别'},{v:'full',l:'🖥️ 全屏识别'},{v:'clipboard',l:'📋 剪贴板图片'}]),
+    'video-process':{title:'🎥 视频处理器',content:`<div class="sub">剪辑 / 压缩 / 格式转换（支持 MP4/AVI/MKV 等）</div>
+      <div style="margin:8px 0;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg)">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">✂️ 裁剪设置（秒）</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="number" id="videoStart" min="0" placeholder="开始时间(秒)" style="width:140px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+          <input type="number" id="videoDur" min="0" placeholder="时长(秒)" style="width:140px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="toolAction('video-process','compress')">📦 压缩视频</button>
+        <button class="btn" onclick="toolAction('video-process','to-mp4')">🎬 转 MP4 格式</button>
+        <button class="btn" onclick="toolAction('video-process','trim')">✂️ 裁剪视频</button>
+      </div>
+      <div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>`},
+    'audio-process':{title:'🎵 音频处理器',content:`<div class="sub">格式转换 / 裁剪 / 压缩（支持 MP3/WAV/FLAC/AAC/OGG）</div>
+      <div style="margin:8px 0;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card-bg)">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">✂️ 裁剪设置（秒）</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input type="number" id="audioStart" min="0" placeholder="开始时间(秒)" style="width:140px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+          <input type="number" id="audioDur" min="0" placeholder="时长(秒)" style="width:140px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="toolAction('audio-process','to-mp3')">🎵 转 MP3</button>
+        <button class="btn" onclick="toolAction('audio-process','to-wav')">🔊 转 WAV</button>
+        <button class="btn" onclick="toolAction('audio-process','to-flac')">💠 转 FLAC</button>
+        <button class="btn" onclick="toolAction('audio-process','to-aac')">🎧 转 AAC</button>
+        <button class="btn" onclick="toolAction('audio-process','to-ogg')">🔔 转 OGG</button>
+        <button class="btn" onclick="toolAction('audio-process','trim')">✂️ 裁剪音频</button>
+        <button class="btn" onclick="toolAction('audio-process','compress')">📦 压缩音频</button>
+      </div>
+      <div class="modal-output" id="toolResult" style="display:none;margin-top:8px;padding:10px;background:var(--card-bg);border-radius:6px;font-size:12px;line-height:1.6;white-space:pre-wrap"></div>`},
     'sys-detail':{title:'💻 系统详细信息',content:'<div class="sub" id="sysDetailContent">加载中...</div>'},
     'formula':{title:'📊 灵犀公式集',content:'<div class="sub">经济指标快速测算</div><div class="actions"><button class="btn" onclick="calcFormula(\'growth\')">📈 增速计算</button><button class="btn" onclick="calcFormula(\'pull\')">📊 拉动点计算</button><button class="btn" onclick="calcFormula(\'custom\')">✏️ 自定义公式</button></div><div class="modal-output" id="formulaResult"></div>'},
     'hotlist':{title:'🔥 今日热榜',content:`<div class="sub">各平台热门话题聚合</div><div class="actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -2357,7 +2407,10 @@ function showToolModal(id,need){
       const ta=document.getElementById('mdInput')
       const pre=document.getElementById('mdPreview')
       if(ta&&pre){
-        ta.oninput=function(){pre.innerHTML=this.value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+        const mdRender=window.renderMarkdown||function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+        ta.oninput=function(){pre.innerHTML=mdRender(this.value)}
+        ta.value='# 📝 Markdown 编辑器\n\n## 特性\n- 实时预览（标题 / 列表 / 表格 / 代码块）\n- 打开 / 保存 / 导出 HTML\n- 任务清单：\n  - [x] 已办事项\n  - [ ] 待办事项\n\n> 编辑左侧内容，右侧实时预览。\n\n| 功能 | 示例 |\n|------|------|\n| 加粗 | **粗体** |\n| 行内代码 | `code` |\n\n```js\nconsole.log(\"Hello UOS百宝箱\")\n```'
+        pre.innerHTML=mdRender(ta.value)
       }
     },100)
   }
@@ -2701,54 +2754,207 @@ async function toolAction(tool,action){
     if(tool==='pdf-merge'){
       const files=await window.fileAPI?.selectFile({multiSelections:true,filters:[{name:'PDF文件',extensions:['pdf']}]})
       if(!files||files.length<2){el.innerHTML='❌ 请选择至少 2 个 PDF 文件';return}
-      const r=await window.toolAPI?.execute('pdf-merge',{files,output:'/tmp/merged.pdf'})
-      el.innerHTML=r?.success?('✅ 合并成功!<br>输出文件: '+esc(r.output)):('❌ 失败: '+esc(r?.error||'未知错误'))
+      const outPath=await window.fileAPI?.saveFileDialog('merged.pdf',[{name:'PDF文件',extensions:['pdf']}])
+      if(!outPath){el.innerHTML='';return}
+      el.innerHTML='⏳ 正在合并 '+files.length+' 个 PDF 文件...'
+      const r=await window.toolAPI?.execute('pdf-merge',{files,output:outPath})
+      el.innerHTML=r?.success?('✅ 合并成功!<br>输出文件: '+esc(r.output)+'<br><button class="btn" onclick="openConvertedFile(\''+String(r.output).replace(/'/g,'')+'\')" style="margin-top:8px">📂 打开所在目录</button>'):('❌ 失败: '+esc(r?.error||'未知错误'))
     }else if(tool==='pdf-split'){
       const file=await window.fileAPI?.selectFile({filters:[{name:'PDF文件',extensions:['pdf']}]})
       if(!file){el.innerHTML='❌ 请选择 PDF 文件';return}
-      const r=await window.toolAPI?.execute('pdf-split',{file,outputDir:'/tmp'})
-      el.innerHTML=r?.success?('✅ 拆分成功!<br>输出目录: '+esc(r.output)):('❌ 失败: '+esc(r?.error||'未知错误'))
-    }else if(tool==='image-resize'){
-      const files=await window.fileAPI?.selectFile([{name:'图片文件',extensions:['jpg','jpeg','png','bmp','webp']}])
-      if(!files||files.length===0){el.innerHTML='❌ 请选择图片文件';return}
-      el.innerHTML='⏳ 处理中...<br>每张图片约需几秒'
-      let out=''
-      for(const f of files){
-        const r=await window.toolAPI?.execute('image-resize',{file:f,width:800,height:600})
-        out+=r?.success?('✅ '+esc(r.output)+'<br>'):('❌ '+esc(f)+' 失败: '+esc(r?.error||'')+'<br>')
+      const pages=prompt('请输入要拆分的页码范围（留空=全部页面，示例: 1-3,5）','')
+      const dir=await window.fileAPI?.selectDirectory()
+      if(!dir){el.innerHTML='';return}
+      el.innerHTML='⏳ 正在拆分 PDF...'
+      const r=await window.toolAPI?.execute('pdf-split',{file,outputDir:dir,pages})
+      el.innerHTML=r?.success?('✅ 拆分成功! 共 '+(r.count||'')+' 个文件<br>输出目录: '+esc(r.output)):('❌ 失败: '+esc(r?.error||'未知错误'))
+    }else if(tool==='pdf-to-image'){
+      const file=await window.fileAPI?.selectFile({filters:[{name:'PDF文件',extensions:['pdf']}]})
+      if(!file){el.innerHTML='❌ 请选择 PDF 文件';return}
+      const dir=await window.fileAPI?.selectDirectory()
+      if(!dir){el.innerHTML='';return}
+      el.innerHTML='⏳ 正在转换 PDF 为图片...'
+      const r=await window.toolAPI?.execute('pdf-to-image',{file,outputDir:dir})
+      el.innerHTML=r?.success?('✅ 转换成功! 共 '+r.count+' 页<br>输出目录: '+esc(r.output)+'<br><button class="btn" onclick="openConvertedFile(\''+String(r.output).replace(/'/g,'')+'\')" style="margin-top:8px">📂 打开所在目录</button>'):('❌ 失败: '+esc(r?.error||'未知错误'))
+    }else if(tool==='pdf-to-text'){
+      const file=await window.fileAPI?.selectFile({filters:[{name:'PDF文件',extensions:['pdf']}]})
+      if(!file){el.innerHTML='❌ 请选择 PDF 文件';return}
+      el.innerHTML='⏳ 正在提取文本...'
+      const r=await window.toolAPI?.execute('pdf-to-text',{file})
+      el.innerHTML=r?.success?('✅ 文本提取成功!<br>输出文件: '+esc(r.output)+'<br><button class="btn" onclick="previewPdfText(\''+String(r.output).replace(/'/g,'')+'\')" style="margin-top:8px">📖 查看内容</button>'):('❌ 失败: '+esc(r?.error||'未知错误'))
+    }else if(tool==='ofd-view'){
+      const file=await window.fileAPI?.selectFile({filters:[{name:'OFD文件',extensions:['ofd']}]})
+      if(!file){el.innerHTML='❌ 请选择 OFD 文件';return}
+      el.innerHTML='⏳ 正在转换并打开 OFD 文档...'
+      const r=await window.toolAPI?.execute('ofd-view',{file})
+      if(r?.success){
+        const pdfPath=r.pdfPath||r.output
+        el.innerHTML='✅ OFD 转换成功，正在打开预览...<br>PDF 文件: '+esc(pdfPath)
+        window.docAPI?.openPdf(pdfPath)
+      }else{
+        el.innerHTML='❌ 失败: '+esc(r?.error||'未知错误')
       }
-      el.innerHTML=out||'❌ 无输出'
+    }else if(tool==='doc-convert'){
+      const file=await window.fileAPI?.selectFile({filters:[{name:'办公文档',extensions:['pdf','doc','docx','xls','xlsx','ppt','pptx','odt','ods','odp','txt','csv','html','rtf']}]})
+      if(!file){el.innerHTML='❌ 请选择文档文件';return}
+      const fmtEl=document.getElementById('docConvertFormat')
+      const format=fmtEl?fmtEl.value:'pdf'
+      el.innerHTML='⏳ 正在转换文档（'+esc(format.toUpperCase())+'）...<br>大文件可能需要较长时间，请耐心等待'
+      const r=await window.toolAPI?.execute('doc-convert',{file,format})
+      el.innerHTML=r?.success?('✅ 转换成功!<br>输出文件: '+esc(r.output)+'<br><button class="btn" onclick="openConvertedFile(\''+String(r.output).replace(/'/g,'')+'\')" style="margin-top:8px">📂 打开所在目录</button>'):('❌ 失败: '+esc(r?.error||'未知错误'))
+    }else if(tool==='image-resize'){
+      const files=await window.fileAPI?.selectFile({multiSelections:true,filters:[{name:'图片文件',extensions:['jpg','jpeg','png','bmp','webp']}]})
+      if(!files||files.length===0){el.innerHTML='❌ 请选择图片文件';return}
+      if(action==='resize'){
+        const w=parseInt(document.getElementById('imgWidth')?.value||'')
+        const h=parseInt(document.getElementById('imgHeight')?.value||'')
+        if(!w&&!h){el.innerHTML='❌ 请至少填写宽度或高度';return}
+        el.innerHTML='⏳ 处理中...<br>每张图片约需几秒'
+        let out=''
+        for(const f of files){
+          const r=await window.toolAPI?.execute('image-resize',{file:f,width:w||null,height:h||null})
+          out+=r?.success?('✅ '+esc(r.output)+'<br>'):('❌ '+esc(f)+' 失败: '+esc(r?.error||'')+'<br>')
+        }
+        el.innerHTML=out||'❌ 无输出'
+      }else if(action==='convert'){
+        const fmt=document.getElementById('imgFormat')?.value||'png'
+        el.innerHTML='⏳ 转换中...<br>每张图片约需几秒'
+        let out=''
+        for(const f of files){
+          const r=await window.toolAPI?.execute('image-convert',{file:f,format:fmt})
+          out+=r?.success?('✅ '+esc(r.output)+'<br>'):('❌ '+esc(f)+' 失败: '+esc(r?.error||'')+'<br>')
+        }
+        el.innerHTML=out||'❌ 无输出'
+      }
     }else if(tool==='image-convert'){
       const files=await window.fileAPI?.selectFile({multiSelections:true,filters:[{name:'图片文件',extensions:['jpg','jpeg','png','bmp','webp']}]})
       if(!files||files.length===0){el.innerHTML='❌ 请选择图片文件';return}
+      const fmt=document.getElementById('imgFormat')?.value||'png'
       let out=''
       for(const f of files){
-        const r=await window.toolAPI?.execute('image-convert',{file:f,format:'png'})
+        const r=await window.toolAPI?.execute('image-convert',{file:f,format:fmt})
         out+=r?.success?('✅ '+esc(r.output)+'<br>'):('❌ '+esc(f)+' 失败: '+esc(r?.error||'')+'<br>')
       }
       el.innerHTML=out||'❌ 无输出'
     }else if(tool==='ocr'){
-      const files=await window.fileAPI?.selectFile({filters:[{name:'图片文件',extensions:['jpg','jpeg','png','bmp','webp']}]})
-      if(!files){el.innerHTML='❌ 请选择图片文件';return}
-      el.innerHTML='⏳ OCR 识别中... 可能需要几秒'
-      const r=await window.toolAPI?.execute('ocr',{file:files,lang:'chi_sim+eng'})
-      el.innerHTML=r?.success?('✅ 识别结果:<br>'+esc(r.output)):('❌ 识别失败: '+esc(r?.error||'请确保已安装 tesseract-ocr'))
+      let file=null
+      if(action==='file'||!action){
+        file=await window.fileAPI?.selectFile({filters:[{name:'图片文件',extensions:['jpg','jpeg','png','bmp','webp']}]})
+        if(!file){el.innerHTML='❌ 请选择图片文件';return}
+      }else if(action==='area'||action==='full'){
+        el.innerHTML='⏳ 正在启动截图... 请框选需要识别的区域'
+        const shot=await window.captureAPI?.screenshot(action==='area'?'area':'full')
+        if(!shot?.success){el.innerHTML='❌ 截图失败: '+esc(shot?.error||'请检查 gnome-screenshot/deepin-screenshot 是否安装');return}
+        file=shot.file
+        el.innerHTML='<img src="'+shot.dataUrl+'" style="max-width:100%;max-height:180px;border-radius:6px;margin-bottom:8px"><br>⏳ OCR 识别中... 可能需要几秒'
+      }else if(action==='clipboard'){
+        el.innerHTML='⏳ 正在读取剪贴板图片...'
+        const clip=await window.clipboardAPI?.getImage()
+        if(!clip?.success){el.innerHTML='❌ 读取剪贴板失败: '+esc(clip?.error||'剪贴板中没有图片');return}
+        file=clip.file
+        el.innerHTML='<img src="'+clip.dataUrl+'" style="max-width:100%;max-height:180px;border-radius:6px;margin-bottom:8px"><br>⏳ OCR 识别中... 可能需要几秒'
+      }else{
+        el.innerHTML='❌ 未知操作';return
+      }
+      const r=await window.toolAPI?.execute('ocr',{file,lang:'chi_sim+eng'})
+      if(r?.success){
+        _lastOcrText=r.output
+        el.innerHTML='✅ 识别结果:<br><div style="margin:8px 0;padding:10px;background:#1e1e1e;color:#e8e8e8;border-radius:6px;max-height:260px;overflow:auto;white-space:pre-wrap">'+esc(r.output)+'</div><button class="btn" onclick="copyOcrResult(this)">📋 复制结果</button>'
+      }else{
+        el.innerHTML='❌ 识别失败: '+esc(r?.error||'请确保已安装 tesseract-ocr')+(r?.need_install?'<br><button class="btn" onclick="installTesseract()">📥 安装 tesseract-ocr</button>':'')
+      }
+    }else if(tool==='scan-doc'){
+      const file=await window.fileAPI?.selectFile({filters:[{name:'图片文件',extensions:['jpg','jpeg','png','bmp','webp']}]})
+      if(!file){el.innerHTML='❌ 请选择图片文件';return}
+      el.innerHTML='⏳ 正在生成扫描件效果...'
+      const r=await window.toolAPI?.execute('scan-doc',{file})
+      el.innerHTML=r?.success?('✅ 扫描件已生成!<br>输出文件: '+esc(r.output)):('❌ 失败: '+esc(r?.error||'未知错误'))
     }else if(tool==='video-process'){
       const files=await window.fileAPI?.selectFile({filters:[{name:'视频文件',extensions:['mp4','avi','mkv','mov','wmv','flv']}]})
       if(!files){el.innerHTML='❌ 请选择视频文件';return}
+      const vp={file:files,action,output:'/tmp/processed_'+files.split('/').pop()}
+      if(action==='trim'){
+        const start=parseFloat(document.getElementById('videoStart')?.value)
+        const duration=parseFloat(document.getElementById('videoDur')?.value)
+        if(isNaN(start)||isNaN(duration)){el.innerHTML='❌ 请填写开始时间和时长';return}
+        vp.start=start;vp.duration=duration
+      }
       el.innerHTML='⏳ 处理中... 视频处理可能需要较长时间<br>请耐心等待'
-      const r=await window.toolAPI?.execute('video-process',{file:files,action,output:'/tmp/processed_'+files.split('/').pop()})
+      const r=await window.toolAPI?.execute('video-process',vp)
       el.innerHTML=r?.success?('✅ 处理完成!<br>输出文件: '+esc(r.output)):('❌ 失败: '+esc(r?.error||'请确保已安装 ffmpeg'))
     }else if(tool==='audio-process'){
-      const files=await window.fileAPI?.selectFile({filters:[{name:'音频文件',extensions:['mp3','wav','flac','aac','ogg','wma']}]})
+      const files=await window.fileAPI?.selectFile({filters:[{name:'音频文件',extensions:['mp3','wav','flac','aac','ogg','wma','m4a']}]})
       if(!files){el.innerHTML='❌ 请选择音频文件';return}
+      const ap={file:files,action,output:'/tmp/processed_'+files.split('/').pop()}
+      if(action==='trim'){
+        const start=parseFloat(document.getElementById('audioStart')?.value)
+        const duration=parseFloat(document.getElementById('audioDur')?.value)
+        if(isNaN(start)||isNaN(duration)){el.innerHTML='❌ 请填写开始时间和时长';return}
+        ap.start=start;ap.duration=duration
+      }
       el.innerHTML='⏳ 处理中...'
-      const r=await window.toolAPI?.execute('audio-process',{file:files,action,output:'/tmp/processed_'+files.split('/').pop()})
+      const r=await window.toolAPI?.execute('audio-process',ap)
       el.innerHTML=r?.success?('✅ 处理完成!<br>输出文件: '+esc(r.output)):('❌ 失败: '+esc(r?.error||'请确保已安装 ffmpeg'))
     }
   }catch(e){
     el.innerHTML='❌ 异常: '+esc(e.message)
   }
+}
+
+// ============ Markdown 编辑器 / 文档辅助 ============
+function mdRenderValue(){
+  const ta=document.getElementById('mdInput')
+  const pre=document.getElementById('mdPreview')
+  if(!ta||!pre)return
+  pre.innerHTML=(window.renderMarkdown||function(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')})(ta.value)
+}
+async function mdOpenFile(){
+  try{
+    const file=await window.fileAPI?.selectFile({filters:[{name:'Markdown 文件',extensions:['md','markdown','txt']}]})
+    if(!file)return
+    const content=await window.fileAPI.readFile(file)
+    const ta=document.getElementById('mdInput')
+    if(ta){ta.value=content;mdRenderValue();showToast('已打开: '+file.split('/').pop(),'success')}
+  }catch(e){showToast('打开失败: '+e.message,'error')}
+}
+async function mdSaveFile(){
+  try{
+    const ta=document.getElementById('mdInput')
+    if(!ta)return
+    const fp=await window.fileAPI?.saveFileDialog('未命名.md',[{name:'Markdown 文件',extensions:['md']}])
+    if(!fp)return
+    await window.fileAPI.writeFile(fp,ta.value)
+    showToast('已保存: '+fp.split('/').pop(),'success')
+  }catch(e){showToast('保存失败: '+e.message,'error')}
+}
+function mdExportHtml(){
+  const ta=document.getElementById('mdInput')
+  if(!ta)return
+  const body=(window.renderMarkdown||function(s){return String(s)})(ta.value)
+  const html='<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Markdown 导出</title><style>body{max-width:860px;margin:40px auto;padding:0 20px;font-family:"Noto Sans CJK SC","PingFang SC",sans-serif;line-height:1.7;color:#24292e}pre{background:#f6f8fa;padding:12px;border-radius:6px;overflow:auto}code{background:#f6f8fa;padding:2px 5px;border-radius:4px;font-size:0.9em}pre code{background:none;padding:0}table{border-collapse:collapse;width:100%}th,td{border:1px solid #d0d7de;padding:6px 10px;text-align:left}blockquote{border-left:4px solid #d0d7de;margin:0 0 16px;padding:2px 12px;color:#57606a}img{max-width:100%}h1,h2,h3{border-bottom:1px solid #eaeef2;padding-bottom:6px}</style></head><body>'+body+'</body></html>'
+  downloadTextFile(html,'markdown_export_'+Date.now()+'.html')
+}
+function mdInsert(before,after){
+  const ta=document.getElementById('mdInput')
+  if(!ta)return
+  const s=ta.selectionStart||0,e=ta.selectionEnd||0
+  const v=ta.value,sel=v.slice(s,e)
+  ta.value=v.slice(0,s)+before+sel+after+v.slice(e)
+  ta.focus()
+  ta.selectionStart=s+before.length
+  ta.selectionEnd=s+before.length+sel.length
+  mdRenderValue()
+}
+async function previewPdfText(fp){
+  const el=document.getElementById('toolResult')
+  if(!el)return
+  try{
+    const content=await window.fileAPI.readFile(fp)
+    el.innerHTML='<div style="font-size:13px;font-weight:600;margin-bottom:6px">📄 '+esc(fp.split('/').pop())+'</div><div style="max-height:320px;overflow-y:auto;white-space:pre-wrap;background:#1e1e1e;color:#e8e8e8;padding:10px;border-radius:6px;font-family:monospace;font-size:12px">'+esc(content)+'</div>'
+  }catch(e){el.innerHTML='❌ 读取失败: '+esc(e.message)}
+}
+function openConvertedFile(fp){
+  window.fileAPI?.openPath(fp)
 }
 
 async function loadSysDetail(){
@@ -3685,6 +3891,11 @@ function downloadTextFile(text, filename) {
   a.href = url; a.download = filename; a.style.display = 'none'
   document.body.appendChild(a); a.click()
   setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url) }, 1000)
+}
+
+let _lastOcrText=''
+function copyOcrResult(btn){
+  navigator.clipboard.writeText(_lastOcrText).then(function(){ showToast('已复制识别结果','success') }).catch(function(){})
 }
 
 async function installTesseract(){
@@ -7869,6 +8080,7 @@ async function removeCronLine(lineNum){
 }
 
 </script>
+<script src="markdown-render.js"></script>
 <script src="init.js"></script>
 <div id="toastContainer" class="toast-container"></div>
 </body>

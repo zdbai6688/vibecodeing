@@ -185,6 +185,43 @@ ipcMain.handle('shell-file-exists', (_, fp) => {
     return fs.existsSync(resolved) && fs.statSync(resolved).isFile()
   } catch { return false }
 })
+ipcMain.handle('open-pdf-viewer', async (_, filePath) => {
+  try {
+    if (!filePath || !fs.existsSync(String(filePath))) return { success: false, error: '文件不存在: ' + (filePath || '') }
+    const resolved = path.resolve(String(filePath))
+    const ext = path.extname(resolved).toLowerCase()
+    if (ext !== '.pdf' && ext !== '.ofd') return { success: false, error: '仅支持预览 PDF/OFD 文档' }
+    let target = resolved
+    if (ext === '.ofd') {
+      // OFD 文件先转换为 PDF 再预览
+      const execSync = require('child_process').execSync
+      const hasBin = (bin) => { try { execSync('command -v ' + bin, { stdio: 'ignore' }); return true } catch { return false } }
+      let converted = path.join(os.tmpdir(), path.basename(resolved, '.ofd') + '.pdf')
+      if (hasBin('ofd2pdf')) {
+        execSync('ofd2pdf "' + resolved.replace(/"/g, '\\"') + '" "' + converted.replace(/"/g, '\\"') + '"', { timeout: 120000 })
+      } else {
+        try { execSync('python3 -c "import ofd"', { stdio: 'ignore' }) } catch {
+          return { success: false, error: '未检测到 OFD 转换组件，请安装: sudo apt install ofd 或 pip3 install ofd' }
+        }
+        execSync('python3 -c "import os;from ofd.utils import ofd2pdf;ofd2pdf(os.environ[\'OFD_IN\'],os.environ[\'OFD_OUT\'])"', {
+          env: Object.assign({}, process.env, { OFD_IN: resolved, OFD_OUT: converted }),
+          timeout: 120000, encoding: 'utf-8'
+        })
+      }
+      if (!fs.existsSync(converted)) return { success: false, error: 'OFD 转换 PDF 失败' }
+      target = converted
+    }
+    const win = new BrowserWindow({
+      width: 960, height: 720,
+      title: '文档预览 - ' + path.basename(target),
+      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true }
+    })
+    win.loadFile(target)
+    win.on('closed', () => {})
+    return { success: true }
+  } catch (e) { return { success: false, error: e.message } }
+})
+
 ipcMain.handle('get-resource-path', () => path.join(__dirname, '../resources/'))
 ipcMain.handle('save-image', async (_, dataUrl, defaultName) => {
   const r = await dialog.showSaveDialog(mainWindow, {
@@ -439,29 +476,301 @@ ipcMain.handle('clear-cache', () => {
 
 // ========== IPC 局域网文件传输 (LocalSend) ==========
 
+const LS_UDP_PORT = 42135
+const LS_RECEIVE_PORT = 42136
+const LS_SHARE_PORT = 8080
+const LS_LOCALSEND_PORT = 53317
+
 let _localsendProcess = null
 let _localsendDir = ''
 
+// ---------- 局域网设备发现（UDP 常驻应答） ----------
+let _lsDiscoverySocket = null
+let _lsDiscoveryStarted = false
+let _lsDiscoveryScanHandler = null
+
+function lsStartDiscoveryListener() {
+  if (_lsDiscoveryStarted && _lsDiscoverySocket) return
+  const dgram = require('dgram')
+  try {
+    const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
+    _lsDiscoverySocket = socket
+    _lsDiscoveryStarted = false
+    socket.on('error', () => {
+      _lsDiscoverySocket = null
+      _lsDiscoveryStarted = false
+    })
+    socket.on('message', (msg, rinfo) => {
+      try {
+        const data = JSON.parse(msg.toString())
+        if (data && data.type === 'discovery') {
+          // 应答其他设备的发现请求
+          const shareRunning = _localsendProcess !== null && _localsendProcess.exitCode === null
+          const recvRunning = !!global.__localsendServer
+          let advertisedPort = null
+          if (recvRunning) advertisedPort = LS_RECEIVE_PORT
+          else if (shareRunning) advertisedPort = LS_SHARE_PORT
+          const resp = Buffer.from(JSON.stringify({
+            type: 'discovery-response',
+            hostname: os.hostname(),
+            port: advertisedPort,
+            platform: 'UOS百宝箱'
+          }))
+          try { socket.send(resp, LS_UDP_PORT, rinfo.address) } catch {}
+        }
+        if (typeof _lsDiscoveryScanHandler === 'function') {
+          try { _lsDiscoveryScanHandler(msg, rinfo) } catch {}
+        }
+      } catch {}
+    })
+    socket.bind(LS_UDP_PORT, () => {
+      try { socket.setBroadcast(true) } catch {}
+      _lsDiscoveryStarted = true
+    })
+  } catch (e) {
+    _lsDiscoverySocket = null
+    _lsDiscoveryStarted = false
+  }
+}
+
+function lsLocalIPs() {
+  const ips = []
+  try {
+    const interfaces = os.networkInterfaces()
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          ips.push({ name, address: iface.address, netmask: iface.netmask })
+        }
+      }
+    }
+  } catch {}
+  return ips
+}
+
+function lsProbeHttp(host, port, timeoutMs, path) {
+  return new Promise((resolve) => {
+    const http = require('http')
+    const req = http.get({
+      hostname: host,
+      port: port,
+      path: path || '/api/status',
+      timeout: timeoutMs || 400,
+      headers: { 'User-Agent': 'UOS-LocalSend/1.0' }
+    }, (res) => {
+      const chunks = []
+      res.on('data', (c) => chunks.push(c))
+      res.on('end', () => {
+        let parsed = null
+        try { parsed = JSON.parse(Buffer.concat(chunks).toString('utf-8')) } catch {}
+        resolve({ host, port, status: res.statusCode, json: parsed })
+      })
+    })
+    req.on('timeout', () => { try { req.destroy() } catch {}; resolve(null) })
+    req.on('error', () => resolve(null))
+  })
+}
+
+function lsProbeLocalSend(host, timeoutMs) {
+  return new Promise((resolve) => {
+    const https = require('https')
+    const req = https.get({
+      hostname: host,
+      port: LS_LOCALSEND_PORT,
+      path: '/api/v1/info',
+      timeout: timeoutMs || 500,
+      rejectUnauthorized: false,
+      headers: { 'User-Agent': 'UOS-LocalSend/1.0' }
+    }, (res) => {
+      const chunks = []
+      res.on('data', (c) => chunks.push(c))
+      res.on('end', () => {
+        let parsed = null
+        try { parsed = JSON.parse(Buffer.concat(chunks).toString('utf-8')) } catch {}
+        if (parsed && parsed.alias) resolve({ host, port: LS_LOCALSEND_PORT, json: parsed })
+        else resolve(null)
+      })
+    })
+    req.on('timeout', () => { try { req.destroy() } catch {}; resolve(null) })
+    req.on('error', () => resolve(null))
+  })
+}
+
+async function lsScanRange(hosts, timeoutMs) {
+  const found = []
+  const queue = hosts.slice()
+  let cursor = 0
+  let active = 0
+  return new Promise((resolve) => {
+    const worker = async () => {
+      while (cursor < queue.length) {
+        const host = queue[cursor++]
+        const [r42136, r8080, lsd] = await Promise.all([
+          lsProbeHttp(host, LS_RECEIVE_PORT, timeoutMs, '/api/status'),
+          lsProbeHttp(host, LS_SHARE_PORT, timeoutMs, '/api/status'),
+          lsProbeLocalSend(host, timeoutMs)
+        ])
+        if (r42136 && r42136.json && r42136.json.status === 'active' && r42136.json.hostname) {
+          found.push({ address: host, port: LS_RECEIVE_PORT, hostname: r42136.json.hostname || host, source: '局域网扫描', canSend: true, kind: 'uos' })
+        } else if (r8080 && r8080.json && r8080.json.status === 'active' && r8080.json.type === 'uos-share') {
+          found.push({ address: host, port: LS_SHARE_PORT, hostname: r8080.json.hostname || host, source: '局域网扫描', canSend: true, kind: 'uos' })
+        }
+        if (lsd) {
+          found.push({ address: host, port: LS_LOCALSEND_PORT, hostname: lsd.json.alias || host, source: '局域网扫描', canSend: true, kind: 'localsend', deviceModel: lsd.json.deviceModel || '' })
+        }
+      }
+      active--
+      if (active === 0) resolve(found)
+    }
+    if (queue.length === 0) { resolve(found); return }
+    const max = Math.min(32, queue.length)
+    for (let i = 0; i < max; i++) { active++; worker() }
+  })
+}
+
+// ---------- LocalSend 协议（跨平台发送） ----------
+function lsHttpsPost(base, apiPath, body, timeoutMs) {
+  return new Promise((resolve) => {
+    const https = require('https')
+    const req = https.request({ ...base, path: apiPath, method: 'POST' }, (res) => {
+      const chunks = []
+      res.on('data', (c) => chunks.push(c))
+      res.on('end', () => resolve({ statusCode: res.statusCode, body: Buffer.concat(chunks).toString('utf-8') }))
+    })
+    req.on('timeout', () => { try { req.destroy() } catch {}; resolve(null) })
+    req.on('error', () => resolve(null))
+    req.setTimeout(timeoutMs || 15000)
+    req.write(body || '{}')
+    req.end()
+  })
+}
+
+function lsHttpsUpload(base, apiPath, filePath, timeoutMs) {
+  return new Promise((resolve) => {
+    const https = require('https')
+    const fs = require('fs')
+    let size = 0
+    try { size = fs.statSync(filePath).size } catch {}
+    const req = https.request({
+      ...base,
+      path: apiPath,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': size }
+    }, (res) => {
+      res.resume()
+      res.on('end', () => resolve({ statusCode: res.statusCode }))
+    })
+    req.on('timeout', () => { try { req.destroy() } catch {}; resolve(null) })
+    req.on('error', () => resolve(null))
+    req.setTimeout(timeoutMs || 120000)
+    try { fs.createReadStream(filePath).pipe(req) } catch (e) { try { req.destroy() } catch {}; resolve(null) }
+  })
+}
+
+function lsSendToLocalSend(targetAddress, targetPort, entries) {
+  const https = require('https')
+  const fs = require('fs')
+  const path = require('path')
+  const agent = new https.Agent({ rejectUnauthorized: false })
+  const base = { hostname: targetAddress, port: Number(targetPort) || LS_LOCALSEND_PORT, agent, rejectUnauthorized: false }
+  const results = []
+  return new Promise((resolve) => {
+    ;(async () => {
+      try {
+        const regBody = JSON.stringify({
+          deviceName: os.hostname(),
+          deviceId: 'uos-' + os.hostname().replace(/[^a-zA-Z0-9]/g, '-'),
+          fingerprint: 'uos-baibaoxiang',
+          message: '来自 UOS百宝箱 的文件',
+          fileCount: entries.length
+        })
+        const reg = await lsHttpsPost(base, '/api/v1/register/send', regBody, 15000)
+        if (!reg || reg.statusCode !== 200) {
+          return resolve({ success: false, error: 'LocalSend 设备无响应或未开启接收 (' + (reg ? reg.statusCode : '无响应') + ')' })
+        }
+        const regData = JSON.parse(reg.body)
+        const sessionId = regData && regData.sessionId
+        if (!sessionId) return resolve({ success: false, error: 'LocalSend 注册失败: ' + String(reg.body).slice(0, 200) })
+        let i = 0
+        for (const entry of entries) {
+          const fileId = 'f' + i++ + '-' + Date.now()
+          const fileName = encodeURIComponent(path.basename(entry.relPath))
+          let size = 0
+          try { size = fs.statSync(entry.absPath).size } catch {}
+          const preparePath = '/api/v1/prepare-upload?sessionId=' + sessionId + '&fileId=' + fileId +
+            '&fileName=' + fileName + '&size=' + size + '&mimeType=' + encodeURIComponent('application/octet-stream')
+          const prep = await lsHttpsPost(base, preparePath, '{}', 15000)
+          if (!prep || prep.statusCode !== 200) {
+            results.push({ file: entry.relPath, size, success: false, error: '对方拒绝接收该文件 (' + (prep ? prep.statusCode : '无响应') + ')' })
+            continue
+          }
+          const uploadPath = '/api/v1/upload?sessionId=' + sessionId + '&fileId=' + fileId
+          const up = await lsHttpsUpload(base, uploadPath, entry.absPath, 300000)
+          if (up && up.statusCode >= 200 && up.statusCode < 300) {
+            results.push({ file: entry.relPath, size, success: true })
+          } else {
+            results.push({ file: entry.relPath, size, success: false, error: up ? ('上传失败 (' + up.statusCode + ')') : '上传无响应' })
+          }
+        }
+        try { await lsHttpsPost(base, '/api/v1/confirm?sessionId=' + sessionId, '{}', 10000) } catch {}
+        resolve({ success: true, results, protocol: 'localsend' })
+      } catch (e) {
+        resolve({ success: false, error: e.message })
+      }
+    })()
+  })
+}
+
+// ---------- 接收服务页面 ----------
+function lsEscHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function lsReceivePage(hostname, dir, filesHtml) {
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>UOS 局域网接收</title><style>' +
+    'body{font-family:sans-serif;max-width:760px;margin:24px auto;padding:0 16px;background:#f5f7fb;color:#333}' +
+    'h1{font-size:20px;border-bottom:2px solid #4A6CF7;padding-bottom:10px}' +
+    '.box{border:2px dashed #4A6CF7;background:#fff;border-radius:12px;padding:20px;text-align:center;margin:16px 0}' +
+    '.btn{background:#4A6CF7;color:#fff;border:none;border-radius:8px;padding:10px 28px;font-size:14px;cursor:pointer}' +
+    '.btn:hover{background:#3b5de7}.meta{color:#666;font-size:13px}' +
+    '.f{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee;font-size:13px}.s{color:#888;font-size:12px}' +
+    '</style></head><body>' +
+    '<h1>📥 UOS 局域网接收 (' + lsEscHtml(hostname) + ')</h1>' +
+    '<div class="meta">保存目录: ' + lsEscHtml(dir) + '</div>' +
+    '<div class="box"><div style="margin-bottom:10px">📤 选择文件后自动发送到该电脑</div>' +
+    '<input type="file" id="f" multiple style="margin-bottom:10px"><br>' +
+    '<button class="btn" onclick="sendFiles()">发送文件</button><div id="st" style="margin-top:10px;font-size:13px"></div></div>' +
+    '<h2>已接收文件</h2>' + filesHtml +
+    '<script>async function sendFiles(){const inp=document.getElementById("f");const st=document.getElementById("st");if(!inp.files.length){st.textContent="请先选择文件";return}st.textContent="发送中...";let ok=0,err=0;for(const f of inp.files){try{const r=await fetch("/upload",{method:"POST",headers:{"X-File-Name":encodeURIComponent(f.name),"X-File-Size":String(f.size),"Content-Type":"application/octet-stream"},body:f});if(r.ok)ok++;else err++;}catch(e){err++}}st.textContent="完成: "+ok+" 成功, "+err+" 失败";if(ok)setTimeout(function(){location.reload()},800)}</' + 'script>' +
+    '</body></html>'
+}
+
+// ---------- 共享服务 IPC ----------
 ipcMain.handle('localsend-start', async (_, dir, port) => {
   try {
     if (_localsendProcess) {
       _localsendProcess.kill()
       _localsendProcess = null
     }
-    const serveDir = dir || os.tmpdir()
+    const defaultShare = path.join(os.homedir(), 'UOS共享')
+    const serveDir = dir || defaultShare
+    if (!fs.existsSync(serveDir)) {
+      try { fs.mkdirSync(serveDir, { recursive: true }) } catch {}
+    }
     const servePort = port || 8080
     _localsendDir = serveDir
-    
+    lsStartDiscoveryListener()
+
     const serverScript = path.join(__dirname, '../resources/localsend_server.py')
     if (!fs.existsSync(serverScript)) {
       return { success: false, error: '服务脚本不存在: ' + serverScript }
     }
-    
+
     _localsendProcess = spawn('python3', [serverScript, String(servePort), serveDir], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env }
     })
-    
+
     let started = false
     return new Promise((resolve) => {
       const checkStart = (d) => {
@@ -1597,19 +1906,101 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
       case 'pdf-merge': {
         const { files, output } = params
         if (!files || files.length < 2) return { success: false, error: '请选择至少两个 PDF 文件' }
-        const outPath = output || '/tmp/merged.pdf'
-        const cmd = 'pdfunite ' + files.map(f => '"' + f.replace(/"/g, '\\"') + '"').join(' ') + ' "' + outPath.replace(/"/g, '\\"') + '"'
+        const outPath = output || os.tmpdir() + '/merged.pdf'
+        const cmd = 'pdfunite ' + files.map(f => '"' + String(f).replace(/"/g, '\\"') + '"').join(' ') + ' "' + String(outPath).replace(/"/g, '\\"') + '"'
         execSync(cmd, { timeout: 60000 })
         return { success: true, output: outPath }
       }
       case 'pdf-split': {
+        const { file, outputDir, pages } = params
+        if (!file) return { success: false, error: '请选择 PDF 文件' }
+        const dir = outputDir || os.tmpdir()
+        const base = path.basename(file, '.pdf')
+        fs.mkdirSync(dir, { recursive: true })
+        if (pages && String(pages).trim()) {
+          // 按指定页范围拆分: 如 "1-3,5"
+          const ranges = String(pages).split(',').map(s => s.trim()).filter(Boolean)
+          const filesOut = []
+          for (const rg of ranges) {
+            const m = rg.match(/^(\d+)\s*-\s*(\d+)$/)
+            const single = rg.match(/^(\d+)$/)
+            if (!m && !single) return { success: false, error: '页范围格式无效: ' + rg + '（示例: 1-3,5）' }
+            const f = m ? m[1] : single[1]
+            const l = m ? m[2] : single[1]
+            const outFile = path.join(dir, base + '-' + rg + '.pdf')
+            execSync('pdfseparate -f ' + f + ' -l ' + l + ' "' + String(file).replace(/"/g, '\\"') + '" "' + String(outFile).replace(/"/g, '\\"') + '"', { timeout: 60000 })
+            filesOut.push(outFile)
+          }
+          return { success: true, output: dir, files: filesOut, count: filesOut.length }
+        }
+        execSync('pdfseparate -f 1 "' + String(file).replace(/"/g, '\\"') + '" "' + String(dir).replace(/"/g, '\\"') + '/' + base + '-%d.pdf"', { timeout: 60000 })
+        return { success: true, output: dir }
+      }
+      case 'pdf-to-image': {
+        const { file, format, outputDir, dpi } = params
+        if (!file) return { success: false, error: '请选择 PDF 文件' }
+        const hasBin = (bin) => { try { execSync('command -v ' + bin, { stdio: 'ignore' }); return true } catch { return false } }
+        if (!hasBin('pdftoppm')) return { success: false, error: '未检测到 pdftoppm（poppler-utils），请安装: sudo apt install poppler-utils', need_install: true }
+        const dir = outputDir || os.tmpdir()
+        const base = path.basename(file, '.pdf')
+        const fmt = String(format || 'png').toLowerCase() === 'jpg' ? 'jpeg' : 'png'
+        const r = parseInt(dpi, 10) || 150
+        fs.mkdirSync(dir, { recursive: true })
+        execSync('pdftoppm -' + fmt + ' -r ' + r + ' "' + String(file).replace(/"/g, '\\"') + '" "' + String(path.join(dir, base + '-page')).replace(/"/g, '\\"') + '"', { timeout: 120000 })
+        const filesOut = fs.readdirSync(dir).filter(f => f.startsWith(base + '-page') && (f.endsWith('.' + fmt) || f.endsWith('.' + fmt))).sort()
+        if (!filesOut.length) return { success: false, error: 'PDF 转图片失败' }
+        return { success: true, output: dir, files: filesOut.map(f => path.join(dir, f)), count: filesOut.length }
+      }
+      case 'pdf-to-text': {
         const { file, outputDir } = params
         if (!file) return { success: false, error: '请选择 PDF 文件' }
-        const dir = outputDir || '/tmp'
+        const hasBin = (bin) => { try { execSync('command -v ' + bin, { stdio: 'ignore' }); return true } catch { return false } }
+        if (!hasBin('pdftotext')) return { success: false, error: '未检测到 pdftotext（poppler-utils），请安装: sudo apt install poppler-utils', need_install: true }
+        const dir = outputDir || os.tmpdir()
         const base = path.basename(file, '.pdf')
-        const cmd = 'pdfseparate -f 1 "' + file.replace(/"/g, '\\"') + '" "' + dir.replace(/"/g, '\\"') + '/' + base + '-%d.pdf"'
-        execSync(cmd, { timeout: 60000 })
-        return { success: true, output: dir }
+        const outPath = path.join(dir, base + '.txt')
+        execSync('pdftotext -layout "' + String(file).replace(/"/g, '\\"') + '" "' + String(outPath).replace(/"/g, '\\"') + '"', { timeout: 120000 })
+        if (!fs.existsSync(outPath)) return { success: false, error: '文本提取失败' }
+        return { success: true, output: outPath }
+      }
+      case 'ofd-view': {
+        const { file, outputDir } = params
+        if (!file) return { success: false, error: '请选择 OFD 文件' }
+        const dir = outputDir || os.tmpdir()
+        const base = path.basename(file, path.extname(file))
+        const pdfPath = path.join(dir, base + '.pdf')
+        fs.mkdirSync(dir, { recursive: true })
+        const hasBin = (bin) => { try { execSync('command -v ' + bin, { stdio: 'ignore' }); return true } catch { return false } }
+        if (hasBin('ofd2pdf')) {
+          execSync('ofd2pdf "' + String(file).replace(/"/g, '\\"') + '" "' + String(pdfPath).replace(/"/g, '\\"') + '"', { timeout: 120000 })
+        } else {
+          try { execSync('python3 -c "import ofd"', { stdio: 'ignore' }) } catch {
+            return { success: false, error: '未检测到 OFD 转换组件。请安装: sudo apt install ofd 或 pip3 install ofd', need_install: true }
+          }
+          execSync('python3 -c "import os;from ofd.utils import ofd2pdf;ofd2pdf(os.environ[\'OFD_IN\'],os.environ[\'OFD_OUT\'])"', {
+            env: Object.assign({}, process.env, { OFD_IN: file, OFD_OUT: pdfPath }),
+            timeout: 120000, encoding: 'utf-8'
+          })
+        }
+        if (!fs.existsSync(pdfPath)) return { success: false, error: 'OFD 转换 PDF 失败' }
+        return { success: true, output: pdfPath, pdfPath: pdfPath }
+      }
+      case 'doc-convert': {
+        const { file, format, outputDir } = params
+        if (!file) return { success: false, error: '请选择文档文件' }
+        const hasBin = (bin) => { try { execSync('command -v ' + bin, { stdio: 'ignore' }); return true } catch { return false } }
+        const bin = hasBin('soffice') ? 'soffice' : (hasBin('libreoffice') ? 'libreoffice' : null)
+        if (!bin) return { success: false, error: '未检测到 LibreOffice，请安装: sudo apt install libreoffice', need_install: true }
+        const fmt = String(format || 'pdf').toLowerCase()
+        const extMap = { pdf:'pdf', docx:'docx', doc:'doc', xlsx:'xlsx', xls:'xls', pptx:'pptx', ppt:'ppt', odt:'odt', ods:'ods', odp:'odp', txt:'txt', html:'html', csv:'csv' }
+        const ext = extMap[fmt] || 'pdf'
+        const dir = outputDir || os.tmpdir()
+        fs.mkdirSync(dir, { recursive: true })
+        execSync(bin + ' --headless --convert-to ' + ext + ' --outdir "' + String(dir).replace(/"/g, '\\"') + '" "' + String(file).replace(/"/g, '\\"') + '"', { timeout: 180000 })
+        const base = path.basename(file, path.extname(file))
+        const converted = path.join(dir, base + '.' + ext)
+        if (!fs.existsSync(converted)) return { success: false, error: '转换失败，请检查源文件格式是否受 LibreOffice 支持' }
+        return { success: true, output: converted }
       }
       case 'image-resize': {
         const r = execSync('python3 "' + helper + '" image-resize "' + JSON.stringify(params).replace(/"/g, '\\"') + '"', { timeout: 30000, encoding: 'utf-8' })
@@ -1623,33 +2014,61 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
         const r = execSync('python3 "' + helper + '" ocr "' + JSON.stringify(params).replace(/"/g, '\\"') + '"', { timeout: 60000, encoding: 'utf-8' })
         return JSON.parse(r.toString())
       }
+      case 'scan-doc': {
+        const r = execSync('python3 "' + helper + '" scan-effect "' + JSON.stringify(params).replace(/"/g, '\\"') + '"', { timeout: 60000, encoding: 'utf-8' })
+        return JSON.parse(r.toString())
+      }
       case 'video-process': {
-        const { file, action, output } = params
+        const { file, action, output, start, duration } = params
         if (!file) return { success: false, error: '请选择视频文件' }
         const outPath = output || '/tmp/processed_' + path.basename(file)
+        const ff = (f) => '"' + String(f).replace(/"/g, '\\"') + '"'
+        if (action === 'trim') {
+          const s = parseFloat(start); const d = parseFloat(duration)
+          if (isNaN(s) || s < 0) return { success: false, error: '请填写有效的开始时间（秒）' }
+          if (isNaN(d) || d <= 0) return { success: false, error: '请填写有效的裁剪时长（秒）' }
+          const out = outPath.replace(/\.[^.]*$/, path.extname(file) || '.mp4')
+          execSync('ffmpeg -y -ss ' + s + ' -t ' + d + ' -i ' + ff(file) + ' -c copy ' + ff(out) + ' 2>&1', { timeout: 300000 })
+          return { success: true, output: out }
+        }
+        let finalOut = outPath
         if (action === 'compress') {
-          execSync('ffmpeg -i "' + file.replace(/"/g, '\\"') + '" -vcodec libx264 -crf 28 "' + outPath.replace(/"/g, '\\"') + '" -y 2>&1', { timeout: 300000 })
+          execSync('ffmpeg -y -i ' + ff(file) + ' -vcodec libx264 -crf 28 ' + ff(finalOut) + ' 2>&1', { timeout: 300000 })
         } else if (action === 'to-mp4') {
-          const out = outPath.replace(/\.[^.]*$/, '.mp4')
-          execSync('ffmpeg -i "' + file.replace(/"/g, '\\"') + '" -c:v libx264 -c:a aac "' + out.replace(/"/g, '\\"') + '" -y 2>&1', { timeout: 300000 })
+          finalOut = outPath.replace(/\.[^.]*$/, '.mp4')
+          execSync('ffmpeg -y -i ' + ff(file) + ' -c:v libx264 -c:a aac ' + ff(finalOut) + ' 2>&1', { timeout: 300000 })
         } else {
           return { success: false, error: '未知操作: ' + action }
         }
-        return { success: true, output: outPath }
+        return { success: true, output: finalOut }
       }
       case 'audio-process': {
-        const { file, action, output } = params
+        const { file, action, output, start, duration } = params
         if (!file) return { success: false, error: '请选择音频文件' }
         const outPath = output || '/tmp/processed_' + path.basename(file)
-        if (action === 'to-mp3') {
-          const out = outPath.replace(/\.[^.]*$/, '.mp3')
-          execSync('ffmpeg -i "' + file.replace(/"/g, '\\"') + '" -codec:a libmp3lame -qscale:a 2 "' + out.replace(/"/g, '\\"') + '" -y 2>&1', { timeout: 300000 })
-        } else if (action === 'compress') {
-          execSync('ffmpeg -i "' + file.replace(/"/g, '\\"') + '" -codec:a libmp3lame -bitrate:a 128k "' + outPath.replace(/"/g, '\\"') + '" -y 2>&1', { timeout: 300000 })
-        } else {
-          return { success: false, error: '未知操作: ' + action }
+        const ff = (f) => '"' + String(f).replace(/"/g, '\\"') + '"'
+        if (action === 'trim') {
+          const s = parseFloat(start); const d = parseFloat(duration)
+          if (isNaN(s) || s < 0) return { success: false, error: '请填写有效的开始时间（秒）' }
+          if (isNaN(d) || d <= 0) return { success: false, error: '请填写有效的裁剪时长（秒）' }
+          const out = outPath.replace(/\.[^.]*$/, path.extname(file) || '.mp3')
+          execSync('ffmpeg -y -ss ' + s + ' -t ' + d + ' -i ' + ff(file) + ' -c copy ' + ff(out) + ' 2>&1', { timeout: 300000 })
+          return { success: true, output: out }
         }
-        return { success: true, output: outPath }
+        const audioEncoders = {
+          'to-mp3': ['-codec:a', 'libmp3lame', '-qscale:a', '2', '.mp3'],
+          'to-wav': ['-codec:a', 'pcm_s16le', '.wav'],
+          'to-flac': ['-codec:a', 'flac', '.flac'],
+          'to-aac': ['-codec:a', 'aac', '-b:a', '192k', '.aac'],
+          'to-ogg': ['-codec:a', 'libvorbis', '-qscale:a', '4', '.ogg'],
+          'compress': ['-codec:a', 'libmp3lame', '-bitrate:a', '128k', '.mp3']
+        }
+        const cfg = audioEncoders[action]
+        if (!cfg) return { success: false, error: '未知操作: ' + action }
+        const ext = cfg[cfg.length - 1]
+        const out = outPath.replace(/\.[^.]*$/, ext)
+        execSync('ffmpeg -y -i ' + ff(file) + ' ' + cfg.slice(0, -1).join(' ') + ' ' + ff(out) + ' 2>&1', { timeout: 300000 })
+        return { success: true, output: out }
       }
       case 'security-sync': {
         const { action: secAction, vuln_id, sys_type, edition, version, arch, output_dir,
@@ -3100,6 +3519,19 @@ ipcMain.handle('capture-screenshot', async (_, mode) => {
     if (!fs.existsSync(file)) return { success: false, error: '截图失败，请检查 gnome-screenshot/deepin-screenshot 是否安装' }
     const dataUrl = 'data:image/png;base64,' + fs.readFileSync(file).toString('base64')
     return { success: true, file, dataUrl }
+  } catch(e) { return { success: false, error: e.message } }
+})
+
+ipcMain.handle('clipboard-image', async () => {
+  const { clipboard } = require('electron'); const fs = require('fs'); const path = require('path')
+  try {
+    const img = clipboard.readImage()
+    if (img.isEmpty()) return { success: false, error: '剪贴板中没有图片' }
+    const dir = require('electron').app.getPath('pictures')
+    const file = path.join(dir, `ocr_clipboard_${Date.now()}.png`)
+    const buf = img.toPNG()
+    fs.writeFileSync(file, buf)
+    return { success: true, file, dataUrl: 'data:image/png;base64,' + buf.toString('base64') }
   } catch(e) { return { success: false, error: e.message } }
 })
 ipcMain.handle('capture-start-recording', async () => {
