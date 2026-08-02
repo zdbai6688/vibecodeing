@@ -136,6 +136,7 @@ void NoteListWidget::refresh()
     }
 
     populateList(notes);
+    showLoading(false);
 }
 
 void NoteListWidget::showLoading(bool loading)
