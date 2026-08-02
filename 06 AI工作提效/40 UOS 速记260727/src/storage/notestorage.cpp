@@ -9,6 +9,7 @@
 #include <QSqlRecord>
 #include <QDebug>
 #include <QJsonDocument>
+#include <QSqlDatabase>
 
 QString NoteData::previewText(int maxLen) const
 {
@@ -117,6 +118,84 @@ bool NoteStorage::permanentDeleteAll()
     return query.exec("DELETE FROM notes_todos WHERE is_deleted = 1");
 }
 
+// ─── 批量操作 ─────────────────────────────────────────────────────
+
+bool NoteStorage::batchDeleteNotes(const QList<int> &ids)
+{
+    if (ids.isEmpty()) return true;
+
+    QSqlDatabase db = QSqlDatabase::database(m_db->connection().connectionName());
+    if (!db.transaction()) {
+        qWarning() << "batchDeleteNotes: 无法开始事务";
+        return false;
+    }
+
+    QSqlQuery query(m_db->connection());
+    query.prepare("UPDATE notes_todos SET is_deleted = 1, deletion_datetime = :del, modification_datetime = :mod WHERE id = :id");
+    qint64 now = QDateTime::currentSecsSinceEpoch();
+    for (int id : ids) {
+        query.bindValue(":del", now);
+        query.bindValue(":mod", now);
+        query.bindValue(":id", id);
+        if (!query.exec()) {
+            qWarning() << "batchDeleteNotes: 删除笔记" << id << "失败:" << query.lastError().text();
+            db.rollback();
+            return false;
+        }
+    }
+    return db.commit();
+}
+
+bool NoteStorage::batchRestoreNotes(const QList<int> &ids)
+{
+    if (ids.isEmpty()) return true;
+
+    QSqlDatabase db = QSqlDatabase::database(m_db->connection().connectionName());
+    if (!db.transaction()) {
+        qWarning() << "batchRestoreNotes: 无法开始事务";
+        return false;
+    }
+
+    QSqlQuery query(m_db->connection());
+    query.prepare("UPDATE notes_todos SET is_deleted = 0, deletion_datetime = 0, modification_datetime = :mod WHERE id = :id");
+    qint64 now = QDateTime::currentSecsSinceEpoch();
+    for (int id : ids) {
+        query.bindValue(":mod", now);
+        query.bindValue(":id", id);
+        if (!query.exec()) {
+            qWarning() << "batchRestoreNotes: 恢复笔记" << id << "失败:" << query.lastError().text();
+            db.rollback();
+            return false;
+        }
+    }
+    return db.commit();
+}
+
+bool NoteStorage::batchPermanentDelete(const QList<int> &ids)
+{
+    if (ids.isEmpty()) return true;
+
+    QSqlDatabase db = QSqlDatabase::database(m_db->connection().connectionName());
+    if (!db.transaction()) {
+        qWarning() << "batchPermanentDelete: 无法开始事务";
+        return false;
+    }
+
+    QSqlQuery query(m_db->connection());
+    query.prepare("DELETE FROM notes_todos WHERE id = :id AND is_deleted = 1");
+    for (int id : ids) {
+        query.bindValue(":id", id);
+        if (!query.exec()) {
+            qWarning() << "batchPermanentDelete: 永久删除笔记" << id << "失败:" << query.lastError().text();
+            db.rollback();
+            return false;
+        }
+    }
+    return db.commit();
+}
+
+// ─── 查询 ─────────────────────────────────────────────────────────
+
 NoteData NoteStorage::getNote(int id) const
 {
     QSqlQuery query(m_db->connection());
@@ -132,7 +211,15 @@ NoteData NoteStorage::getNote(int id) const
     return NoteData();
 }
 
-QList<NoteData> NoteStorage::getAllNotes(bool includeDeleted) const
+QString NoteStorage::buildNoteOrderClause(const NoteSortParam &sort) const
+{
+    QString fieldName = (sort.field == NoteSortParam::CreatedAt)
+        ? "creation_datetime" : "modification_datetime";
+    QString order = sort.ascending ? "ASC" : "DESC";
+    return QString(" ORDER BY %1 %2").arg(fieldName, order);
+}
+
+QList<NoteData> NoteStorage::getAllNotes(bool includeDeleted, const NoteSortParam &sort) const
 {
     QList<NoteData> result;
     QSqlQuery query(m_db->connection());
@@ -140,7 +227,7 @@ QList<NoteData> NoteStorage::getAllNotes(bool includeDeleted) const
     if (!includeDeleted) {
         sql += " AND is_deleted = 0";
     }
-    sql += " ORDER BY modification_datetime DESC";
+    sql += buildNoteOrderClause(sort);
 
     if (query.exec(sql)) {
         while (query.next()) {
@@ -170,7 +257,7 @@ QList<NoteData> NoteStorage::getDeletedNotes() const
     return result;
 }
 
-QList<NoteData> NoteStorage::searchNotes(const QString &keyword) const
+QList<NoteData> NoteStorage::searchNotes(const QString &keyword, const NoteSortParam &sort) const
 {
     QList<NoteData> result;
     QSqlQuery query(m_db->connection());
@@ -178,8 +265,7 @@ QList<NoteData> NoteStorage::searchNotes(const QString &keyword) const
         SELECT * FROM notes_todos
         WHERE is_deleted = 0 AND is_todo = 0
         AND (title LIKE :kw OR content LIKE :kw2)
-        ORDER BY modification_datetime DESC
-    )");
+    )" + buildNoteOrderClause(sort));
     QString like = "%" + keyword + "%";
     query.bindValue(":kw", like);
     query.bindValue(":kw2", like);
@@ -196,7 +282,7 @@ QList<NoteData> NoteStorage::searchNotes(const QString &keyword) const
     return result;
 }
 
-QList<NoteData> NoteStorage::getNotesByTag(const QString &tag) const
+QList<NoteData> NoteStorage::getNotesByTag(const QString &tag, const NoteSortParam &sort) const
 {
     QList<NoteData> result;
     QSqlQuery query(m_db->connection());
@@ -204,8 +290,7 @@ QList<NoteData> NoteStorage::getNotesByTag(const QString &tag) const
         SELECT * FROM notes_todos
         WHERE is_deleted = 0 AND is_todo = 0
         AND tag LIKE :tag
-        ORDER BY modification_datetime DESC
-    )");
+    )" + buildNoteOrderClause(sort));
     query.bindValue(":tag", "%" + tag + "%");
     if (query.exec()) {
         while (query.next()) {
@@ -219,11 +304,12 @@ QList<NoteData> NoteStorage::getNotesByTag(const QString &tag) const
     return result;
 }
 
-QList<NoteData> NoteStorage::getNotesByFolder(int folderId) const
+QList<NoteData> NoteStorage::getNotesByFolder(int folderId, const NoteSortParam &sort) const
 {
     QList<NoteData> result;
     QSqlQuery query(m_db->connection());
-    query.prepare("SELECT * FROM notes_todos WHERE is_deleted = 0 AND is_todo = 0 AND folder_id = :fid ORDER BY modification_datetime DESC");
+    query.prepare("SELECT * FROM notes_todos WHERE is_deleted = 0 AND is_todo = 0 AND folder_id = :fid"
+                  + buildNoteOrderClause(sort));
     query.bindValue(":fid", folderId);
     if (query.exec()) {
         while (query.next()) {

@@ -18,6 +18,33 @@
 #include <QTextStream>
 #include <QFile>
 #include <QGridLayout>
+#include <QDateEdit>
+#include <QLineEdit>
+#include <QMouseEvent>
+
+// ─── 可双击的日历日期单元格 ───────────────────────────────────────
+class ClickableDayCell : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit ClickableDayCell(int dayIndex, QWidget *parent = nullptr)
+        : QWidget(parent), m_dayIndex(dayIndex) {}
+
+signals:
+    void doubleClicked(int dayIndex);
+
+protected:
+    void mouseDoubleClickEvent(QMouseEvent *event) override
+    {
+        if (event->button() == Qt::LeftButton) {
+            emit doubleClicked(m_dayIndex);
+        }
+        QWidget::mouseDoubleClickEvent(event);
+    }
+
+private:
+    int m_dayIndex;
+};
 
 WeeklyReportWidget::WeeklyReportWidget(QWidget *parent)
     : QWidget(parent)
@@ -53,7 +80,7 @@ void WeeklyReportWidget::initUI()
     navRow->addWidget(m_nextBtn);
     mainLayout->addLayout(navRow);
 
-    // 横向日历网格
+    // 横向日历网格（支持双击创建待办）
     QWidget *calendarWidget = new QWidget(this);
     calendarWidget->setStyleSheet("background: palette(light); border-radius: 6px;");
     QHBoxLayout *calendarLayout = new QHBoxLayout(calendarWidget);
@@ -62,25 +89,38 @@ void WeeklyReportWidget::initUI()
 
     QStringList dayNames = {tr("周一"), tr("周二"), tr("周三"), tr("周四"), tr("周五")};
     for (int i = 0; i < 5; i++) {
-        QWidget *dayCell = new QWidget(this);
+        ClickableDayCell *dayCell = new ClickableDayCell(i, this);
         QVBoxLayout *cellLayout = new QVBoxLayout(dayCell);
         cellLayout->setAlignment(Qt::AlignCenter);
         cellLayout->setSpacing(4);
 
-        m_weekdayLabels[i] = new DLabel(dayNames[i], this);
+        m_weekdayLabels[i] = new DLabel(dayNames[i], dayCell);
         m_weekdayLabels[i]->setAlignment(Qt::AlignCenter);
         m_weekdayLabels[i]->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
 
-        m_weekdayNums[i] = new DLabel(this);
+        m_weekdayNums[i] = new DLabel(dayCell);
         m_weekdayNums[i]->setAlignment(Qt::AlignCenter);
         m_weekdayNums[i]->setFixedSize(32, 32);
         m_weekdayNums[i]->setStyleSheet("font-size: 14px; font-weight: 600; border-radius: 16px;");
 
         cellLayout->addWidget(m_weekdayLabels[i]);
         cellLayout->addWidget(m_weekdayNums[i]);
+
+        // 双击日历日期 → 快速创建该日待办
+        connect(dayCell, &ClickableDayCell::doubleClicked, this, [this](int dayIndex) {
+            onDayCellDoubleClicked(dayIndex);
+        });
+
+        m_dayCells[i] = dayCell;
         calendarLayout->addWidget(dayCell, 1);
     }
     mainLayout->addWidget(calendarWidget);
+
+    // 提示标签：双击日期可创建待办
+    DLabel *hintLabel = new DLabel(tr("💡 双击日历日期可快速创建该日待办"), this);
+    hintLabel->setStyleSheet("font-size: 11px; color: palette(placeholderText); padding: 2px 0;");
+    hintLabel->setAlignment(Qt::AlignCenter);
+    mainLayout->addWidget(hintLabel);
 
     // 统计区
     QWidget *statsWidget = new QWidget(this);
@@ -164,6 +204,74 @@ void WeeklyReportWidget::initUI()
     connect(m_nextBtn, &QPushButton::clicked, this, &WeeklyReportWidget::onNextWeek);
     connect(m_generateBtn, &QPushButton::clicked, this, &WeeklyReportWidget::onGenerateReport);
     connect(m_exportBtn, &QPushButton::clicked, this, &WeeklyReportWidget::onExportReport);
+}
+
+void WeeklyReportWidget::onDayCellDoubleClicked(int dayIndex)
+{
+    if (dayIndex < 0 || dayIndex >= 5) return;
+
+    QDate clickedDate = m_currentMonday.addDays(dayIndex);
+    QDate thisMonday = QDate::currentDate().addDays(-(int)QDate::currentDate().dayOfWeek() + 1);
+    if (m_currentMonday > thisMonday) return;
+
+    DDialog dlg(this);
+    dlg.setTitle(tr("快速创建待办"));
+    dlg.setFixedSize(380, 200);
+
+    QWidget *widget = new QWidget(&dlg);
+    QVBoxLayout *layout = new QVBoxLayout(widget);
+    layout->setSpacing(12);
+    layout->setContentsMargins(16, 8, 16, 8);
+
+    QLineEdit *titleEdit = new QLineEdit(widget);
+    titleEdit->setPlaceholderText(tr("输入待办内容"));
+    titleEdit->selectAll();
+    layout->addWidget(new DLabel(tr("待办内容:"), widget));
+    layout->addWidget(titleEdit);
+
+    QHBoxLayout *dateRow = new QHBoxLayout();
+    DLabel *dateLabel = new DLabel(tr("截止日期:"), widget);
+    dateRow->addWidget(dateLabel);
+
+    DLabel *dateValue = new DLabel(clickedDate.toString("yyyy-MM-dd") + " (" + tr("双击的日期") + ")", widget);
+    dateValue->setStyleSheet("color: palette(highlight); font-weight: 600;");
+    dateRow->addWidget(dateValue);
+    dateRow->addStretch();
+    layout->addLayout(dateRow);
+
+    dlg.addContent(widget);
+
+    int cancelBtn = dlg.addButton(tr("取消"), false, DDialog::ButtonNormal);
+    int okBtn = dlg.addButton(tr("创建"), true, DDialog::ButtonRecommend);
+    Q_UNUSED(cancelBtn);
+
+    if (dlg.exec() == okBtn) {
+        QString text = titleEdit->text().trimmed();
+        if (text.isEmpty()) return;
+
+        auto *mgr = ShorthandApplication::instance()->todoManager();
+        TodoData todo;
+        todo.title = text;
+        todo.dueDatetime = QDateTime(clickedDate, QTime(23, 59, 59)).toSecsSinceEpoch();
+        todo.creationDatetime = QDateTime::currentSecsSinceEpoch();
+        todo.modificationDatetime = todo.creationDatetime;
+
+        mgr->createTodo(todo);
+        refresh();
+    }
+}
+
+void WeeklyReportWidget::updateCalendarCells()
+{
+    QDate today = QDate::currentDate();
+    for (int i = 0; i < 5; i++) {
+        QDate d = m_currentMonday.addDays(i);
+        bool isClickable = (d <= today);
+        m_dayCells[i]->setCursor(isClickable ? Qt::PointingHandCursor : Qt::ArrowCursor);
+        m_dayCells[i]->setToolTip(isClickable
+            ? tr("双击创建 %1 的待办").arg(d.toString("MM-dd"))
+            : "");
+    }
 }
 
 QString WeeklyReportWidget::formatWeekDate(const QDate &date)
@@ -357,3 +465,5 @@ void WeeklyReportWidget::onExportReport()
         d.exec();
     }
 }
+
+#include "weeklyreportwidget.moc"

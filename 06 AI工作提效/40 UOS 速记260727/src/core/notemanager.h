@@ -25,12 +25,17 @@ public:
     bool permanentDelete(int id);
     bool permanentDeleteAll();
 
+    // 批量操作
+    bool batchDeleteNotes(const QList<int> &ids);
+    bool batchRestoreNotes(const QList<int> &ids);
+    bool batchPermanentDelete(const QList<int> &ids);
+
     NoteData getNote(int id) const;
-    QList<NoteData> getAllNotes() const;
+    QList<NoteData> getAllNotes(const NoteSortParam &sort = NoteSortParam()) const;
     QList<NoteData> getDeletedNotes() const;
-    QList<NoteData> searchNotes(const QString &keyword) const;
-    QList<NoteData> getNotesByTag(const QString &tag) const;
-    QList<NoteData> getNotesByFolder(int folderId) const;
+    QList<NoteData> searchNotes(const QString &keyword, const NoteSortParam &sort = NoteSortParam()) const;
+    QList<NoteData> getNotesByTag(const QString &tag, const NoteSortParam &sort = NoteSortParam()) const;
+    QList<NoteData> getNotesByFolder(int folderId, const NoteSortParam &sort = NoteSortParam()) const;
 
     int noteCount() const;
 

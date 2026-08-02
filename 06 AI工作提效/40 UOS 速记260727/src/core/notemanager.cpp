@@ -64,12 +64,45 @@ bool NoteManager::permanentDeleteAll()
     return ok;
 }
 
+// ─── 批量操作 ─────────────────────────────────────────────────────
+
+bool NoteManager::batchDeleteNotes(const QList<int> &ids)
+{
+    bool ok = m_storage->batchDeleteNotes(ids);
+    if (ok) {
+        for (int id : ids) {
+            emit noteDeleted(id);
+        }
+        emit dataChanged();
+    }
+    return ok;
+}
+
+bool NoteManager::batchRestoreNotes(const QList<int> &ids)
+{
+    bool ok = m_storage->batchRestoreNotes(ids);
+    if (ok) {
+        for (int id : ids) {
+            emit noteRestored(id);
+        }
+        emit dataChanged();
+    }
+    return ok;
+}
+
+bool NoteManager::batchPermanentDelete(const QList<int> &ids)
+{
+    bool ok = m_storage->batchPermanentDelete(ids);
+    if (ok) emit dataChanged();
+    return ok;
+}
+
 NoteData NoteManager::getNote(int id) const { return m_storage->getNote(id); }
-QList<NoteData> NoteManager::getAllNotes() const { return m_storage->getAllNotes(false); }
+QList<NoteData> NoteManager::getAllNotes(const NoteSortParam &sort) const { return m_storage->getAllNotes(false, sort); }
 QList<NoteData> NoteManager::getDeletedNotes() const { return m_storage->getDeletedNotes(); }
-QList<NoteData> NoteManager::searchNotes(const QString &keyword) const { return m_storage->searchNotes(keyword); }
-QList<NoteData> NoteManager::getNotesByTag(const QString &tag) const { return m_storage->getNotesByTag(tag); }
-QList<NoteData> NoteManager::getNotesByFolder(int folderId) const { return m_storage->getNotesByFolder(folderId); }
+QList<NoteData> NoteManager::searchNotes(const QString &keyword, const NoteSortParam &sort) const { return m_storage->searchNotes(keyword, sort); }
+QList<NoteData> NoteManager::getNotesByTag(const QString &tag, const NoteSortParam &sort) const { return m_storage->getNotesByTag(tag, sort); }
+QList<NoteData> NoteManager::getNotesByFolder(int folderId, const NoteSortParam &sort) const { return m_storage->getNotesByFolder(folderId, sort); }
 int NoteManager::noteCount() const { return m_storage->noteCount(); }
 
 bool NoteManager::convertToTodo(int id, int priority, qint64 dueDatetime)
