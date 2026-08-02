@@ -14,6 +14,8 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QPushButton>
+#include <QDateEdit>
+#include <QDate>
 #include <DToolButton>
 #include <DLabel>
 #include "storage/todostorage.h"
@@ -61,6 +63,11 @@ private:
 
     /// 返回预置示例待办列表（负 ID 标记，仅用于空状态引导）
     QList<TodoData> presetExamples() const;
+    /// 日期选择器
+    void showTodoEditDialog(int todoId);
+    void updateDatePickerVisibility();
+    void onCreateTodo();
+
     /// 按 section 名称过滤预置示例
     QList<TodoData> presetExamplesForSection(const QString &section) const;
 
@@ -77,6 +84,14 @@ private:
     int m_weekCount = 0;
     int m_completedCount = 0;
     QLineEdit *m_newTodoInput;
+    DToolButton *m_dateToggleBtn;
+    QWidget *m_datePickerContainer;
+    QDateEdit *m_dateEdit;
+    QPushButton *m_todayBtn;
+    QPushButton *m_tomorrowBtn;
+    QPushButton *m_nextWeekBtn;
+    QPushButton *m_clearDateBtn;
+    qint64 m_pendingDueDate = 0;
 
     // 排序控件
     QComboBox *m_sortFieldCombo;

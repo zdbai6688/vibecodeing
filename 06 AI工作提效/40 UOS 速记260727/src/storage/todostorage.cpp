@@ -237,6 +237,16 @@ TodoData TodoStorage::getTodo(int id) const
     return TodoData();
 }
 
+
+QString TodoStorage::buildTodoOrderClause(const TodoSortParam &sort) const
+{
+    QString fieldName = (sort.field == TodoSortParam::CreatedAt)
+        ? "creation_datetime" : "due_datetime";
+    QString order = sort.ascending ? "ASC" : "DESC";
+    return QString(" ORDER BY %1 %2").arg(fieldName, order);
+}
+
+
 QList<TodoData> TodoStorage::getAllTodos(bool includeCompleted, bool includeDeleted) const
 {
     QList<TodoData> list;
@@ -251,13 +261,6 @@ QList<TodoData> TodoStorage::getAllTodos(bool includeCompleted, bool includeDele
     return list;
 }
 
-QString TodoStorage::buildTodoOrderClause(const TodoSortParam &sort) const
-{
-    QString fieldName = (sort.field == TodoSortParam::CreatedAt)
-        ? "creation_datetime" : "due_datetime";
-    QString order = sort.ascending ? "ASC" : "DESC";
-    return QString(" ORDER BY %1 %2").arg(fieldName, order);
-}
 
 QList<TodoData> TodoStorage::getPendingTodos(const TodoSortParam &sort) const
 {
