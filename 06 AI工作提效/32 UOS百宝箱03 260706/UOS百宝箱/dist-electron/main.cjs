@@ -31,7 +31,13 @@ const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, dialog, shell } = 
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
-const { spawn, execSync } = require('child_process')
+const { spawn, execSync, execFileSync } = require('child_process')
+
+/** Check if a binary is available on PATH */
+function hasBin(bin) {
+  try { execFileSync('which', [bin], { stdio: 'ignore' }); return true }
+  catch { return false }
+}
 const https = require('https')
 
 let mainWindow = null
@@ -191,14 +197,18 @@ ipcMain.handle('open-pdf-viewer', async (_, filePath) => {
     const resolved = path.resolve(String(filePath))
     const ext = path.extname(resolved).toLowerCase()
     if (ext !== '.pdf' && ext !== '.ofd') return { success: false, error: '仅支持预览 PDF/OFD 文档' }
+    // 限制可访问目录范围，防止目录遍历
+    const allowedPrefixes = [os.homedir(), os.tmpdir(), path.join(__dirname, '..')]
+    if (!allowedPrefixes.some(p => resolved.startsWith(p + path.sep) || resolved === p)) {
+      return { success: false, error: '不允许访问此路径的文件' }
+    }
     let target = resolved
     if (ext === '.ofd') {
       // OFD 文件先转换为 PDF 再预览
-      const execSync = require('child_process').execSync
-      const hasBin = (bin) => { try { execSync('command -v ' + bin, { stdio: 'ignore' }); return true } catch { return false } }
+      // hasBin() from module level
       let converted = path.join(os.tmpdir(), path.basename(resolved, '.ofd') + '.pdf')
       if (hasBin('ofd2pdf')) {
-        execSync('ofd2pdf "' + resolved.replace(/"/g, '\\"') + '" "' + converted.replace(/"/g, '\\"') + '"', { timeout: 120000 })
+        execFileSync('ofd2pdf', [resolved, converted], { timeout: 120000 })
       } else {
         try { execSync('python3 -c "import ofd"', { stdio: 'ignore' }) } catch {
           return { success: false, error: '未检测到 OFD 转换组件，请安装: sudo apt install ofd 或 pip3 install ofd' }
@@ -1907,8 +1917,8 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
         const { files, output } = params
         if (!files || files.length < 2) return { success: false, error: '请选择至少两个 PDF 文件' }
         const outPath = output || os.tmpdir() + '/merged.pdf'
-        const cmd = 'pdfunite ' + files.map(f => '"' + String(f).replace(/"/g, '\\"') + '"').join(' ') + ' "' + String(outPath).replace(/"/g, '\\"') + '"'
-        execSync(cmd, { timeout: 60000 })
+        const cmd = 'pdfunite'; // kept for variable scope, but execFileSync is used below
+        execFileSync('pdfunite', [...files.map(f => String(f)), String(outPath)], { timeout: 60000 })
         return { success: true, output: outPath }
       }
       case 'pdf-split': {
@@ -1928,25 +1938,25 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
             const f = m ? m[1] : single[1]
             const l = m ? m[2] : single[1]
             const outFile = path.join(dir, base + '-' + rg + '.pdf')
-            execSync('pdfseparate -f ' + f + ' -l ' + l + ' "' + String(file).replace(/"/g, '\\"') + '" "' + String(outFile).replace(/"/g, '\\"') + '"', { timeout: 60000 })
+            execFileSync('pdfseparate', ['-f', f, '-l', l, String(file), String(outFile)], { timeout: 60000 })
             filesOut.push(outFile)
           }
           return { success: true, output: dir, files: filesOut, count: filesOut.length }
         }
-        execSync('pdfseparate -f 1 "' + String(file).replace(/"/g, '\\"') + '" "' + String(dir).replace(/"/g, '\\"') + '/' + base + '-%d.pdf"', { timeout: 60000 })
+        execFileSync('pdfseparate', ['-f', '1', String(file), path.join(dir, base + '-%d.pdf')], { timeout: 60000 })
         return { success: true, output: dir }
       }
       case 'pdf-to-image': {
         const { file, format, outputDir, dpi } = params
         if (!file) return { success: false, error: '请选择 PDF 文件' }
-        const hasBin = (bin) => { try { execSync('command -v ' + bin, { stdio: 'ignore' }); return true } catch { return false } }
+        // hasBin() from module level
         if (!hasBin('pdftoppm')) return { success: false, error: '未检测到 pdftoppm（poppler-utils），请安装: sudo apt install poppler-utils', need_install: true }
         const dir = outputDir || os.tmpdir()
         const base = path.basename(file, '.pdf')
         const fmt = String(format || 'png').toLowerCase() === 'jpg' ? 'jpeg' : 'png'
         const r = parseInt(dpi, 10) || 150
         fs.mkdirSync(dir, { recursive: true })
-        execSync('pdftoppm -' + fmt + ' -r ' + r + ' "' + String(file).replace(/"/g, '\\"') + '" "' + String(path.join(dir, base + '-page')).replace(/"/g, '\\"') + '"', { timeout: 120000 })
+        execFileSync('pdftoppm', ['-' + fmt, '-r', String(r), String(file), String(path.join(dir, base + '-page'))], { timeout: 120000 })
         const filesOut = fs.readdirSync(dir).filter(f => f.startsWith(base + '-page') && (f.endsWith('.' + fmt) || f.endsWith('.' + fmt))).sort()
         if (!filesOut.length) return { success: false, error: 'PDF 转图片失败' }
         return { success: true, output: dir, files: filesOut.map(f => path.join(dir, f)), count: filesOut.length }
@@ -1954,12 +1964,12 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
       case 'pdf-to-text': {
         const { file, outputDir } = params
         if (!file) return { success: false, error: '请选择 PDF 文件' }
-        const hasBin = (bin) => { try { execSync('command -v ' + bin, { stdio: 'ignore' }); return true } catch { return false } }
+        // hasBin() from module level
         if (!hasBin('pdftotext')) return { success: false, error: '未检测到 pdftotext（poppler-utils），请安装: sudo apt install poppler-utils', need_install: true }
         const dir = outputDir || os.tmpdir()
         const base = path.basename(file, '.pdf')
         const outPath = path.join(dir, base + '.txt')
-        execSync('pdftotext -layout "' + String(file).replace(/"/g, '\\"') + '" "' + String(outPath).replace(/"/g, '\\"') + '"', { timeout: 120000 })
+        execFileSync('pdftotext', ['-layout', String(file), String(outPath)], { timeout: 120000 })
         if (!fs.existsSync(outPath)) return { success: false, error: '文本提取失败' }
         return { success: true, output: outPath }
       }
@@ -1970,9 +1980,9 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
         const base = path.basename(file, path.extname(file))
         const pdfPath = path.join(dir, base + '.pdf')
         fs.mkdirSync(dir, { recursive: true })
-        const hasBin = (bin) => { try { execSync('command -v ' + bin, { stdio: 'ignore' }); return true } catch { return false } }
+        // hasBin() from module level
         if (hasBin('ofd2pdf')) {
-          execSync('ofd2pdf "' + String(file).replace(/"/g, '\\"') + '" "' + String(pdfPath).replace(/"/g, '\\"') + '"', { timeout: 120000 })
+          execFileSync('ofd2pdf', [String(file), String(pdfPath)], { timeout: 120000 })
         } else {
           try { execSync('python3 -c "import ofd"', { stdio: 'ignore' }) } catch {
             return { success: false, error: '未检测到 OFD 转换组件。请安装: sudo apt install ofd 或 pip3 install ofd', need_install: true }
@@ -1988,7 +1998,7 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
       case 'doc-convert': {
         const { file, format, outputDir } = params
         if (!file) return { success: false, error: '请选择文档文件' }
-        const hasBin = (bin) => { try { execSync('command -v ' + bin, { stdio: 'ignore' }); return true } catch { return false } }
+        // hasBin() from module level
         const bin = hasBin('soffice') ? 'soffice' : (hasBin('libreoffice') ? 'libreoffice' : null)
         if (!bin) return { success: false, error: '未检测到 LibreOffice，请安装: sudo apt install libreoffice', need_install: true }
         const fmt = String(format || 'pdf').toLowerCase()
@@ -1996,7 +2006,7 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
         const ext = extMap[fmt] || 'pdf'
         const dir = outputDir || os.tmpdir()
         fs.mkdirSync(dir, { recursive: true })
-        execSync(bin + ' --headless --convert-to ' + ext + ' --outdir "' + String(dir).replace(/"/g, '\\"') + '" "' + String(file).replace(/"/g, '\\"') + '"', { timeout: 180000 })
+        execFileSync(bin, ['--headless', '--convert-to', ext, '--outdir', String(dir), String(file)], { timeout: 180000 })
         const base = path.basename(file, path.extname(file))
         const converted = path.join(dir, base + '.' + ext)
         if (!fs.existsSync(converted)) return { success: false, error: '转换失败，请检查源文件格式是否受 LibreOffice 支持' }
