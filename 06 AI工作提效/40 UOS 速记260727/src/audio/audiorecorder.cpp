@@ -5,6 +5,8 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QFileInfo>
+#include <QSettings>
 #include <QStandardPaths>
 #include <gst/gst.h>
 
@@ -16,6 +18,23 @@ static void ensureGstInit()
         gst_init(nullptr, nullptr);
         s_gstInitialized = true;
     }
+}
+
+QString AudioRecorder::recordingDir()
+{
+    // 优先使用设置页配置的存储目录
+    const QString configured = QSettings().value("recording/storage_dir").toString().trimmed();
+    if (!configured.isEmpty()) {
+        return configured;
+    }
+    return QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/UOS速记/录音";
+}
+
+QString AudioRecorder::makeRecordingPath(const QString &prefix)
+{
+    QString dir = recordingDir();
+    QDir().mkpath(dir);
+    return dir + "/" + prefix + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss") + ".wav";
 }
 
 AudioRecorder::AudioRecorder(QObject *parent)
@@ -42,22 +61,24 @@ bool AudioRecorder::startRecording(const QString &filePath)
     // 确定保存路径
     QString path = filePath;
     if (path.isEmpty()) {
-        QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
-                      + "/UOS速记/录音";
-        QDir().mkpath(dir);
-        path = dir + "/录音_" + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss") + ".wav";
+        path = makeRecordingPath("录音_");
     }
     m_filePath = path;
 
+    // 确保目标目录存在
+    QDir().mkpath(QFileInfo(path).absolutePath());
+
     // 构建 GStreamer 管道:
-    // autoaudiosrc ! audioconvert ! audioresample ! capsfilter(S16LE 16kHz mono) ! wavenc ! filesink
+    // autoaudiosrc ! audioconvert ! audioresample ! capsfilter(16kHz mono 16bit) ! wavenc ! filesink
+    // 注意：filesink 的 location 不嵌入管道字符串，避免路径含空格/中文/特殊字符时解析失败，
+    // 保证录音文件精确落盘到 m_filePath（与 ASR 转写读取路径一致）。
     QString pipelineStr = QString(
         "autoaudiosrc name=src ! "
         "audioconvert ! audioresample ! "
-        "capsfilter caps=\"audio/x-raw, format=S16LE, rate=16000, channels=1\" ! "
+        "audio/x-raw, format=S16LE, rate=16000, channels=1 ! "
         "wavenc ! "
-        "filesink name=file_sink location=\"%1\""
-    ).arg(path);
+        "filesink name=file_sink"
+    );
 
     GError *error = nullptr;
     m_pipeline = gst_parse_launch(pipelineStr.toUtf8().constData(), &error);
@@ -71,6 +92,16 @@ bool AudioRecorder::startRecording(const QString &filePath)
 
     m_source = gst_bin_get_by_name(GST_BIN(m_pipeline), "src");
     m_sink = gst_bin_get_by_name(GST_BIN(m_pipeline), "file_sink");
+    if (m_sink) {
+        g_object_set(m_sink, "location", path.toUtf8().constData(), nullptr);
+    } else {
+        qWarning() << "录音管道缺少 filesink 元素";
+        gst_element_set_state(m_pipeline, GST_STATE_NULL);
+        gst_object_unref(m_pipeline);
+        m_pipeline = nullptr;
+        emit errorOccurred("创建录音管道失败: 缺少 filesink 元素");
+        return false;
+    }
 
     // 监听总线消息
     GstBus *bus = gst_element_get_bus(m_pipeline);
@@ -137,7 +168,7 @@ bool AudioRecorder::stopRecording()
     }
 
     if (m_pipeline) {
-        // 发送 EOS 事件
+        // 发送 EOS 事件，确保 wavenc 写入完整的 WAV 文件头
         gst_element_send_event(m_pipeline, gst_event_new_eos());
         // 等待 EOS 或超时
         GstBus *bus = gst_element_get_bus(m_pipeline);
@@ -158,6 +189,13 @@ bool AudioRecorder::stopRecording()
     emit stateChanged(m_state);
     emit recordingFinished(m_filePath);
     qInfo() << "录音结束:" << m_filePath << "时长:" << m_durationMs << "ms";
+
+    // 校验录音文件是否已正确落盘（存在且非空）
+    QFileInfo fi(m_filePath);
+    if (!fi.exists() || fi.size() <= 0) {
+        qWarning() << "录音文件缺失或为空:" << m_filePath;
+        emit errorOccurred("录音文件未正确保存，请重新录音");
+    }
     return true;
 }
 

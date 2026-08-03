@@ -4,9 +4,11 @@
 #include "meetingwidget.h"
 #include "application/shorthandapplication.h"
 #include "core/meetingmanager.h"
+#include "core/todomanager.h"
 #include "services/aiservice.h"
 #include "services/asrservice.h"
 #include "audio/audioplayer.h"
+#include "audio/audiorecorder.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -15,6 +17,12 @@
 #include <QInputDialog>
 #include <QScrollBar>
 #include <QTextBlock>
+#include <QDir>
+#include <QStandardPaths>
+#include <QFileInfo>
+#include <QFileDialog>
+#include <QMenu>
+#include <QAction>
 #include <DLabel>
 #include <DFontSizeManager>
 #include <DDialog>
@@ -26,21 +34,34 @@ static void stylePrimaryBtn(QPushButton *btn)
     btn->setFixedHeight(36);
     btn->setStyleSheet(R"(
         QPushButton {
-            background: palette(highlight); color: palette(highlightedText); border: none;
+            background: #2178E5; color: #FFFFFF; border: none;
             border-radius: 6px; padding: 4px 24px; font-size: 13px; font-weight: 600;
         }
-        QPushButton:hover { background: palette(dark); }
-        QPushButton:disabled { background: palette(mid); color: palette(windowText); }
+        QPushButton:hover { background: #1A6AD4; }
+        QPushButton:disabled { background: #CCCCCC; color: #888888; }
     )");
 }
 
 MeetingWidget::MeetingWidget(QWidget *parent)
     : QWidget(parent)
 {
-    setStyleSheet("MeetingWidget { background: palette(base); }");
+    setStyleSheet("MeetingWidget { background: #FFFFFF; }");
     m_player = new AudioPlayer(this);
+    m_recorder = new AudioRecorder(this);
+    m_recordingAnimTimer = new QTimer(this);
+    m_recordingAnimTimer->setInterval(500);
+    m_recordingStartTime = 0;
+    connect(m_recordingAnimTimer, &QTimer::timeout, this, [this]() {
+        if (m_recordingStartTime > 0) {
+            int elapsed = (QDateTime::currentMSecsSinceEpoch() - m_recordingStartTime) / 1000;
+            int min = elapsed / 60;
+            int sec = elapsed % 60;
+            m_recordingBtn->setText(tr("⏹ 停止  %1:%2").arg(min).arg(sec, 2, 10, QChar('0')));
+        }
+    });
     initUI();
     initConnections();
+    refresh();
 }
 
 void MeetingWidget::initUI()
@@ -49,32 +70,42 @@ void MeetingWidget::initUI()
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
     m_stack = new QStackedWidget(this);
+    mainLayout->addWidget(m_stack);
 
     // ─── 空状态页 ─────────────────────────────────────────────
     m_emptyPage = new QWidget(this);
     QVBoxLayout *emptyLayout = new QVBoxLayout(m_emptyPage);
     emptyLayout->setAlignment(Qt::AlignCenter);
-    emptyLayout->setSpacing(12);
+    emptyLayout->setSpacing(16);
 
-    DLabel *emptyIcon = new DLabel(tr("🎤"), this);
+    QLabel *emptyIcon = new QLabel(tr("🎤"), m_emptyPage);
     emptyIcon->setStyleSheet("font-size: 64px;");
     emptyIcon->setAlignment(Qt::AlignCenter);
     emptyLayout->addWidget(emptyIcon);
 
-    DLabel *emptyTitle = new DLabel(tr("会议记录"), this);
-    emptyTitle->setStyleSheet("font-size: 16px; font-weight: 600;");
+    QLabel *emptyTitle = new QLabel(tr("会议记录"), m_emptyPage);
+    emptyTitle->setStyleSheet("font-size: 18px; font-weight: 700; color: #222222;");
     emptyTitle->setAlignment(Qt::AlignCenter);
     emptyLayout->addWidget(emptyTitle);
 
-    DLabel *emptyDesc = new DLabel(tr("记录会议音频，支持语音转文字和 AI 摘要"), this);
-    emptyDesc->setStyleSheet("font-size: 13px; color: palette(placeholderText);");
+    QLabel *emptyDesc = new QLabel(tr("记录会议音频，支持语音转文字和 AI 摘要"), m_emptyPage);
+    emptyDesc->setStyleSheet("font-size: 13px; color: #999999;");
     emptyDesc->setAlignment(Qt::AlignCenter);
     emptyLayout->addWidget(emptyDesc);
 
-    QPushButton *startBtn = new QPushButton(tr("🎤 开始记录"), this);
-    stylePrimaryBtn(startBtn);
+    QPushButton *startBtn = new QPushButton(tr("🎤 开始会议"), m_emptyPage);
+    startBtn->setFixedHeight(38);
+    startBtn->setCursor(Qt::PointingHandCursor);
+    startBtn->setStyleSheet("QPushButton { background: #2178E5; color: white; border: none; border-radius: 6px; padding: 4px 32px; font-size: 14px; font-weight: 600; } QPushButton:hover { background: #1A6AD4; }");
     emptyLayout->addWidget(startBtn, 0, Qt::AlignCenter);
-    connect(startBtn, &QPushButton::clicked, this, &MeetingWidget::onNewMeeting);
+    connect(startBtn, &QPushButton::clicked, this, &MeetingWidget::onStartRecording);
+
+    QPushButton *manualBtn = new QPushButton(tr("📝 新建会议"), m_emptyPage);
+    manualBtn->setFixedHeight(38);
+    manualBtn->setCursor(Qt::PointingHandCursor);
+    manualBtn->setStyleSheet("QPushButton { background: white; color: #2178E5; border: 1px solid #2178E5; border-radius: 6px; padding: 4px 32px; font-size: 14px; } QPushButton:hover { background: #F0F5FF; }");
+    emptyLayout->addWidget(manualBtn, 0, Qt::AlignCenter);
+    connect(manualBtn, &QPushButton::clicked, this, &MeetingWidget::onNewMeeting);
 
     m_stack->addWidget(m_emptyPage);
 
@@ -98,7 +129,7 @@ void MeetingWidget::initUI()
     m_searchEdit = new QLineEdit(this);
     m_searchEdit->setPlaceholderText(tr("搜索会议..."));
     m_searchEdit->setFixedHeight(32);
-    m_searchEdit->setStyleSheet("QLineEdit { border:1px solid palette(mid); border-radius:6px; padding:4px 12px; font-size:13px; background:palette(window); } QLineEdit:focus { border-color:palette(highlight); }");
+    m_searchEdit->setStyleSheet("QLineEdit { border:1px solid #EAECEF; border-radius:6px; padding:4px 12px; font-size:13px; background:palette(window); } QLineEdit:focus { border-color:#2178E5; }");
     listLayout->addWidget(m_searchEdit);
 
     m_meetingList = new QListWidget(this);
@@ -108,23 +139,24 @@ void MeetingWidget::initUI()
         QListWidget { background: transparent; border: none; }
         QListWidget::item {
             border-radius: 6px; padding: 12px 16px; margin: 2px 0;
-            background: palette(base); border: 1px solid palette(midlight);
+            background: #F8F9FA; border: 1px solid #EAECEF;
         }
-        QListWidget::item:hover { background: palette(light); }
+        QListWidget::item:hover { background: #EEF0F3; }
+        QListWidget::item:selected { background: #EEF2FF; border-color: #2178E5; }
     )");
     listLayout->addWidget(m_meetingList, 1);
     m_stack->addWidget(m_listPage);
 
-    // ─── 详情页 ────────────────────────────────────────────────
+    // ─── 详情页（简洁版）────────────────────────────────────
     m_detailPage = new QWidget(this);
     QVBoxLayout *detailLayout = new QVBoxLayout(m_detailPage);
     detailLayout->setContentsMargins(16, 12, 16, 12);
     detailLayout->setSpacing(8);
 
-    // 标题栏
+    // 返回 + 标题
     QHBoxLayout *detailHeader = new QHBoxLayout();
-    m_backBtn = new QPushButton(tr("← 返回"), this);
-    m_backBtn->setStyleSheet("QPushButton { background:transparent; border:none; color:palette(placeholderText); font-size:13px; } QPushButton:hover { color:palette(highlight); }");
+    m_backBtn = new QPushButton(tr("← 返回列表"), this);
+    m_backBtn->setStyleSheet("QPushButton { background:transparent; border:none; color:#999; font-size:12px; } QPushButton:hover { color:#2178E5; }");
     detailHeader->addWidget(m_backBtn);
     detailHeader->addStretch();
     m_deleteBtn = new QPushButton(tr("删除"), this);
@@ -133,57 +165,115 @@ void MeetingWidget::initUI()
     detailLayout->addLayout(detailHeader);
 
     m_titleLabel = new DLabel(this);
-    m_titleLabel->setStyleSheet("font-size: 16px; font-weight: 600;");
+    m_titleLabel->setStyleSheet("font-size: 16px; font-weight: 600; color: #222;");
     detailLayout->addWidget(m_titleLabel);
 
     m_dateLabel = new DLabel(this);
-    m_dateLabel->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
+    m_dateLabel->setStyleSheet("font-size: 11px; color: #999;");
     detailLayout->addWidget(m_dateLabel);
 
-    // 音频播放器
-    QWidget *playerWidget = new QWidget(this);
-    playerWidget->setStyleSheet("background: palette(light); border-radius: 6px;");
-    QHBoxLayout *playerLayout = new QHBoxLayout(playerWidget);
-    playerLayout->setContentsMargins(12, 4, 12, 4);
-    m_playBtn = new QPushButton(tr("▶ 播放"), this);
-    m_playBtn->setStyleSheet("QPushButton { background:palette(highlight); color:palette(highlightedText); border:none; border-radius:6px; padding:4px 16px; font-size:12px; }");
-    m_positionLabel = new QLabel(tr("00:00 / 00:00"), this);
-    m_positionLabel->setStyleSheet("font-size:11px; color:palette(placeholderText);");
-    playerLayout->addWidget(m_playBtn);
-    playerLayout->addWidget(m_positionLabel, 1);
-    detailLayout->addWidget(playerWidget);
+    QHBoxLayout *fileRow = new QHBoxLayout();
+    m_fileLabel = new QLabel(this);
+    m_fileLabel->setStyleSheet("font-size: 11px; color: #999;");
+    m_fileLabel->setVisible(false);
+    fileRow->addWidget(m_fileLabel, 1);
+    m_exportBtn = new QPushButton(tr("📤 导出录音"), this);
+    m_exportBtn->setFixedHeight(26);
+    m_exportBtn->setStyleSheet("QPushButton { background:transparent; color:#2178E5; border:1px solid #2178E5; border-radius:4px; padding:2px 10px; font-size:11px; } QPushButton:hover { background:#F0F5FF; }");
+    m_exportBtn->setVisible(false);
+    fileRow->addWidget(m_exportBtn);
+    detailLayout->addLayout(fileRow);
 
-    // 操作按钮
+    // 操作按钮行
     QHBoxLayout *actionRow = new QHBoxLayout();
-    actionRow->setSpacing(8);
+    actionRow->setSpacing(6);
+    m_recordingBtn = new QPushButton(tr("🎙 开始录音"), this);
+    m_recordingBtn->setFixedHeight(32);
+    m_recordingBtn->setStyleSheet("QPushButton { background:#E64545; color:white; border:none; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#CF3A3A; }");
     m_transcribeBtn = new QPushButton(tr("🎤 语音转写"), this);
-    stylePrimaryBtn(m_transcribeBtn);
-    m_aiSummaryBtn = new QPushButton(tr("🤖 AI 生成纪要"), this);
-    stylePrimaryBtn(m_aiSummaryBtn);
-    m_transcribeBtn->setStyleSheet(m_transcribeBtn->styleSheet() + "QPushButton { background:palette(mid); }");
+    m_transcribeBtn->setFixedHeight(32);
+    m_transcribeBtn->setStyleSheet("QPushButton { background:#2178E5; color:white; border:none; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#1A6AD4; } QPushButton:disabled { background:#CCC; }");
+    m_aiSummaryBtn = new QPushButton(tr("🤖 AI 纪要"), this);
+    m_aiSummaryBtn->setFixedHeight(32);
+    m_aiSummaryBtn->setStyleSheet("QPushButton { background:white; color:#2178E5; border:1px solid #2178E5; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#F0F5FF; }");
+
+    QPushButton *genTodoBtn = new QPushButton(tr("📋 生成待办"), this);
+    genTodoBtn->setFixedHeight(32);
+    genTodoBtn->setStyleSheet("QPushButton { background:white; color:#52C41A; border:1px solid #52C41A; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#F0FFF0; }");
+
+    actionRow->addWidget(m_recordingBtn);
     actionRow->addWidget(m_transcribeBtn);
     actionRow->addWidget(m_aiSummaryBtn);
+    actionRow->addWidget(genTodoBtn);
     actionRow->addStretch();
     detailLayout->addLayout(actionRow);
 
-    // 转写内容（QTextBrowser 支持锚点点击）
+    connect(genTodoBtn, &QPushButton::clicked, this, [this, genTodoBtn]() {
+        if (m_currentMeetingId <= 0) return;
+        auto *app = ShorthandApplication::instance();
+        auto *mgr = app->meetingManager();
+        auto *ai = app->aiService();
+        if (!ai || !ai->currentService()) {
+            DDialog d(this); d.setTitle(tr("AI 未配置")); d.setMessage(tr("请在设置中配置 AI 服务")); d.addButton(tr("确定")); d.exec();
+            return;
+        }
+        QString transcript;
+        QList<TranscriptData> segs = mgr->getTranscripts(m_currentMeetingId);
+        for (const auto &s : segs) {
+            if (!s.text.trimmed().isEmpty()) transcript += s.text + "\n";
+        }
+        if (transcript.trimmed().isEmpty()) {
+            DDialog d(this); d.setTitle(tr("提示")); d.setMessage(tr("暂无转写内容，请先语音转写")); d.addButton(tr("确定")); d.exec();
+            return;
+        }
+        genTodoBtn->setEnabled(false);
+        genTodoBtn->setText(tr("生成中..."));
+
+        ai->extractTodos(transcript, [this, genTodoBtn](const QList<QPair<QString, int>> &todos) {
+            genTodoBtn->setEnabled(true);
+            genTodoBtn->setText(tr("📋 生成待办"));
+            if (todos.isEmpty()) {
+                DDialog d(this); d.setTitle(tr("提取结果")); d.setMessage(tr("未从会议内容中识别出待办事项")); d.addButton(tr("确定")); d.exec();
+                return;
+            }
+            auto *app = ShorthandApplication::instance();
+            int count = 0;
+            for (const auto &todo : todos) {
+                TodoData td; td.title = todo.first; td.priority = todo.second;
+                td.creationDatetime = QDateTime::currentSecsSinceEpoch();
+                td.modificationDatetime = td.creationDatetime;
+                if (app->todoManager()->createTodo(td) > 0) count++;
+            }
+            DDialog d(this); d.setTitle(tr("生成完成"));
+            d.setMessage(tr("成功从会议中提取 %1 条待办事项").arg(count));
+            d.addButton(tr("确定"));
+            d.exec();
+        });
+    });
+
+    // 内容区（转写 + AI 纪要合并）
+    DLabel *contentTitle = new DLabel(tr("会议内容"), this);
+    contentTitle->setStyleSheet("font-size: 12px; font-weight: 600; color: #666; padding: 4px 0;");
+    detailLayout->addWidget(contentTitle);
+
     m_transcriptEdit = new QTextBrowser(this);
     m_transcriptEdit->setPlaceholderText(tr("点击「语音转写」识别录音内容..."));
     m_transcriptEdit->setReadOnly(true);
-    m_transcriptEdit->setMinimumHeight(160);
+    m_transcriptEdit->setStyleSheet("QTextBrowser { border: 1px solid #EAECEF; border-radius: 6px; padding: 8px; font-size: 12px; color: #333; background: #FFFFFF; }");
+    m_transcriptEdit->setMinimumHeight(200);
     m_transcriptEdit->setOpenExternalLinks(false);
     m_transcriptEdit->setOpenLinks(false);
-    detailLayout->addWidget(m_transcriptEdit, 3);
+    detailLayout->addWidget(m_transcriptEdit, 1);
 
-    // AI 摘要
     DLabel *summaryTitle = new DLabel(tr("AI 摘要"), this);
-    summaryTitle->setStyleSheet("font-size:12px; font-weight:600;");
+    summaryTitle->setStyleSheet("font-size: 12px; font-weight: 600; color: #666; padding: 4px 0;");
     detailLayout->addWidget(summaryTitle);
     m_summaryEdit = new QTextEdit(this);
     m_summaryEdit->setPlaceholderText(tr("AI 生成的会议纪要..."));
     m_summaryEdit->setReadOnly(true);
-    m_summaryEdit->setMinimumHeight(140);
-    detailLayout->addWidget(m_summaryEdit, 2);
+    m_summaryEdit->setStyleSheet("QTextEdit { border: 1px solid #EAECEF; border-radius: 6px; padding: 8px; font-size: 12px; color: #333; background: #FFFFFF; }");
+    m_summaryEdit->setMinimumHeight(100);
+    detailLayout->addWidget(m_summaryEdit);
 
     m_stack->addWidget(m_detailPage);
 
@@ -196,36 +286,60 @@ void MeetingWidget::initConnections()
     connect(m_newBtn, &QPushButton::clicked, this, &MeetingWidget::onNewMeeting);
     connect(m_backBtn, &QPushButton::clicked, this, &MeetingWidget::showMeetingList);
     connect(m_deleteBtn, &QPushButton::clicked, this, &MeetingWidget::onDeleteMeeting);
-    connect(m_playBtn, &QPushButton::clicked, this, &MeetingWidget::onPlayPause);
     connect(m_transcribeBtn, &QPushButton::clicked, this, &MeetingWidget::onTranscribe);
     connect(m_aiSummaryBtn, &QPushButton::clicked, this, &MeetingWidget::onAiSummary);
+    connect(m_recordingBtn, &QPushButton::clicked, this, &MeetingWidget::onStartRecording);
+    connect(m_recorder, &AudioRecorder::recordingFinished, this, &MeetingWidget::onStopRecording);
     connect(m_meetingList, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
         int meetingId = item->data(Qt::UserRole).toInt();
         showMeetingDetail(meetingId);
     });
+
+    // 右键菜单
+    m_meetingList->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_meetingList, &QListWidget::customContextMenuRequested, this, [this](const QPoint &pos) {
+        QListWidgetItem *item = m_meetingList->itemAt(pos);
+        if (!item) return;
+        int meetingId = item->data(Qt::UserRole).toInt();
+        if (meetingId <= 0) return;
+
+        QMenu menu(this);
+        // 跟随系统主题（深色/浅色均可读），选中项使用主题高亮色
+        menu.setStyleSheet(R"(
+            QMenu { background: palette(window); border: 1px solid palette(mid); border-radius: 6px; padding: 4px; }
+            QMenu::item { padding: 6px 24px; border-radius: 4px; font-size: 13px; color: palette(windowText); }
+            QMenu::item:selected { background: palette(highlight); color: palette(highlightedText); }
+            QMenu::separator { height: 1px; background: palette(midlight); margin: 4px 8px; }
+        )");
+
+        QAction *openAction = menu.addAction(tr("📂 打开"));
+        connect(openAction, &QAction::triggered, this, [this, meetingId]() { showMeetingDetail(meetingId); });
+
+        menu.addSeparator();
+
+        QAction *transcribeAction = menu.addAction(tr("🎤 语音转写"));
+        connect(transcribeAction, &QAction::triggered, this, [this, meetingId]() {
+            m_currentMeetingId = meetingId;
+            onTranscribe();
+        });
+
+        QAction *summaryAction = menu.addAction(tr("🤖 AI 生成纪要"));
+        connect(summaryAction, &QAction::triggered, this, [this, meetingId]() {
+            m_currentMeetingId = meetingId;
+            onAiSummary();
+        });
+
+        menu.addSeparator();
+
+        QAction *deleteAction = menu.addAction(tr("🗑 删除"));
+        connect(deleteAction, &QAction::triggered, this, [this, meetingId]() {
+            m_currentMeetingId = meetingId;
+            onDeleteMeeting();
+        });
+
+        menu.exec(m_meetingList->viewport()->mapToGlobal(pos));
+    });
     connect(m_searchEdit, &QLineEdit::textChanged, this, &MeetingWidget::onSearch);
-
-    // 时间戳点击 → 跳转到音频对应位置
-    connect(m_transcriptEdit, &QTextBrowser::anchorClicked,
-            this, &MeetingWidget::onTranscriptAnchorClicked);
-
-    // 播放位置变化 → 更新显示并高亮当前转写段
-    connect(m_player, &AudioPlayer::positionChanged,
-            this, &MeetingWidget::onPlaybackPositionChanged);
-
-    connect(m_player, &AudioPlayer::playbackStarted, this, [this]() {
-        m_playBtn->setText(tr("⏸ 暂停"));
-    });
-    connect(m_player, &AudioPlayer::playbackPaused, this, [this]() {
-        m_playBtn->setText(tr("▶ 播放"));
-    });
-    connect(m_player, &AudioPlayer::playbackStopped, this, [this]() {
-        m_playBtn->setText(tr("▶ 播放"));
-    });
-    connect(m_player, &AudioPlayer::playbackFinished, this, [this]() {
-        m_playBtn->setText(tr("▶ 播放"));
-        m_highlightedSegmentIndex = -1;
-    });
 }
 
 void MeetingWidget::showMeetingList()
@@ -243,6 +357,32 @@ void MeetingWidget::showMeetingDetail(int meetingId)
 
     m_titleLabel->setText(meeting.title.isEmpty() ? tr("无标题") : meeting.title);
     m_dateLabel->setText(QDateTime::fromSecsSinceEpoch(meeting.createdAt).toString("yyyy-MM-dd hh:mm"));
+
+    // 显示录音文件信息
+    if (!meeting.audioFilePath.isEmpty() && QFile::exists(meeting.audioFilePath)) {
+        QFileInfo fi(meeting.audioFilePath);
+        m_fileLabel->setText(tr("录音文件: %1").arg(fi.fileName()));
+        m_fileLabel->setVisible(true);
+        m_exportBtn->setVisible(true);
+        // 断开旧连接避免重复
+        disconnect(m_exportBtn, &QPushButton::clicked, nullptr, nullptr);
+        connect(m_exportBtn, &QPushButton::clicked, this, [this, meeting]() {
+            QString savePath = QFileDialog::getSaveFileName(this, tr("导出录音"),
+                QFileInfo(meeting.audioFilePath).fileName(),
+                tr("音频文件 (*.wav *.mp3 *.ogg)"));
+            if (!savePath.isEmpty()) {
+                QFile::copy(meeting.audioFilePath, savePath);
+                DDialog d(this);
+                d.setTitle(tr("导出成功"));
+                d.setMessage(tr("录音已导出到：%1").arg(savePath));
+                d.addButton(tr("确定"));
+                d.exec();
+            }
+        });
+    } else {
+        m_fileLabel->setVisible(false);
+        m_exportBtn->setVisible(false);
+    }
 
     // 加载转写文本（带可点击时间戳）
     m_currentTranscripts = mgr->getTranscripts(meetingId);
@@ -265,7 +405,6 @@ void MeetingWidget::showMeetingDetail(int meetingId)
         m_player->load(m_currentAudioFilePath);
         if (!m_player->isPlaying()) {
             m_player->stop();
-            m_positionLabel->setText(tr("00:00 / 00:00"));
         }
     }
 
@@ -282,6 +421,72 @@ void MeetingWidget::onNewMeeting()
     if (id > 0) {
         showMeetingDetail(id);
     }
+}
+
+void MeetingWidget::onStartRecording()
+{
+    // 如果正在录音，点击则停止
+    if (m_recorder->state() == AudioRecorder::Recording) {
+        m_recorder->stopRecording();
+        return;
+    }
+
+    // 创建会议并开始录音
+    auto *app = ShorthandApplication::instance();
+    MeetingData meeting;
+    meeting.title = tr("会议 %1").arg(QDateTime::currentDateTime().toString("MM-dd hh:mm"));
+    meeting.createdAt = QDateTime::currentSecsSinceEpoch();
+    meeting.status = "recording";
+    int id = app->meetingManager()->createMeeting(meeting);
+
+    if (id > 0) {
+        m_currentMeetingId = id;
+        // 录音文件路径：使用设置页配置的存储目录（未配置时回退到默认目录）
+        QString audioPath = AudioRecorder::makeRecordingPath("会议_");
+
+        if (m_recorder->startRecording(audioPath)) {
+            m_recordingBtn->setText(tr("⏹ 停止  0:00"));
+            m_recordingBtn->setStyleSheet("QPushButton { background:#E64545; color:white; border:none; border-radius:6px; padding:4px 16px; font-size:12px; } QPushButton:hover { background:#CF3A3A; }");
+            m_recordingStartTime = QDateTime::currentMSecsSinceEpoch();
+            m_recordingAnimTimer->start();
+            showMeetingDetail(id);
+        } else {
+            DDialog d(this);
+            d.setTitle(tr("录音失败"));
+            d.setMessage(tr("无法启动录音，请检查麦克风。"));
+            d.addButton(tr("确定"));
+            d.exec();
+        }
+    }
+}
+
+void MeetingWidget::onStopRecording(const QString &filePath)
+{
+    m_recordingAnimTimer->stop();
+    m_recordingBtn->setText(tr("🎙 开始录音"));
+    m_recordingBtn->setStyleSheet("QPushButton { background:#E64545; color:white; border:none; border-radius:6px; padding:4px 16px; font-size:12px; } QPushButton:hover { background:#CF3A3A; }");
+
+    if (m_currentMeetingId <= 0) return;
+
+    auto *app = ShorthandApplication::instance();
+    MeetingData meeting = app->meetingManager()->getMeeting(m_currentMeetingId);
+    if (meeting.id <= 0) return;
+
+    meeting.audioFilePath = filePath;
+    meeting.status = "completed";
+    meeting.endedAt = QDateTime::currentSecsSinceEpoch();
+    meeting.durationSecs = (int)(meeting.endedAt - meeting.createdAt);
+    app->meetingManager()->updateMeeting(meeting);
+    m_currentAudioFilePath = filePath;
+
+    // 刷新详情页，展示录音文件名与导出按钮
+    showMeetingDetail(m_currentMeetingId);
+
+    DDialog d(this);
+    d.setTitle(tr("录音完成"));
+    d.setMessage(tr("会议录音已保存，可点击「🎤 语音转写」识别内容。"));
+    d.addButton(tr("确定"));
+    d.exec();
 }
 
 void MeetingWidget::refresh()
@@ -313,31 +518,6 @@ void MeetingWidget::populateMeetingList(const QList<MeetingData> &meetings)
     }
 }
 
-void MeetingWidget::onPlayPause()
-{
-    if (m_currentMeetingId <= 0) return;
-    auto *app = ShorthandApplication::instance();
-    MeetingData meeting = app->meetingManager()->getMeeting(m_currentMeetingId);
-    if (meeting.audioFilePath.isEmpty() || !QFile::exists(meeting.audioFilePath)) {
-        DDialog d(this);
-        d.setTitle(tr("提示"));
-        d.setMessage(tr("暂无录音文件"));
-        d.addButton(tr("确定"));
-        d.exec();
-        return;
-    }
-
-    if (m_player->isPlaying()) {
-        // 正在播放 → 暂停
-        m_player->pause();
-    } else {
-        // 暂停或停止 → 开始/继续播放
-        if (!m_player->isLoaded()) {
-            m_player->load(meeting.audioFilePath);
-        }
-        m_player->play();
-    }
-}
 
 void MeetingWidget::onDeleteMeeting()
 {
@@ -484,68 +664,7 @@ void MeetingWidget::onSearch(const QString &keyword)
 
 // ─── 时间戳点击跳转 ──────────────────────────────────────────
 
-void MeetingWidget::onTranscriptAnchorClicked(const QUrl &link)
-{
-    // 链接格式: "seek://TIMESTAMP_MS"
-    if (link.scheme() != "seek") return;
 
-    bool ok = false;
-    QString path = link.path();
-    // 去掉开头的 "/"
-    if (path.startsWith('/')) path = path.mid(1);
-    qint64 ts = path.toLongLong(&ok);
-
-    if (!ok || m_currentMeetingId <= 0) return;
-    if (m_currentAudioFilePath.isEmpty() || !QFile::exists(m_currentAudioFilePath)) return;
-
-    // 跳转到对应时间位置
-    if (!m_player->isLoaded()) {
-        m_player->load(m_currentAudioFilePath);
-    }
-    m_player->seekTo(ts);
-
-    // 如果播放器不在播放状态，开始播放
-    if (!m_player->isPlaying()) {
-        m_player->play();
-    }
-}
-
-void MeetingWidget::onPlaybackPositionChanged(qint64 posMs)
-{
-    // 更新位置标签（使用缓存的音频路径，避免每帧查询数据库）
-    if (!m_currentAudioFilePath.isEmpty() && m_player->isLoaded()) {
-        m_positionLabel->setText(QString("%1 / %2")
-            .arg(formatTime(posMs)).arg(formatTime(m_player->durationMs())));
-    }
-
-    // 高亮当前对应的转写段
-    if (m_currentTranscripts.isEmpty()) return;
-
-    // 找到 posMs 所在的 segment 索引（反向线性查找，转写数据按时间递增排列）
-    int newIndex = -1;
-    for (int i = m_currentTranscripts.size() - 1; i >= 0; --i) {
-        if (m_currentTranscripts[i].timestampMs <= posMs) {
-            newIndex = i;
-            break;
-        }
-    }
-
-    if (newIndex == m_highlightedSegmentIndex) return;
-    m_highlightedSegmentIndex = newIndex;
-
-    m_transcriptEdit->setHtml(buildTranscriptHtml(newIndex));
-
-    // 滚动到高亮行
-    if (newIndex >= 0) {
-        QTextDocument *doc = m_transcriptEdit->document();
-        QTextBlock block = doc->findBlockByNumber(newIndex);
-        if (block.isValid()) {
-            QTextCursor scrollCursor(block);
-            m_transcriptEdit->setTextCursor(scrollCursor);
-            m_transcriptEdit->ensureCursorVisible();
-        }
-    }
-}
 
 // ─── 构建转写 HTML（可点击时间戳） ───────────────────────────
 

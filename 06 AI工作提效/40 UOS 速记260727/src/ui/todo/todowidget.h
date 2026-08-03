@@ -7,21 +7,22 @@
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QListWidget>
-#include <QStackedWidget>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMenu>
-#include <QComboBox>
 #include <QCheckBox>
-#include <QPushButton>
+#include <QMenu>
+#include <QAction>
 #include <QDateEdit>
-#include <QDate>
-#include <DToolButton>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <DLabel>
+#include <DDialog>
+#include <QInputDialog>
 #include "storage/todostorage.h"
 
 DWIDGET_USE_NAMESPACE
 
+// 极简待办列表：和笔记列表一致，只是每条前面有完成复选框
 class TodoWidget : public QWidget
 {
     Q_OBJECT
@@ -45,70 +46,16 @@ private slots:
 
 private:
     void initUI();
-    void populateSection(QListWidget *list, const QList<TodoData> &todos,
-                         const QString &emptyHint, int &outCount,
-                         bool isPreset = false);
-    void updateOverallEmptyState();
-    void setupListContextMenu(QListWidget *list);
-    void loadSortPreference();
-    void saveSortPreference();
+    void populateList(const QList<TodoData> &todos);
+    QWidget *createTodoRow(const TodoData &todo);
+    QWidget *createSectionHeader(const QString &title, const QString &color);
+    void showTodoContextMenu(QListWidget *list, const QPoint &pos);
+    void setTodoDueDate(int todoId);
 
-    QMenu *createTodoContextMenu(int todoId);
-    void buildTagSubMenu(QMenu *parentMenu, int todoId);
-    void buildPrioritySubMenu(QMenu *parentMenu, int todoId);
-
-    // 批量操作
-    void enterMultiSelectMode();
-    void exitMultiSelectMode();
-    void updateSelectionState();
-    void onBatchDelete();
-    QList<int> getSelectedTodoIds() const;
-
-    /// 返回预置示例待办列表（负 ID 标记，仅用于空状态引导）
-    QList<TodoData> presetExamples() const;
-    /// 日期选择器
-    void showTodoEditDialog(int todoId);
-    void updateDatePickerVisibility();
-    void onCreateTodo();
-
-    /// 按 section 名称过滤预置示例
-    QList<TodoData> presetExamplesForSection(const QString &section) const;
-
-    QListWidget *m_todayList;
-    QListWidget *m_overdueList;
-    QListWidget *m_weekList;
-    QListWidget *m_completedList;
-    QVBoxLayout *m_mainLayout;
-    QStackedWidget *m_stack;
-    QWidget *m_contentWidget;
-    QWidget *m_emptyWidget;
-    int m_todayCount = 0;
-    int m_overdueCount = 0;
-    int m_weekCount = 0;
-    int m_completedCount = 0;
-    QStringList m_filterTags;
     QLineEdit *m_newTodoInput;
-    DToolButton *m_dateToggleBtn;
-    QWidget *m_datePickerContainer;
-    QDateEdit *m_dateEdit;
-    QPushButton *m_todayBtn;
-    QPushButton *m_tomorrowBtn;
-    QPushButton *m_nextWeekBtn;
-    QPushButton *m_clearDateBtn;
-    qint64 m_pendingDueDate = 0;
-
-    // 排序控件
-    QComboBox *m_sortFieldCombo;
-    DToolButton *m_sortOrderBtn;
-    TodoSortParam m_sortParam;
-
-    // 批量操作控件
-    bool m_multiSelectMode = false;
-    QWidget *m_batchToolbar;
-    QPushButton *m_selectModeBtn;
-    QPushButton *m_selectAllBtn;
-    QPushButton *m_batchDeleteBtn;
-    DLabel *m_selectionCountLabel;
+    QListWidget *m_pendingList;
+    QListWidget *m_completedList;
+    QStringList m_filterTags;
 };
 
 #endif // TODOWIDGET_H

@@ -8,12 +8,14 @@
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QLineEdit>
+#include <QTimer>
 #include <QUrl>
 #include <DPushButton>
 #include <DLabel>
 #include "storage/meetingstorage.h"
 
 class AudioPlayer;
+class AudioRecorder;
 
 DWIDGET_USE_NAMESPACE
 
@@ -28,13 +30,12 @@ public:
 
 private slots:
     void onNewMeeting();
-    void onPlayPause();
+    void onStartRecording();
+    void onStopRecording(const QString &filePath = QString());
     void onDeleteMeeting();
     void onAiSummary();
     void onTranscribe();
     void onSearch(const QString &keyword);
-    void onTranscriptAnchorClicked(const QUrl &link);
-    void onPlaybackPositionChanged(qint64 posMs);
 
 private:
     void initUI();
@@ -62,9 +63,14 @@ private:
     QPushButton *m_backBtn;
     QPushButton *m_aiSummaryBtn;
     QPushButton *m_transcribeBtn;
-    QPushButton *m_playBtn;
-    QLabel *m_positionLabel;
+    QLabel *m_fileLabel;
+    QPushButton *m_exportBtn;
     AudioPlayer *m_player;
+    AudioRecorder *m_recorder;
+    QPushButton *m_recordingBtn;
+    QTimer *m_recordingAnimTimer;
+    int m_recordingDotCount = 0;
+    qint64 m_recordingStartTime = 0;
 
     int m_currentMeetingId = -1;
     QString m_currentAudioFilePath;

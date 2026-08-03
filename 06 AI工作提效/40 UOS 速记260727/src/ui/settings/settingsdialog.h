@@ -10,6 +10,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QTabWidget>
+#include <QStackedWidget>
 #include <QSlider>
 #include <DSwitchButton>
 #include <DPushButton>
@@ -38,6 +39,7 @@ private:
     DSwitchButton *m_autostartSwitch;
     QCheckBox *m_trayNotifyCheck;
     QSpinBox *m_reminderInterval;
+    QLineEdit *m_recordingDirEdit;
 
     QComboBox *m_themeCombo;
     QComboBox *m_aiEngineCombo;

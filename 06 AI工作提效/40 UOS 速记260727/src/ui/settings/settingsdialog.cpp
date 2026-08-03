@@ -4,6 +4,7 @@
 #include "settingsdialog.h"
 #include "application/shorthandapplication.h"
 #include "services/aiservice.h"
+#include "services/asrservice.h"
 #include "globaldef.h"
 
 #include <QVBoxLayout>
@@ -18,6 +19,7 @@
 #include <QDir>
 #include <QStandardPaths>
 #include <QFileInfo>
+#include <QFileDialog>
 #include <QFile>
 #include <QTextStream>
 #include <DGroupBox>
@@ -78,6 +80,27 @@ QWidget *SettingsDialog::createGeneralPage()
     m_reminderInterval->setSuffix(tr(" 分钟"));
     intervalRow->addWidget(m_reminderInterval);
     layout->addLayout(intervalRow);
+
+    // 录音存储目录
+    QHBoxLayout *recDirRow = new QHBoxLayout();
+    recDirRow->addWidget(new DLabel(tr("录音存储目录"), this));
+    recDirRow->addStretch();
+    m_recordingDirEdit = new QLineEdit(this);
+    m_recordingDirEdit->setPlaceholderText(tr("默认：文档/UOS速记/录音"));
+    m_recordingDirEdit->setFixedWidth(280);
+    recDirRow->addWidget(m_recordingDirEdit);
+    QPushButton *recDirBtn = new QPushButton(tr("浏览…"), this);
+    recDirBtn->setFixedWidth(64);
+    recDirBtn->setCursor(Qt::PointingHandCursor);
+    recDirRow->addWidget(recDirBtn);
+    layout->addLayout(recDirRow);
+    connect(recDirBtn, &QPushButton::clicked, this, [this]() {
+        QString dir = QFileDialog::getExistingDirectory(this, tr("选择录音存储目录"),
+                                                        m_recordingDirEdit->text().trimmed());
+        if (!dir.isEmpty()) {
+            m_recordingDirEdit->setText(dir);
+        }
+    });
 
     layout->addStretch();
     return page;
@@ -181,19 +204,42 @@ QWidget *SettingsDialog::createAiPage()
     engineRow->addWidget(m_aiEngineCombo);
     layout->addLayout(engineRow);
 
-    auto addRow = [this, layout](const QString &label, QLineEdit *&edit) {
-        QHBoxLayout *row = new QHBoxLayout();
-        row->addWidget(new DLabel(label, this));
-        row->addStretch();
-        edit = new QLineEdit(this);
-        edit->setEchoMode(QLineEdit::Password);
-        edit->setFixedWidth(300);
-        row->addWidget(edit);
-        layout->addLayout(row);
-    };
+    // 引擎选择后只显示对应的 Key 输入框
+    QStackedWidget *keyStack = new QStackedWidget(this);
 
-    addRow(tr("DeepSeek API Key"), m_deepseekKeyEdit);
-    addRow(tr("通义千问 API Key"), m_tongyiKeyEdit);
+    QWidget *deepseekPage = new QWidget(this);
+    QVBoxLayout *dsLayout = new QVBoxLayout(deepseekPage);
+    dsLayout->setContentsMargins(0, 0, 0, 0);
+    QHBoxLayout *dsRow = new QHBoxLayout();
+    dsRow->addWidget(new DLabel(tr("DeepSeek API Key"), this));
+    dsRow->addStretch();
+    m_deepseekKeyEdit = new QLineEdit(this);
+    m_deepseekKeyEdit->setEchoMode(QLineEdit::Password);
+    m_deepseekKeyEdit->setFixedWidth(300);
+    dsRow->addWidget(m_deepseekKeyEdit);
+    dsLayout->addLayout(dsRow);
+    keyStack->addWidget(deepseekPage);
+
+    QWidget *tongyiPage = new QWidget(this);
+    QVBoxLayout *tyLayout = new QVBoxLayout(tongyiPage);
+    tyLayout->setContentsMargins(0, 0, 0, 0);
+    QHBoxLayout *tyRow = new QHBoxLayout();
+    tyRow->addWidget(new DLabel(tr("通义千问 API Key"), this));
+    tyRow->addStretch();
+    m_tongyiKeyEdit = new QLineEdit(this);
+    m_tongyiKeyEdit->setEchoMode(QLineEdit::Password);
+    m_tongyiKeyEdit->setFixedWidth(300);
+    tyRow->addWidget(m_tongyiKeyEdit);
+    tyLayout->addLayout(tyRow);
+    keyStack->addWidget(tongyiPage);
+
+    keyStack->setCurrentIndex(0);
+    layout->addWidget(keyStack);
+
+    connect(m_aiEngineCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [keyStack, this](int idx) {
+        keyStack->setCurrentIndex(idx);
+        QSettings().setValue("ai/engine", idx == 0 ? "DeepSeek" : "通义千问");
+    });
 
     QHBoxLayout *testRow = new QHBoxLayout();
     testRow->addStretch();
@@ -346,6 +392,7 @@ void SettingsDialog::loadSettings()
 
     int themeType = settings.value("appearance/theme", 0).toInt();
     m_themeCombo->setCurrentIndex(themeType);
+    m_recordingDirEdit->setText(settings.value("recording/storage_dir").toString());
 
     m_shortcutEdit->setText(settings.value("shortcut/quick_entry", SHORTCUT_QUICK_ENTRY).toString());
     m_compactStartSwitch->setChecked(settings.value("startup/compact_mode", false).toBool());
@@ -402,6 +449,17 @@ void SettingsDialog::saveSettings()
     settings.setValue("ai/deepseek_key", m_deepseekKeyEdit->text());
     settings.setValue("ai/tongyi_key", m_tongyiKeyEdit->text());
 
+    // 实时更新 AI 服务
+    auto *app = ShorthandApplication::instance();
+    if (auto *ai = app->aiService()) {
+        ai->setEngine(AiServiceManager::engineFromName(m_aiEngineCombo->currentText()));
+        ai->setApiKeyForEngine(AiServiceManager::DeepSeek, m_deepseekKeyEdit->text());
+        ai->setApiKeyForEngine(AiServiceManager::Tongyi, m_tongyiKeyEdit->text());
+    }
+
+    // 录音存储目录
+    settings.setValue("recording/storage_dir", m_recordingDirEdit->text().trimmed());
+
     // ASR settings
     settings.setValue("asr/engine", m_asrEngineCombo->currentText());
     settings.setValue("asr/baidu_key", m_baiduAsrKey->text());
@@ -411,6 +469,12 @@ void SettingsDialog::saveSettings()
     settings.setValue("asr/xunfei_secret", m_xunfeiAsrSecret->text());
     settings.setValue("asr/aliyun_key", m_aliyunAsrKey->text());
     settings.setValue("asr/aliyun_secret", m_aliyunAsrSecret->text());
+
+    // 实时更新 ASR 服务（重新加载凭据，保证重新配置后立即生效）
+    if (auto *asr = app->asrService()) {
+        asr->setEngine(AsrServiceManager::engineFromName(m_asrEngineCombo->currentText()));
+        asr->reloadCredentials();
+    }
 
     // 应用主题
     int themeIdx = m_themeCombo->currentIndex();

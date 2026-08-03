@@ -40,6 +40,7 @@ private:
     QString getEmptyIcon(Mode mode) const;
     QString getEmptyTitle(Mode mode) const;
     QString getEmptyHint(Mode mode) const;
+    void onContextMenu(const QPoint &pos);
 
     // 批量操作
     void enterMultiSelectMode();

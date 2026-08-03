@@ -4,6 +4,10 @@
 #include "settingswidget.h"
 #include "application/shorthandapplication.h"
 #include "services/aiservice.h"
+#include "services/asrservice.h"
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QUrl>
 #include "globaldef.h"
 
 #include <QVBoxLayout>
@@ -20,6 +24,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QSettings>
+#include <QFileDialog>
 
 static QString autostartDesktopPath()
 {
@@ -97,6 +102,30 @@ void SettingsWidget::initUI()
     m_trayNotifyCheck->setChecked(true);
     notifyRow->addWidget(m_trayNotifyCheck);
     generalLayout->addLayout(notifyRow);
+
+    // 录音存储目录
+    QHBoxLayout *recDirRow = new QHBoxLayout();
+    recDirRow->addWidget(new DLabel(tr("录音存储目录"), this));
+    recDirRow->addStretch();
+    m_recordingDirEdit = new QLineEdit(this);
+    m_recordingDirEdit->setPlaceholderText(tr("默认：文档/UOS速记/录音"));
+    m_recordingDirEdit->setFixedWidth(280);
+    recDirRow->addWidget(m_recordingDirEdit);
+    QPushButton *recDirBtn = new QPushButton(tr("浏览…"), this);
+    recDirBtn->setFixedWidth(64);
+    recDirBtn->setCursor(Qt::PointingHandCursor);
+    recDirRow->addWidget(recDirBtn);
+    generalLayout->addLayout(recDirRow);
+    connect(recDirBtn, &QPushButton::clicked, this, [this]() {
+        QString dir = QFileDialog::getExistingDirectory(this, tr("选择录音存储目录"),
+                                                        m_recordingDirEdit->text().trimmed());
+        if (!dir.isEmpty()) {
+            m_recordingDirEdit->setText(dir);
+        }
+    });
+    connect(m_recordingDirEdit, &QLineEdit::textChanged, this, [](const QString &v) {
+        QSettings().setValue("recording/storage_dir", v.trimmed());
+    });
 
     layout->addWidget(generalGroup);
 
@@ -211,11 +240,49 @@ void SettingsWidget::initAiSection(QVBoxLayout *parent)
     connect(m_deepseekKeyEdit, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("ai/deepseek_key", v); });
     connect(m_tongyiKeyEdit, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("ai/tongyi_key", v); });
     connect(m_testBtn, &DPushButton::clicked, this, [this]() {
-        DDialog d(this);
-        d.setTitle(tr("测试连接"));
-        d.setMessage(tr("AI 连接测试功能将在后续版本中实现。\n请先在对应平台注册并获取 API Key。"));
-        d.addButton(tr("确定"));
-        d.exec();
+        auto *app = ShorthandApplication::instance();
+        auto *ai = app ? app->aiService() : nullptr;
+        if (!ai) {
+            DDialog d(this);
+            d.setTitle(tr("测试连接"));
+            d.setMessage(tr("AI 服务未初始化"));
+            d.addButton(tr("确定"));
+            d.exec();
+            return;
+        }
+        m_testBtn->setEnabled(false);
+        m_testBtn->setText(tr("测试中..."));
+        QString key = m_aiEngineCombo->currentText().contains("DeepSeek")
+            ? m_deepseekKeyEdit->text() : m_tongyiKeyEdit->text();
+        if (key.isEmpty()) {
+            m_testBtn->setEnabled(true);
+            m_testBtn->setText(tr("测试连接"));
+            DDialog d(this);
+            d.setTitle(tr("测试连接"));
+            d.setMessage(tr("请先输入 API Key"));
+            d.addButton(tr("确定"));
+            d.exec();
+            return;
+        }
+        QUrl url(m_aiEngineCombo->currentText().contains("DeepSeek")
+            ? QString("https://api.deepseek.com/v1/models")
+            : QString("https://dashscope.aliyuncs.com/api/v1/models"));
+        QNetworkAccessManager *mgr = new QNetworkAccessManager(this);
+        QNetworkRequest req(url);
+        req.setRawHeader("Authorization", ("Bearer " + key).toUtf8());
+        QNetworkReply *reply = mgr->get(req);
+        connect(reply, &QNetworkReply::finished, this, [this, reply, mgr]() {
+            reply->deleteLater();
+            mgr->deleteLater();
+            m_testBtn->setEnabled(true);
+            m_testBtn->setText(tr("测试连接"));
+            bool ok = reply->error() == QNetworkReply::NoError;
+            DDialog d(this);
+            d.setTitle(tr("测试连接"));
+            d.setMessage(ok ? tr("✅ 连接成功，API Key 有效") : tr("❌ 连接失败：%1").arg(reply->errorString()));
+            d.addButton(tr("确定"));
+            d.exec();
+        });
     });
 }
 
@@ -295,23 +362,49 @@ void SettingsWidget::initAsrSection(QVBoxLayout *parent)
         credentialWidget->setVisible(!offline);
     };
 
-    connect(m_asrEngineCombo, &QComboBox::currentTextChanged, this, [updateCredVisibility](const QString &engine) {
+    // 凭据/引擎变化后同步到 AsrServiceManager，保证转写立即使用最新配置
+    auto reloadAsr = []() {
+        auto *app = ShorthandApplication::instance();
+        if (auto *asr = app ? app->asrService() : nullptr) {
+            asr->reloadCredentials();
+        }
+    };
+    connect(m_asrEngineCombo, &QComboBox::currentTextChanged, this, [updateCredVisibility, reloadAsr](const QString &engine) {
         QSettings().setValue("asr/engine", engine);
         updateCredVisibility();
+        reloadAsr();
     });
-    connect(m_baiduAsrKey, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("asr/baidu_key", v); });
-    connect(m_baiduAsrSecret, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("asr/baidu_secret", v); });
-    connect(m_xunfeiAsrAppId, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("asr/xunfei_appid", v); });
-    connect(m_xunfeiAsrKey, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("asr/xunfei_key", v); });
-    connect(m_xunfeiAsrSecret, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("asr/xunfei_secret", v); });
-    connect(m_aliyunAsrKey, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("asr/aliyun_key", v); });
-    connect(m_aliyunAsrSecret, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("asr/aliyun_secret", v); });
+    connect(m_baiduAsrKey, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/baidu_key", v); reloadAsr(); });
+    connect(m_baiduAsrSecret, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/baidu_secret", v); reloadAsr(); });
+    connect(m_xunfeiAsrAppId, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/xunfei_appid", v); reloadAsr(); });
+    connect(m_xunfeiAsrKey, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/xunfei_key", v); reloadAsr(); });
+    connect(m_xunfeiAsrSecret, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/xunfei_secret", v); reloadAsr(); });
+    connect(m_aliyunAsrKey, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/aliyun_key", v); reloadAsr(); });
+    connect(m_aliyunAsrSecret, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/aliyun_secret", v); reloadAsr(); });
     connect(m_asrTestBtn, &DPushButton::clicked, this, [this]() {
-        DDialog d(this);
-        d.setTitle(tr("提示"));
-        d.setMessage(tr("ASR 连接测试功能将在后续版本中实现。\n请先在对应平台注册并获取 API Key。"));
-        d.addButton(tr("确定"));
-        d.exec();
+        auto *app = ShorthandApplication::instance();
+        auto *asr = app ? app->asrService() : nullptr;
+        if (!asr) {
+            DDialog d(this);
+            d.setTitle(tr("测试连接"));
+            d.setMessage(tr("ASR 服务未初始化"));
+            d.addButton(tr("确定"));
+            d.exec();
+            return;
+        }
+        m_asrTestBtn->setEnabled(false);
+        m_asrTestBtn->setText(tr("测试中..."));
+        QString engineText = m_asrEngineCombo->currentText();
+        AsrServiceManager::Engine engine = AsrServiceManager::engineFromName(engineText);
+        asr->testEngine(engine, [this](bool ok, const QString &msg) {
+            m_asrTestBtn->setEnabled(true);
+            m_asrTestBtn->setText(tr("测试连接"));
+            DDialog d(this);
+            d.setTitle(tr("测试连接"));
+            d.setMessage(ok ? tr("✅ %1").arg(msg) : tr("❌ %1").arg(msg));
+            d.addButton(tr("确定"));
+            d.exec();
+        });
     });
 }
 
@@ -324,6 +417,8 @@ void SettingsWidget::loadSettings()
     // 加载主题设置
     int themeType = settings.value("appearance/theme", 0).toInt();
     m_themeCombo->setCurrentIndex(themeType);
+
+    m_recordingDirEdit->setText(settings.value("recording/storage_dir").toString());
 
     QString engine = settings.value("ai/engine", "DeepSeek").toString();
     int idx = m_aiEngineCombo->findText(engine);

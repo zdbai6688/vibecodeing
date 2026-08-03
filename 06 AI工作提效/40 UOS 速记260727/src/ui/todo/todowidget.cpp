@@ -6,491 +6,443 @@
 #include "core/todomanager.h"
 #include "core/tagmanager.h"
 
-#include <QScrollArea>
-#include <QCheckBox>
 #include <QHBoxLayout>
-#include <QLineEdit>
-#include <QLocale>
-#include <QUuid>
-#include <QMenu>
-#include <QInputDialog>
 #include <QRegularExpression>
-#include <QAction>
-#include <QMessageBox>
-#include <QSettings>
-#include <QApplication>
+#include <QDateTime>
 #include <DLabel>
 #include <DFontSizeManager>
-#include <DGuiApplicationHelper>
-#include <DDialog>
 
+// 待办列表：每条显示标题+创建时间+标签+复选框，未完成/已完成分区
 TodoWidget::TodoWidget(QWidget *parent)
     : QWidget(parent)
 {
     setStyleSheet("TodoWidget { background: palette(base); }");
-    loadSortPreference();
     initUI();
+}
+
+QWidget *TodoWidget::createSectionHeader(const QString &title, const QString &color)
+{
+    QWidget *header = new QWidget(this);
+    QVBoxLayout *hl = new QVBoxLayout(header);
+    hl->setContentsMargins(0, 8, 0, 2);
+    DLabel *label = new DLabel(title, this);
+    label->setStyleSheet(QString("font-size: 12px; font-weight: 600; color: %1;").arg(color));
+    hl->addWidget(label);
+    return header;
 }
 
 void TodoWidget::initUI()
 {
-    QVBoxLayout *outerLayout = new QVBoxLayout(this);
-    outerLayout->setContentsMargins(0, 0, 0, 0);
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    layout->setContentsMargins(16, 12, 16, 12);
+    layout->setSpacing(4);
 
-    m_stack = new QStackedWidget(this);
-
-    // ─── 内容页面（输入 + 列表）────────────────────────────────
-    m_contentWidget = new QWidget(this);
-    QVBoxLayout *contentLayout = new QVBoxLayout(m_contentWidget);
-    contentLayout->setContentsMargins(0, 0, 0, 0);
-    contentLayout->setSpacing(0);
-
-    // 新建待办输入框（固定在顶部）
-    QWidget *inputContainer = new QWidget(this);
-    inputContainer->setStyleSheet("background: palette(base); border-bottom: 1px solid palette(midlight);");
-    QHBoxLayout *inputRow = new QHBoxLayout(inputContainer);
-    inputRow->setContentsMargins(16, 8, 16, 8);
+    // 顶部：新建待办输入框
     m_newTodoInput = new QLineEdit(this);
-    m_newTodoInput->setPlaceholderText(tr("输入待办事项，按 Enter 创建"));
-    m_newTodoInput->setStyleSheet(
-        "QLineEdit { border: 1px solid palette(mid); border-radius: 6px;"
-        " padding: 8px 12px; font-size: 13px; }");
+    m_newTodoInput->setPlaceholderText(tr("新建待办，输入内容按 Enter 创建"));
     m_newTodoInput->setFixedHeight(36);
-    inputRow->addWidget(m_newTodoInput, 1);
+    m_newTodoInput->setStyleSheet(
+        "QLineEdit { border: 1px solid #EAECEF; border-radius: 6px;"
+        " padding: 8px 12px; font-size: 13px; background: palette(base); }"
+        "QLineEdit:focus { border-color: #2178E5; }");
+    layout->addWidget(m_newTodoInput);
 
-    // 📅 日期选择按钮
-    m_dateToggleBtn = new DToolButton(this);
-    m_dateToggleBtn->setText(tr("📅"));
-    m_dateToggleBtn->setToolTip(tr("设置截止日期"));
-    m_dateToggleBtn->setFixedSize(36, 36);
-    m_dateToggleBtn->setStyleSheet(
-        "DToolButton { border: 1px solid palette(mid); border-radius: 6px;"
-        " font-size: 14px; background: palette(base); }"
-        "DToolButton:hover { background: palette(light); }"
-        "DToolButton:checked { background: palette(highlight); color: white; }");
-    m_dateToggleBtn->setCheckable(true);
-    inputRow->addWidget(m_dateToggleBtn);
-    contentLayout->addWidget(inputContainer);
+    connect(m_newTodoInput, &QLineEdit::returnPressed, this, [this]() {
+        QString text = m_newTodoInput->text().trimmed();
+        if (text.isEmpty()) return;
 
-    // ─── 日期选择器行（默认隐藏）──────────────────
-    m_datePickerContainer = new QWidget(this);
-    m_datePickerContainer->setStyleSheet("background: palette(base); border-bottom: 1px solid palette(midlight);");
-    m_datePickerContainer->setVisible(false);
-    QHBoxLayout *dateRow = new QHBoxLayout(m_datePickerContainer);
-    dateRow->setContentsMargins(16, 4, 16, 8);
-    dateRow->setSpacing(6);
+        int priority = 0;
+        QStringList tags;
 
-    m_dateEdit = new QDateEdit(this);
-    m_dateEdit->setCalendarPopup(true);
-    m_dateEdit->setDate(QDate::currentDate());
-    m_dateEdit->setDisplayFormat("yyyy-MM-dd");
-    m_dateEdit->setStyleSheet(
-        "QDateEdit { border: 1px solid palette(mid); border-radius: 4px;"
-        " padding: 4px 8px; font-size: 12px; background: palette(base);"
-        " min-width: 120px; }");
-    m_dateEdit->setFixedHeight(28);
-    dateRow->addWidget(m_dateEdit);
+        QRegularExpression prioRe(QStringLiteral(R"(!([高中低]))"));
+        QRegularExpressionMatch prioMatch = prioRe.match(text);
+        if (prioMatch.hasMatch()) {
+            QString p = prioMatch.captured(1);
+            if (p == QString::fromUtf8("\xe9\xab\x98")) priority = 3;
+            else if (p == QString::fromUtf8("\xe4\xb8\xad")) priority = 2;
+            else if (p == QString::fromUtf8("\xe4\xbd\x8e")) priority = 1;
+            text = text.mid(0, prioMatch.capturedStart()) + text.mid(prioMatch.capturedEnd());
+            text = text.trimmed();
+        }
 
-    auto makeQuickBtn = [this](const QString &text) {
-        QPushButton *btn = new QPushButton(text, this);
-        btn->setFixedHeight(28);
-        btn->setStyleSheet(
-            "QPushButton { border: 1px solid palette(mid); border-radius: 4px;"
-            " padding: 2px 10px; font-size: 11px; background: palette(base); }"
-            "QPushButton:hover { background: palette(highlight); color: white; border-color: palette(highlight); }");
-        return btn;
-    };
+        QRegularExpression tagRe(QStringLiteral(R"(#(\S+))"));
+        QRegularExpressionMatchIterator tagMatches = tagRe.globalMatch(text);
+        while (tagMatches.hasNext()) {
+            QRegularExpressionMatch m = tagMatches.next();
+            QString tagName = m.captured(1).trimmed();
+            if (!tagName.isEmpty()) tags.append(tagName);
+        }
+        text = text.remove(tagRe).trimmed();
+        if (text.isEmpty()) return;
 
-    m_todayBtn = makeQuickBtn(tr("今天"));
-    m_tomorrowBtn = makeQuickBtn(tr("明天"));
-    m_nextWeekBtn = makeQuickBtn(tr("下周"));
-    m_clearDateBtn = makeQuickBtn(tr("清除"));
-
-    dateRow->addWidget(m_todayBtn);
-    dateRow->addWidget(m_tomorrowBtn);
-    dateRow->addWidget(m_nextWeekBtn);
-    dateRow->addWidget(m_clearDateBtn);
-    dateRow->addStretch();
-
-    contentLayout->addWidget(m_datePickerContainer);
-
-
-    // ─── 排序工具栏 ─────────────────────────────
-    QWidget *sortBar = new QWidget(this);
-    sortBar->setStyleSheet("background: transparent; padding: 4px 12px; border-bottom: 1px solid palette(midlight);");
-    QHBoxLayout *sortLayout = new QHBoxLayout(sortBar);
-    sortLayout->setContentsMargins(4, 4, 4, 4);
-    sortLayout->setSpacing(6);
-
-    DLabel *sortLabel = new DLabel(tr("排序:"), this);
-    sortLabel->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
-    sortLayout->addWidget(sortLabel);
-
-    m_sortFieldCombo = new QComboBox(this);
-    m_sortFieldCombo->addItem(tr("截止日期"), TodoSortParam::DueDate);
-    m_sortFieldCombo->addItem(tr("创建时间"), TodoSortParam::CreatedAt);
-    m_sortFieldCombo->setCurrentIndex(static_cast<int>(m_sortParam.field));
-    m_sortFieldCombo->setStyleSheet(
-        "QComboBox { border: 1px solid palette(mid); border-radius: 4px;"
-        " padding: 2px 8px; font-size: 11px; background: palette(base);"
-        " min-width: 80px; }");
-    m_sortFieldCombo->setFixedHeight(24);
-    sortLayout->addWidget(m_sortFieldCombo);
-
-    m_sortOrderBtn = new DToolButton(this);
-    m_sortOrderBtn->setText(m_sortParam.ascending ? "↑" : "↓");
-    m_sortOrderBtn->setToolTip(m_sortParam.ascending ? tr("升序") : tr("降序"));
-    m_sortOrderBtn->setFixedSize(24, 24);
-    m_sortOrderBtn->setStyleSheet(
-        "DToolButton { border: 1px solid palette(mid); border-radius: 4px;"
-        " font-size: 12px; background: palette(base); }"
-        "DToolButton:hover { background: palette(light); }");
-    sortLayout->addWidget(m_sortOrderBtn);
-
-    sortLayout->addStretch();
-
-    // ─── 多选模式切换按钮 ───────────────────────
-    m_selectModeBtn = new QPushButton(tr("☐ 多选"), this);
-    m_selectModeBtn->setCheckable(true);
-    m_selectModeBtn->setFixedHeight(24);
-    m_selectModeBtn->setStyleSheet(
-        "QPushButton { border: 1px solid palette(mid); border-radius: 4px;"
-        " padding: 2px 8px; font-size: 11px; background: palette(base); }"
-        "QPushButton:hover { background: palette(light); }"
-        "QPushButton:checked { background: palette(highlight); color: palette(highlightedText); }");
-    sortLayout->addWidget(m_selectModeBtn);
-
-    contentLayout->addWidget(sortBar);
-
-    // 滚动区域（容纳四个分组列表）
-    QScrollArea *scroll = new QScrollArea(this);
-    scroll->setWidgetResizable(true);
-    scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setStyleSheet("QScrollArea { background: transparent; border: none; }");
-
-    QWidget *container = new QWidget(scroll);
-    m_mainLayout = new QVBoxLayout(container);
-    m_mainLayout->setContentsMargins(16, 12, 16, 12);
-    m_mainLayout->setSpacing(12);
-
-    auto addSection = [this](const QString &title, const QString &color, QListWidget *&list) {
-        DLabel *header = new DLabel(title, this);
-        header->setStyleSheet(
-            QString("font-size: 13px; font-weight: 600; color: %1; padding: 4px 0;").arg(color));
-        m_mainLayout->addWidget(header);
-
-        list = new QListWidget(this);
-        list->setFrameShape(QFrame::NoFrame);
-        list->setMinimumHeight(48);
-        list->setSpacing(2);
-        list->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        list->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        list->setStyleSheet(R"(
-            QListWidget { background: transparent; border: none; }
-            QListWidget::item {
-                border-radius: 6px; padding: 8px 12px; margin: 1px 0;
-                background: palette(base); border: 1px solid palette(midlight);
+        qint64 parsedDue = 0;
+        QDate today = QDate::currentDate();
+        if (text.contains(QString::fromUtf8("\xe6\x98\x8e\xe5\xa4\xa9"))) {
+            parsedDue = QDateTime(today.addDays(1), QTime(23, 59, 59)).toSecsSinceEpoch();
+            text.replace(QString::fromUtf8("\xe6\x98\x8e\xe5\xa4\xa9"), "");
+        } else if (text.contains(QString::fromUtf8("\xe5\x90\x8e\xe5\xa4\xa9"))) {
+            parsedDue = QDateTime(today.addDays(2), QTime(23, 59, 59)).toSecsSinceEpoch();
+            text.replace(QString::fromUtf8("\xe5\x90\x8e\xe5\xa4\xa9"), "");
+        } else {
+            QLocale chLocale(QLocale::Chinese);
+            for (int d = 1; d <= 7; d++) {
+                QString dayName = chLocale.dayName(d, QLocale::LongFormat);
+                if (text.contains(dayName)) {
+                    int curDay = today.dayOfWeek();
+                    int daysUntil = d - curDay;
+                    if (daysUntil <= 0) daysUntil += 7;
+                    parsedDue = QDateTime(today.addDays(daysUntil), QTime(23, 59, 59)).toSecsSinceEpoch();
+                    text.replace(dayName, "");
+                    break;
+                }
             }
-            QListWidget::item:hover { background: palette(midlight); border-color: palette(mid); }
-        )");
+        }
+        text = text.trimmed();
+        if (text.isEmpty()) return;
 
-        m_mainLayout->addWidget(list);
-    };
+        TodoData todo;
+        todo.title = text;
+        todo.priority = priority;
+        todo.tags = tags;
+        todo.dueDatetime = parsedDue;
+        todo.creationDatetime = QDateTime::currentSecsSinceEpoch();
+        todo.modificationDatetime = todo.creationDatetime;
 
-    // 添加四个分区
-    addSection(tr("⏰ 逾期"), "#E64545", m_overdueList);
-    addSection(tr("📋 今日"), "#2178E5", m_todayList);
-    addSection(tr("📅 本周"), "#52C41A", m_weekList);
-    addSection(tr("✅ 已完成"), "#999999", m_completedList);
+        auto *app = ShorthandApplication::instance();
+        for (const QString &tagName : tags) {
+            if (!app->tagManager()->allTagNames().contains(tagName, Qt::CaseInsensitive)) {
+                app->tagManager()->createTag(tagName, "#1890FF");
+            }
+        }
+        app->todoManager()->createTodo(todo);
+        m_newTodoInput->clear();
+        refresh();
+    });
 
-    scroll->setWidget(container);
-    contentLayout->addWidget(scroll, 1);
+    // 未完成列表（含分区标题）
+    layout->addWidget(createSectionHeader(tr("进行中"), "#2178E5"));
+    m_pendingList = new QListWidget(this);
+    m_pendingList->setFrameShape(QFrame::NoFrame);
+    m_pendingList->setSpacing(2);
+    m_pendingList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_pendingList->setStyleSheet(R"(
+        QListWidget { background: transparent; border: none; }
+        QListWidget::item { border-radius: 6px; padding: 0; margin: 1px 0; background: #F8F9FA; }
+        QListWidget::item:hover { background: #EEF0F3; }
+        QListWidget::item:selected { background: #EEF2FF; }
+    )");
+    layout->addWidget(m_pendingList, 1);
 
-    // ─── 批量操作工具栏 ─────────────────────────
-    m_batchToolbar = new QWidget(this);
-    m_batchToolbar->setStyleSheet("background: palette(midlight); border-radius: 8px; padding: 4px;");
-    m_batchToolbar->hide();
-    QHBoxLayout *batchLayout = new QHBoxLayout(m_batchToolbar);
-    batchLayout->setContentsMargins(8, 4, 8, 4);
-    batchLayout->setSpacing(6);
+    // 已完成列表（含分区标题）
+    layout->addWidget(createSectionHeader(tr("已完成"), "#52C41A"));
+    m_completedList = new QListWidget(this);
+    m_completedList->setFrameShape(QFrame::NoFrame);
+    m_completedList->setSpacing(2);
+    m_completedList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_completedList->setMaximumHeight(200);
+    m_completedList->setStyleSheet(R"(
+        QListWidget { background: transparent; border: none; }
+        QListWidget::item { border-radius: 6px; padding: 0; margin: 1px 0; background: #F5F5F5; }
+    )");
+    layout->addWidget(m_completedList);
 
-    m_selectionCountLabel = new DLabel(tr("已选择 0 项"), this);
-    m_selectionCountLabel->setStyleSheet("font-size: 12px; color: palette(windowText);");
-    batchLayout->addWidget(m_selectionCountLabel);
-
-    batchLayout->addStretch();
-
-    m_selectAllBtn = new QPushButton(tr("全选"), this);
-    m_selectAllBtn->setFixedHeight(28);
-    m_selectAllBtn->setStyleSheet(
-        "QPushButton { border: 1px solid palette(mid); border-radius: 4px;"
-        " padding: 2px 12px; font-size: 12px; background: palette(base); }"
-        "QPushButton:hover { background: palette(light); }");
-    batchLayout->addWidget(m_selectAllBtn);
-
-    m_batchDeleteBtn = new QPushButton(tr("🗑 删除"), this);
-    m_batchDeleteBtn->setFixedHeight(28);
-    m_batchDeleteBtn->setStyleSheet(
-        "QPushButton { border: 1px solid #E64545; border-radius: 4px;"
-        " padding: 2px 12px; font-size: 12px; color: #E64545; background: palette(base); }"
-        "QPushButton:hover { background: #FFF0F0; }");
-    batchLayout->addWidget(m_batchDeleteBtn);
-
-    contentLayout->addWidget(m_batchToolbar);
-
-    m_stack->addWidget(m_contentWidget);
-
-    // ─── 空状态页面 ────────────────────────────────────────────
-    m_emptyWidget = new QWidget(this);
-    QVBoxLayout *emptyLayout = new QVBoxLayout(m_emptyWidget);
-    emptyLayout->setAlignment(Qt::AlignCenter);
-    emptyLayout->setSpacing(8);
-
-    DLabel *emptyIcon = new DLabel(tr("✅"), this);
-    emptyIcon->setStyleSheet("font-size: 48px;");
-    emptyIcon->setAlignment(Qt::AlignCenter);
-    emptyLayout->addWidget(emptyIcon);
-
-    DLabel *emptyText = new DLabel(tr("所有待办已完成！"), this);
-    emptyText->setStyleSheet("font-size: 14px; margin-top: 8px;");
-    emptyText->setAlignment(Qt::AlignCenter);
-    emptyLayout->addWidget(emptyText);
-
-    // 为每个列表设置右键菜单
-    setupListContextMenu(m_todayList);
-    setupListContextMenu(m_overdueList);
-    setupListContextMenu(m_weekList);
-    setupListContextMenu(m_completedList);
-
-    // 双击待办项打开编辑对话框
-    auto setupDoubleClick = [this](QListWidget *list) {
-        connect(list, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem *item) {
+    // 单击待办在右侧编辑器打开
+    auto setupClick = [this](QListWidget *list) {
+        connect(list, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
             int todoId = item->data(Qt::UserRole).toInt();
-            if (todoId > 0) {
-                showTodoEditDialog(todoId);
-            }
+            if (todoId > 0) emit todoSelected(todoId);
         });
     };
-    setupDoubleClick(m_todayList);
-    setupDoubleClick(m_overdueList);
-    setupDoubleClick(m_weekList);
-    setupDoubleClick(m_completedList);
+    setupClick(m_pendingList);
+    setupClick(m_completedList);
 
-    connect(m_newTodoInput, &QLineEdit::returnPressed, this, &TodoWidget::onCreateTodo);
-
-    // 排序信号
-    connect(m_sortFieldCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
-        m_sortParam.field = static_cast<TodoSortParam::Field>(m_sortFieldCombo->currentData().toInt());
-        saveSortPreference();
-        refresh();
-    });
-    connect(m_sortOrderBtn, &DToolButton::clicked, this, [this]() {
-        m_sortParam.ascending = !m_sortParam.ascending;
-        m_sortOrderBtn->setText(m_sortParam.ascending ? "↑" : "↓");
-        m_sortOrderBtn->setToolTip(m_sortParam.ascending ? tr("升序") : tr("降序"));
-        saveSortPreference();
-        refresh();
-    });
-
-    // ─── 日期选择器信号 ─────────────────────────
-    connect(m_dateToggleBtn, &DToolButton::clicked, this, &TodoWidget::updateDatePickerVisibility);
-
-    connect(m_todayBtn, &QPushButton::clicked, this, [this]() {
-        m_dateEdit->setDate(QDate::currentDate());
-        m_pendingDueDate = QDateTime(QDate::currentDate(), QTime(23, 59, 59)).toSecsSinceEpoch();
-        m_dateToggleBtn->setChecked(false);
-        m_datePickerContainer->setVisible(false);
-    });
-    connect(m_tomorrowBtn, &QPushButton::clicked, this, [this]() {
-        QDate tomorrow = QDate::currentDate().addDays(1);
-        m_dateEdit->setDate(tomorrow);
-        m_pendingDueDate = QDateTime(tomorrow, QTime(23, 59, 59)).toSecsSinceEpoch();
-        m_dateToggleBtn->setChecked(false);
-        m_datePickerContainer->setVisible(false);
-    });
-    connect(m_nextWeekBtn, &QPushButton::clicked, this, [this]() {
-        QDate nextMonday = QDate::currentDate().addDays(8 - QDate::currentDate().dayOfWeek());
-        m_dateEdit->setDate(nextMonday);
-        m_pendingDueDate = QDateTime(nextMonday, QTime(23, 59, 59)).toSecsSinceEpoch();
-        m_dateToggleBtn->setChecked(false);
-        m_datePickerContainer->setVisible(false);
-    });
-    connect(m_clearDateBtn, &QPushButton::clicked, this, [this]() {
-        m_dateEdit->setDate(QDate::currentDate());
-        m_pendingDueDate = 0;
-        m_dateToggleBtn->setChecked(false);
-        m_datePickerContainer->setVisible(false);
-    });
-    connect(m_dateEdit, &QDateEdit::dateChanged, this, [this](const QDate &date) {
-        m_pendingDueDate = QDateTime(date, QTime(23, 59, 59)).toSecsSinceEpoch();
-    });
-
-    // ─── 多选模式切换 ───────────────────────────
-    connect(m_selectModeBtn, &QPushButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            enterMultiSelectMode();
-        } else {
-            exitMultiSelectMode();
-        }
-    });
-
-    // ─── 批量操作按钮 ───────────────────────────
-    connect(m_selectAllBtn, &QPushButton::clicked, this, [this]() {
-        // 收集所有列表中的复选框
-        bool allSelected = true;
-        auto checkAll = [&allSelected](QListWidget *list) {
-            for (int i = 0; i < list->count(); ++i) {
-                QListWidgetItem *item = list->item(i);
-                QWidget *w = list->itemWidget(item);
-                if (w) {
-                    QCheckBox *cb = w->findChild<QCheckBox *>();
-                    if (cb && !cb->isChecked()) {
-                        allSelected = false;
-                        return;
-                    }
-                }
-            }
-        };
-        checkAll(m_overdueList);
-        checkAll(m_todayList);
-        checkAll(m_weekList);
-        checkAll(m_completedList);
-
-        bool check = !allSelected;
-        auto setAll = [check](QListWidget *list) {
-            for (int i = 0; i < list->count(); ++i) {
-                QListWidgetItem *item = list->item(i);
-                QWidget *w = list->itemWidget(item);
-                if (w) {
-                    QCheckBox *cb = w->findChild<QCheckBox *>();
-                    if (cb) cb->setChecked(check);
-                }
-            }
-        };
-        setAll(m_overdueList);
-        setAll(m_todayList);
-        setAll(m_weekList);
-        setAll(m_completedList);
-        updateSelectionState();
-    });
-
-    connect(m_batchDeleteBtn, &QPushButton::clicked, this, &TodoWidget::onBatchDelete);
-
-    m_stack->addWidget(m_emptyWidget);
-    outerLayout->addWidget(m_stack);
+    // 右键菜单
+    m_pendingList->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_completedList->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_pendingList, &QListWidget::customContextMenuRequested, this, &TodoWidget::onContextMenu);
+    connect(m_completedList, &QListWidget::customContextMenuRequested, this, &TodoWidget::onContextMenu);
 }
 
-// ─── 多选模式 ────────────────────────────────────────────────
-
-void TodoWidget::enterMultiSelectMode()
+void TodoWidget::onContextMenu(const QPoint &pos)
 {
-    m_multiSelectMode = true;
-    refresh();
-    m_batchToolbar->show();
-    updateSelectionState();
+    QListWidget *list = qobject_cast<QListWidget *>(sender());
+    if (list) showTodoContextMenu(list, pos);
 }
 
-void TodoWidget::exitMultiSelectMode()
+void TodoWidget::showTodoContextMenu(QListWidget *list, const QPoint &pos)
 {
-    m_multiSelectMode = false;
-    m_batchToolbar->hide();
-    refresh();
-}
-
-void TodoWidget::updateSelectionState()
-{
-    QList<int> selected = getSelectedTodoIds();
-    int count = selected.size();
-    m_selectionCountLabel->setText(tr("已选择 %1 项").arg(count));
-    m_batchDeleteBtn->setEnabled(count > 0);
-}
-
-QList<int> TodoWidget::getSelectedTodoIds() const
-{
-    QList<int> ids;
-    auto collectIds = [&ids](QListWidget *list) {
-        for (int i = 0; i < list->count(); ++i) {
-            QListWidgetItem *item = list->item(i);
-            QWidget *w = list->itemWidget(item);
-            if (w) {
-                QCheckBox *cb = w->findChild<QCheckBox *>();
-                if (cb && cb->isChecked()) {
-                    int todoId = item->data(Qt::UserRole).toInt();
-                    if (todoId > 0) ids.append(todoId);
-                }
-            }
-        }
-    };
-    collectIds(m_overdueList);
-    collectIds(m_todayList);
-    collectIds(m_weekList);
-    collectIds(m_completedList);
-    return ids;
-}
-
-void TodoWidget::onBatchDelete()
-{
-    QList<int> selectedIds = getSelectedTodoIds();
-    if (selectedIds.isEmpty()) return;
-
-    QMessageBox::StandardButton btn = QMessageBox::question(
-        this, tr("删除待办"),
-        tr("确定要将选中的 %1 条待办移至回收站吗？").arg(selectedIds.size()),
-        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-    if (btn != QMessageBox::Yes) return;
+    QListWidgetItem *item = list->itemAt(pos);
+    if (!item) return;
+    int todoId = item->data(Qt::UserRole).toInt();
+    if (todoId <= 0) return;
 
     auto *app = ShorthandApplication::instance();
-    app->todoManager()->batchDeleteTodos(selectedIds);
+    TodoManager *mgr = app->todoManager();
+    TodoData todo = mgr->getTodo(todoId);
 
-    exitMultiSelectMode();
-    refresh();
-    emit todoStatusChanged();
+    QMenu menu(this);
+    // 跟随系统主题（深色/浅色均可读），删除等菜单项选中时使用主题高亮色
+    menu.setStyleSheet(R"(
+        QMenu { background: palette(window); border: 1px solid palette(mid); border-radius: 6px; padding: 4px; }
+        QMenu::item { padding: 6px 24px; border-radius: 4px; font-size: 13px; color: palette(windowText); }
+        QMenu::item:selected { background: palette(highlight); color: palette(highlightedText); }
+        QMenu::item:disabled { color: palette(placeholderText); }
+        QMenu::separator { height: 1px; background: palette(midlight); margin: 4px 8px; }
+    )");
+
+    // 完成/取消完成
+    QAction *toggleAction = menu.addAction(todo.isCompleted ? tr("✓ 标记为未完成") : tr("✓ 标记完成"));
+    connect(toggleAction, &QAction::triggered, this, [this, mgr, todoId, todo]() {
+        mgr->toggleComplete(todoId, !todo.isCompleted);
+        emit todoStatusChanged();
+        refresh();
+    });
+
+    menu.addSeparator();
+
+    // 优先级子菜单
+    QMenu *priorityMenu = menu.addMenu(tr("优先级"));
+    QAction *pNone = priorityMenu->addAction(tr("无"));
+    QAction *pLow = priorityMenu->addAction(tr("低"));
+    QAction *pMid = priorityMenu->addAction(tr("中"));
+    QAction *pHigh = priorityMenu->addAction(tr("高"));
+    QList<QAction *> priorityActions = {pNone, pLow, pMid, pHigh};
+    for (QAction *a : priorityActions) {
+        connect(a, &QAction::triggered, this, [this, mgr, todoId, priorityActions, a]() {
+            int p = priorityActions.indexOf(a);
+            mgr->setPriority(todoId, p);
+            emit todoStatusChanged();
+            refresh();
+        });
+    }
+
+    // 截止日期
+    QAction *dueAction = menu.addAction(tr("📅 设置截止日期..."));
+    connect(dueAction, &QAction::triggered, this, [this, mgr, todoId]() { setTodoDueDate(todoId); });
+
+    // 标签子菜单
+    QMenu *tagMenu = menu.addMenu(tr("设置标签"));
+    QList<TagData> allTags = app->tagManager()->getAllTags();
+    QStringList curTags = mgr->getTodoTags(todoId);
+    if (allTags.isEmpty()) {
+        tagMenu->addAction(tr("（暂无标签）"))->setEnabled(false);
+    }
+    for (const TagData &tag : allTags) {
+        QAction *tagAction = tagMenu->addAction(tag.name);
+        tagAction->setCheckable(true);
+        tagAction->setChecked(curTags.contains(tag.name));
+        int tagId = tag.id;
+        connect(tagAction, &QAction::triggered, this, [this, mgr, todoId, tagId, tag, curTags](bool checked) {
+            QStringList newTags = curTags;
+            if (checked) {
+                if (!newTags.contains(tag.name)) newTags.append(tag.name);
+            } else {
+                newTags.removeAll(tag.name);
+            }
+            mgr->setTodoTags(todoId, newTags);
+            Q_UNUSED(tagId)
+            emit todoStatusChanged();
+            refresh();
+        });
+    }
+    QAction *newTagAction = tagMenu->addAction(tr("➕ 新建标签..."));
+    connect(newTagAction, &QAction::triggered, this, [this, app, mgr, todoId]() {
+        bool ok = false;
+        QString name = QInputDialog::getText(this, tr("新建标签"), tr("标签名称:"), QLineEdit::Normal, "", &ok);
+        if (ok && !name.trimmed().isEmpty()) {
+            int tagId = app->tagManager()->createTag(name.trimmed());
+            if (tagId > 0) {
+                QStringList cur = mgr->getTodoTags(todoId);
+                if (!cur.contains(name.trimmed())) cur.append(name.trimmed());
+                mgr->setTodoTags(todoId, cur);
+                emit todoStatusChanged();
+                refresh();
+            }
+        }
+    });
+
+    menu.addSeparator();
+
+    // 删除
+    QAction *delAction = menu.addAction(tr("🗑 删除"));
+    connect(delAction, &QAction::triggered, this, [this, mgr, todoId]() {
+        DDialog dlg(this);
+        dlg.setTitle(tr("确认删除"));
+        dlg.setMessage(tr("确定删除这条待办吗？"));
+        dlg.addButton(tr("取消"));
+        dlg.addButton(tr("删除"), true, DDialog::ButtonWarning);
+        if (dlg.exec() == 1) {
+            mgr->deleteTodo(todoId);
+            emit todoStatusChanged();
+            refresh();
+        }
+    });
+
+    menu.exec(list->viewport()->mapToGlobal(pos));
 }
 
-// ─── 原有功能 ────────────────────────────────────────────────
+void TodoWidget::setTodoDueDate(int todoId)
+{
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("设置截止日期"));
+    QVBoxLayout *layout = new QVBoxLayout(&dlg);
+    QDateEdit *dateEdit = new QDateEdit(&dlg);
+    dateEdit->setCalendarPopup(true);
+    dateEdit->setDate(QDate::currentDate());
+    dateEdit->setDisplayFormat("yyyy-MM-dd");
+    layout->addWidget(dateEdit);
+    QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dlg);
+    layout->addWidget(buttons);
+    connect(buttons, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(buttons, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+
+    if (dlg.exec() == QDialog::Accepted) {
+        auto *mgr = ShorthandApplication::instance()->todoManager();
+        TodoData t = mgr->getTodo(todoId);
+        t.dueDatetime = QDateTime(dateEdit->date(), QTime(23, 59, 59)).toSecsSinceEpoch();
+        mgr->updateTodo(t);
+        emit todoStatusChanged();
+        refresh();
+    }
+}
+
+QWidget *TodoWidget::createTodoRow(const TodoData &todo)
+{
+    QWidget *card = new QWidget(this);
+    QHBoxLayout *hLayout = new QHBoxLayout(card);
+    hLayout->setContentsMargins(12, 6, 12, 6);
+    hLayout->setSpacing(8);
+
+    // 完成复选框
+    QCheckBox *checkBox = new QCheckBox(card);
+    checkBox->setChecked(todo.isCompleted);
+    checkBox->setFixedSize(20, 20);
+    hLayout->addWidget(checkBox);
+
+    // 标题 + 创建时间（竖排）
+    QWidget *textWidget = new QWidget(card);
+    QVBoxLayout *tl = new QVBoxLayout(textWidget);
+    tl->setContentsMargins(0, 0, 0, 0);
+    tl->setSpacing(2);
+
+    QString title = todo.title.isEmpty() ? tr("无标题") : todo.title;
+    DLabel *titleLabel = new DLabel(title, card);
+    titleLabel->setStyleSheet(todo.isCompleted
+        ? "font-size: 13px; color: #BBBBBB; text-decoration: line-through;"
+        : "font-size: 13px; color: #222222;");
+    tl->addWidget(titleLabel);
+
+    // 创建时间 + 截止日期
+    QString timeStr = tr("创建于 ") + todo.createdAt().toString("MM-dd HH:mm");
+    if (todo.dueDatetime > 0) {
+        timeStr += tr("  截止 ") + QDateTime::fromSecsSinceEpoch(todo.dueDatetime).toString("MM-dd");
+    }
+    DLabel *timeLabel = new DLabel(timeStr, card);
+    timeLabel->setStyleSheet("font-size: 10px; color: #999999;");
+    tl->addWidget(timeLabel);
+
+    hLayout->addWidget(textWidget, 1);
+
+    // 优先级
+    if (todo.priority >= 3) {
+        DLabel *p = new DLabel(tr("高"), card);
+        p->setStyleSheet("background: #E64545; color: white; font-size: 10px; border-radius: 4px; padding: 1px 6px;");
+        hLayout->addWidget(p);
+    } else if (todo.priority == 2) {
+        DLabel *p = new DLabel(tr("中"), card);
+        p->setStyleSheet("background: #FAAD14; color: white; font-size: 10px; border-radius: 4px; padding: 1px 6px;");
+        hLayout->addWidget(p);
+    }
+
+    // 标签徽章
+    QStringList tagNames = todo.tags;
+    if (tagNames.isEmpty() && !todo.tag.isEmpty()) tagNames << todo.tag;
+    if (!tagNames.isEmpty()) {
+        auto *app = ShorthandApplication::instance();
+        QList<TagData> allTags = app->tagManager()->getAllTags();
+        for (const QString &tn : tagNames) {
+            QString color = "#2178E5";
+            for (const auto &t : allTags) {
+                if (t.name == tn) { color = t.color; break; }
+            }
+            QLabel *badge = new QLabel(tn, card);
+            badge->setFixedHeight(18);
+            badge->setStyleSheet(QString(
+                "QLabel { background: %1; color: white; font-size: 10px; font-weight: 600;"
+                " border-radius: 9px; padding: 0 6px; }").arg(color));
+            hLayout->addWidget(badge);
+        }
+    }
+
+    int todoId = todo.id;
+    connect(checkBox, &QCheckBox::toggled, this, [this, todoId](bool checked) {
+        ShorthandApplication::instance()->todoManager()->toggleComplete(todoId, checked);
+        emit todoStatusChanged();
+        refresh();
+    });
+
+    return card;
+}
+
+void TodoWidget::populateList(const QList<TodoData> &todos)
+{
+    m_pendingList->clear();
+    m_completedList->clear();
+
+    QList<TodoData> pending, completed;
+    for (const auto &t : todos) {
+        if (t.isCompleted) completed.append(t);
+        else pending.append(t);
+    }
+
+    auto fill = [this](QListWidget *list, const QList<TodoData> &items) {
+        for (const auto &t : items) {
+            QWidget *row = createTodoRow(t);
+            QListWidgetItem *item = new QListWidgetItem(list);
+            item->setData(Qt::UserRole, t.id);
+            item->setSizeHint(QSize(0, 52));
+            list->addItem(item);
+            list->setItemWidget(item, row);
+        }
+    };
+
+    if (pending.isEmpty()) {
+        QListWidgetItem *hint = new QListWidgetItem(tr("暂无待办，在上方输入框输入内容创建"));
+        hint->setFlags(Qt::NoItemFlags);
+        hint->setForeground(QColor("#BBBBBB"));
+        hint->setTextAlignment(Qt::AlignCenter);
+        m_pendingList->addItem(hint);
+    } else {
+        fill(m_pendingList, pending);
+    }
+
+    if (!completed.isEmpty()) {
+        fill(m_completedList, completed);
+    }
+}
 
 void TodoWidget::refresh()
 {
     auto *app = ShorthandApplication::instance();
     TodoManager *mgr = app->todoManager();
 
-    // 获取各分区的待办数据
-    QList<TodoData> overdueTodos = mgr->getOverdueTodos(m_sortParam);
-    QList<TodoData> todayTodos = mgr->getTodayTodos(m_sortParam);
-    QList<TodoData> weekTodos = mgr->getWeekTodos(m_sortParam);
-    QList<TodoData> completedTodos = mgr->getCompletedTodos();
+    QList<TodoData> all = mgr->getAllTodos();
 
-    // 如果设置了标签筛选，过滤所有分区
-    auto filterByTags = [this](QList<TodoData> &list) {
-        if (m_filterTags.isEmpty()) return;
-        list.erase(std::remove_if(list.begin(), list.end(), [this](const TodoData &t) {
+    if (!m_filterTags.isEmpty()) {
+        all.erase(std::remove_if(all.begin(), all.end(), [this](const TodoData &t) {
             for (const QString &ft : m_filterTags) {
                 if (!t.tags.contains(ft) && t.tag != ft) return true;
             }
             return false;
-        }), list.end());
-    };
-    filterByTags(overdueTodos);
-    filterByTags(todayTodos);
-    filterByTags(weekTodos);
-    filterByTags(completedTodos);
-
-    // 过滤掉今日和逾期已包含的
-    QList<TodoData> weekOnly;
-    QSet<int> todayIds, overdueIds;
-    for (const auto &t : todayTodos) todayIds.insert(t.id);
-    for (const auto &t : overdueTodos) overdueIds.insert(t.id);
-    for (const auto &t : weekTodos) {
-        if (!todayIds.contains(t.id) && !overdueIds.contains(t.id))
-            weekOnly.append(t);
+        }), all.end());
     }
 
-    populateSection(m_overdueList, overdueTodos, tr("没有逾期的待办"), m_overdueCount);
-    populateSection(m_todayList, todayTodos, tr("今天没有待办"), m_todayCount);
-    populateSection(m_weekList, weekOnly, tr("本周没有其他待办"), m_weekCount);
-    populateSection(m_completedList, completedTodos, tr("还没有已完成的待办"), m_completedCount);
+    populateList(all);
+}
 
-    updateOverallEmptyState();
+void TodoWidget::selectTodo(int todoId)
+{
+    emit todoSelected(todoId);
 }
 
 void TodoWidget::setFilterTags(const QStringList &tags)
@@ -499,578 +451,8 @@ void TodoWidget::setFilterTags(const QStringList &tags)
     refresh();
 }
 
-void TodoWidget::selectTodo(int todoId)
-{
-    emit todoSelected(todoId);
-}
-
 void TodoWidget::focusNewTodoInput()
 {
     m_newTodoInput->setFocus();
     m_newTodoInput->selectAll();
-}
-
-void TodoWidget::populateSection(QListWidget *list, const QList<TodoData> &todos,
-                                  const QString &emptyHint, int &outCount, bool isPreset)
-{
-    list->clear();
-    outCount = todos.size();
-
-    if (todos.isEmpty()) {
-        // 改进的空行提示
-        QWidget *emptyWidget = new QWidget(this);
-        QHBoxLayout *emptyLayout = new QHBoxLayout(emptyWidget);
-        emptyLayout->setContentsMargins(12, 8, 12, 8);
-
-        DLabel *emptyLabel = new DLabel(emptyHint, this);
-        emptyLabel->setStyleSheet("color: palette(placeholderText); font-size: 12px;");
-        emptyLabel->setAlignment(Qt::AlignCenter);
-        emptyLayout->addWidget(emptyLabel);
-
-        QListWidgetItem *item = new QListWidgetItem(list);
-        item->setFlags(Qt::NoItemFlags);
-        item->setSizeHint(QSize(0, 36));
-        list->addItem(item);
-        list->setItemWidget(item, emptyWidget);
-        return;
-    }
-
-    for (const auto &todo : todos) {
-        QString title = todo.title.isEmpty() ? tr("无标题") : todo.title;
-        QString dueStr = todo.dueDatetime > 0
-            ? QDateTime::fromSecsSinceEpoch(todo.dueDatetime).toString("MM-dd")
-            : "";
-        QString priorityStr = todo.priority >= 3 ? "🔴"
-                            : todo.priority == 2 ? "🟡"
-                            : "";
-        QString tagStr = todo.tag.isEmpty() ? "" : QString(" [%1]").arg(todo.tag);
-
-        QWidget *card = new QWidget(this);
-        QHBoxLayout *hLayout = new QHBoxLayout(card);
-        hLayout->setContentsMargins(0, 0, 0, 0);
-        hLayout->setSpacing(4);
-
-        // 多选复选框（仅多选模式下显示，替代原有的勾选框）
-        QCheckBox *multiCb = nullptr;
-        if (m_multiSelectMode) {
-            multiCb = new QCheckBox(this);
-            multiCb->setFixedSize(24, 24);
-            multiCb->setStyleSheet("QCheckBox::indicator { width: 16px; height: 16px; }");
-            hLayout->addWidget(multiCb);
-        }
-
-        QCheckBox *checkBox = new QCheckBox(this);
-        checkBox->setChecked(todo.isCompleted);
-        if (isPreset) {
-            // 预置示例 — 只做视觉引导，不触发数据库写入
-            checkBox->setEnabled(false);
-            checkBox->setStyleSheet("QCheckBox::indicator { opacity: 0.5; }");
-        }
-        int todoId = todo.id;
-
-        QString displayText = priorityStr + " " + title + tagStr;
-        if (!dueStr.isEmpty()) displayText += QString("  [%1]").arg(dueStr);
-
-        // 逾期待办标红
-        QString textStyle = "font-size: 13px;";
-        if (todo.isOverdue() && !todo.isCompleted) {
-            textStyle += " color: #E64545;";
-        }
-        if (isPreset) {
-            textStyle += " font-style: italic; opacity: 0.7;";
-        }
-
-        DLabel *textLabel = new DLabel(displayText, this);
-        textLabel->setStyleSheet(textStyle);
-
-        hLayout->addWidget(checkBox);
-        hLayout->addWidget(textLabel, 1);
-
-        QListWidgetItem *listItem = new QListWidgetItem(list);
-        listItem->setData(Qt::UserRole, todoId);
-        listItem->setSizeHint(card->sizeHint());
-
-        if (!isPreset && !m_multiSelectMode) {
-            connect(checkBox, &QCheckBox::toggled, this,
-                    [this, mgr = ShorthandApplication::instance()->todoManager(),
-                     todoId](bool checked) {
-                        mgr->toggleComplete(todoId, checked);
-                        emit todoStatusChanged();
-                        refresh();
-                    });
-        }
-
-        list->addItem(listItem);
-        list->setItemWidget(listItem, card);
-
-    }
-}
-
-void TodoWidget::setupListContextMenu(QListWidget *list)
-{
-    list->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(list, &QListWidget::customContextMenuRequested, this, &TodoWidget::onContextMenu);
-}
-
-void TodoWidget::onContextMenu(const QPoint &pos)
-{
-    // 找出右键点击的列表和项
-    QListWidget *list = qobject_cast<QListWidget *>(sender());
-    if (!list) return;
-
-    QListWidgetItem *item = list->itemAt(pos);
-    if (!item) return;
-
-    int todoId = item->data(Qt::UserRole).toInt();
-    if (todoId <= 0) return; // 预设示例不弹出菜单
-
-    QMenu *menu = createTodoContextMenu(todoId);
-    if (menu) {
-        menu->exec(list->viewport()->mapToGlobal(pos));
-        delete menu;
-    }
-}
-
-QMenu *TodoWidget::createTodoContextMenu(int todoId)
-{
-    auto *app = ShorthandApplication::instance();
-    TodoManager *mgr = app->todoManager();
-
-    TodoData todo = mgr->getTodo(todoId);
-    if (todo.id <= 0) return nullptr;
-
-    QMenu *menu = new QMenu(this);
-    menu->setStyleSheet(R"(
-        QMenu {
-            background: palette(base);
-            border: 1px solid palette(mid);
-            border-radius: 8px;
-            padding: 4px;
-        }
-        QMenu::item {
-            padding: 6px 24px 6px 12px;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-        QMenu::item:selected {
-            background: palette(highlight);
-            color: palette(highlightedText);
-        }
-        QMenu::separator {
-            height: 1px;
-            margin: 4px 8px;
-            background: palette(midlight);
-        }
-    )");
-
-    // 完成/取消完成
-    QAction *toggleAction = menu->addAction(
-        todo.isCompleted ? tr("取消完成") : tr("标记完成"));
-    connect(toggleAction, &QAction::triggered, this, [this, todoId, completed = todo.isCompleted]() {
-        auto *mgr = ShorthandApplication::instance()->todoManager();
-        mgr->toggleComplete(todoId, !completed);
-        emit todoStatusChanged();
-        refresh();
-    });
-
-    menu->addSeparator();
-
-    // 设置标签子菜单
-    buildTagSubMenu(menu, todoId);
-
-    // 设置优先级子菜单
-    buildPrioritySubMenu(menu, todoId);
-
-    menu->addSeparator();
-
-    // 删除（带确认提示）
-    QAction *deleteAction = menu->addAction(tr("删除"));
-    connect(deleteAction, &QAction::triggered, this, [this, todoId]() {
-        QMessageBox::StandardButton btn = QMessageBox::question(
-            this, tr("删除待办"),
-            tr("确定要将该待办移至回收站吗？"),
-            QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-        if (btn != QMessageBox::Yes) return;
-
-        ShorthandApplication::instance()->todoManager()->deleteTodo(todoId);
-        emit todoStatusChanged();
-        refresh();
-    });
-
-    return menu;
-}
-
-void TodoWidget::buildTagSubMenu(QMenu *parentMenu, int todoId)
-{
-    QMenu *tagMenu = parentMenu->addMenu(tr("设置标签"));
-    auto *app = ShorthandApplication::instance();
-    QStringList currentTags = app->todoManager()->getTodoTags(todoId);
-    bool singleTagMode = currentTags.size() <= 1;
-
-    // "无标签" 选项（单选模式下可用）
-    if (singleTagMode) {
-        QAction *actNoTag = tagMenu->addAction(tr("无标签"));
-        actNoTag->setCheckable(true);
-        actNoTag->setChecked(currentTags.isEmpty());
-        connect(actNoTag, &QAction::triggered, this, [this, todoId]() {
-            bool ok = ShorthandApplication::instance()->todoManager()->setTodoTags(todoId, {});
-            if (!ok) {
-                QMessageBox::warning(const_cast<TodoWidget*>(this), tr("错误"), tr("清除标签失败"));
-            }
-            refresh();
-        });
-        tagMenu->addSeparator();
-    }
-
-    // "新建标签" 入口
-    QAction *actNew = tagMenu->addAction(tr("➕ 新建标签..."));
-    connect(actNew, &QAction::triggered, this, [this, todoId]() {
-        auto *app = ShorthandApplication::instance();
-        bool ok = false;
-        QString name = QInputDialog::getText(const_cast<TodoWidget*>(this), tr("新建标签"),
-                                              tr("请输入标签名称："),
-                                              QLineEdit::Normal, QString(), &ok);
-        if (!ok || name.trimmed().isEmpty()) return;
-        name = name.trimmed();
-
-        // 创建或获取标签
-        TagData existing = app->tagManager()->getTagByName(name);
-        if (existing.id > 0) {
-            // 标签已存在，直接关联
-            app->todoManager()->addTodoTag(todoId, existing.id);
-        } else {
-            // 新建标签并关联
-            int tagId = app->tagManager()->createTag(name);
-            if (tagId > 0) {
-                app->todoManager()->addTodoTag(todoId, tagId);
-            }
-        }
-        refresh();
-    });
-    tagMenu->addSeparator();
-
-    QList<TagData> tags = app->tagManager()->getAllTags();
-    for (const TagData &tag : tags) {
-        QAction *act = tagMenu->addAction(tag.name);
-        act->setCheckable(true);
-        act->setChecked(currentTags.contains(tag.name));
-        connect(act, &QAction::triggered, this, [this, todoId, name = tag.name]() {
-            auto *app = ShorthandApplication::instance();
-            QStringList curTags = app->todoManager()->getTodoTags(todoId);
-            if (curTags.contains(name)) {
-                // 取消该标签
-                TagData t = app->tagManager()->getTagByName(name);
-                if (t.id > 0) {
-                    app->todoManager()->removeTodoTag(todoId, t.id);
-                }
-            } else {
-                // 添加该标签
-                TagData t = app->tagManager()->getTagByName(name);
-                if (t.id > 0) {
-                    app->todoManager()->addTodoTag(todoId, t.id);
-                } else {
-                    // 自动创建
-                    int tagId = app->tagManager()->createTag(name);
-                    if (tagId > 0) {
-                        app->todoManager()->addTodoTag(todoId, tagId);
-                    }
-                }
-            }
-            refresh();
-        });
-    }
-}
-
-void TodoWidget::buildPrioritySubMenu(QMenu *parentMenu, int todoId)
-{
-    QMenu *priorityMenu = parentMenu->addMenu(tr("设置优先级"));
-    TodoData todo = ShorthandApplication::instance()->todoManager()->getTodo(todoId);
-
-    struct PrioItem { QString label; int value; };
-    QList<PrioItem> items = {
-        {tr("无优先级"), 0},
-        {tr("🟢 低"), 1},
-        {tr("🟡 中"), 2},
-        {tr("🔴 高"), 3}
-    };
-
-    for (const auto &pi : items) {
-        QAction *act = priorityMenu->addAction(pi.label);
-        act->setCheckable(true);
-        act->setChecked(todo.priority == pi.value);
-        connect(act, &QAction::triggered, this, [this, todoId, prio = pi.value]() {
-            bool ok = ShorthandApplication::instance()->todoManager()->setPriority(todoId, prio);
-            if (!ok) {
-                QMessageBox::warning(const_cast<TodoWidget*>(this), tr("错误"), tr("设置优先级失败"));
-            }
-            refresh();
-        });
-    }
-}
-
-// ─── 日期选择器和编辑对话框 ──────────────────────────────────────────
-
-void TodoWidget::onCreateTodo()
-{
-    QString text = m_newTodoInput->text().trimmed();
-    if (text.isEmpty()) return;
-
-    int priority = 0;
-    QStringList tags;
-
-    // 解析 !高/!中/!低 优先级标记
-    QRegularExpression prioRe(QStringLiteral(R"(!([高中低]))"));
-    QRegularExpressionMatch prioMatch = prioRe.match(text);
-    if (prioMatch.hasMatch()) {
-        QString p = prioMatch.captured(1);
-        if (p == QString::fromUtf8("\xe9\xab\x98")) priority = 3;      // 高
-        else if (p == QString::fromUtf8("\xe4\xb8\xad")) priority = 2; // 中
-        else if (p == QString::fromUtf8("\xe4\xbd\x8e")) priority = 1; // 低
-        text = text.mid(0, prioMatch.capturedStart()) + text.mid(prioMatch.capturedEnd());
-        text = text.trimmed();
-    }
-    // 兼容 !! 标记（旧语法）
-    while (text.startsWith("!!")) {
-        priority++;
-        text = text.mid(2).trimmed();
-    }
-    if (priority > 3) priority = 3;
-
-    // 解析 #标签 语法（多标签）
-    QRegularExpression tagRe(QStringLiteral(R"(#(\S+))"));
-    QRegularExpressionMatchIterator tagMatches = tagRe.globalMatch(text);
-    while (tagMatches.hasNext()) {
-        QRegularExpressionMatch m = tagMatches.next();
-        QString tagName = m.captured(1).trimmed();
-        if (!tagName.isEmpty()) {
-            tags.append(tagName);
-        }
-    }
-    // 从文本中移除 #标签 部分
-    text = text.remove(tagRe).trimmed();
-
-    // 解析自然语言日期（明天、周五、下周一等）
-    qint64 parsedDue = 0;
-    QDate today = QDate::currentDate();
-    if (text.contains(QString::fromUtf8("\xe6\x98\x8e\xe5\xa4\xa9"))) { // 明天
-        parsedDue = QDateTime(today.addDays(1), QTime(23, 59, 59)).toSecsSinceEpoch();
-        text.replace(QString::fromUtf8("\xe6\x98\x8e\xe5\xa4\xa9"), "");
-    } else if (text.contains(QString::fromUtf8("\xe5\x90\x8e\xe5\xa4\xa9"))) { // 后天
-        parsedDue = QDateTime(today.addDays(2), QTime(23, 59, 59)).toSecsSinceEpoch();
-        text.replace(QString::fromUtf8("\xe5\x90\x8e\xe5\xa4\xa9"), "");
-    } else {
-        // 下周五/下周一等
-        for (int d = 1; d <= 7; d++) {
-            QLocale chLocale(QLocale::Chinese); QString dayName = chLocale.dayName(d, QLocale::LongFormat);
-            if (text.contains(dayName)) {
-                int targetDay = d; // 周一=1 ... 周日=7
-                int curDay = today.dayOfWeek();
-                int daysUntil = targetDay - curDay;
-                if (daysUntil <= 0) daysUntil += 7;
-                parsedDue = QDateTime(today.addDays(daysUntil), QTime(23, 59, 59)).toSecsSinceEpoch();
-                text.replace(dayName, "");
-                break;
-            }
-        }
-    }
-    text = text.trimmed();
-    if (text.isEmpty()) return;
-
-    TodoData todo;
-    todo.title = text;
-    todo.priority = priority;
-    todo.tags = tags;
-    todo.dueDatetime = parsedDue > 0 ? parsedDue : m_pendingDueDate;
-    todo.creationDatetime = QDateTime::currentSecsSinceEpoch();
-    todo.modificationDatetime = todo.creationDatetime;
-
-    auto *app = ShorthandApplication::instance();
-    app->todoManager()->createTodo(todo);
-    m_newTodoInput->clear();
-    m_pendingDueDate = 0;
-    m_dateToggleBtn->setChecked(false);
-    m_datePickerContainer->setVisible(false);
-    refresh();
-}
-
-void TodoWidget::updateDatePickerVisibility()
-{
-    bool visible = m_dateToggleBtn->isChecked();
-    m_datePickerContainer->setVisible(visible);
-    if (visible) {
-        m_dateEdit->setFocus();
-        m_dateEdit->setDate(m_pendingDueDate > 0
-            ? QDateTime::fromSecsSinceEpoch(m_pendingDueDate).date()
-            : QDate::currentDate());
-    }
-}
-
-void TodoWidget::showTodoEditDialog(int todoId)
-{
-    auto *app = ShorthandApplication::instance();
-    TodoManager *mgr = app->todoManager();
-    TodoData todo = mgr->getTodo(todoId);
-    if (todo.id <= 0) return;  // 预置示例或无效待办不可编辑
-
-    DDialog dlg(this);
-    dlg.setTitle(tr("编辑待办"));
-    dlg.setFixedSize(400, 250);
-
-    QWidget *widget = new QWidget(&dlg);
-    QVBoxLayout *layout = new QVBoxLayout(widget);
-    layout->setSpacing(12);
-    layout->setContentsMargins(16, 8, 16, 8);
-
-    // 标题编辑
-    QLineEdit *titleEdit = new QLineEdit(widget);
-    titleEdit->setText(todo.title);
-    titleEdit->selectAll();
-    layout->addWidget(new DLabel(tr("待办内容:"), widget));
-    layout->addWidget(titleEdit);
-
-    // 日期选择
-    QHBoxLayout *dateRow = new QHBoxLayout();
-    dateRow->addWidget(new DLabel(tr("截止日期:"), widget));
-
-    QDateEdit *dateEdit = new QDateEdit(widget);
-    dateEdit->setCalendarPopup(true);
-    dateEdit->setDisplayFormat("yyyy-MM-dd");
-    if (todo.dueDatetime > 0) {
-        dateEdit->setDate(QDateTime::fromSecsSinceEpoch(todo.dueDatetime).date());
-    } else {
-        dateEdit->setDate(QDate::currentDate());
-    }
-    dateEdit->setStyleSheet(
-        "QDateEdit { border: 1px solid palette(mid); border-radius: 4px;"
-        " padding: 4px 8px; font-size: 12px; background: palette(base);"
-        " min-width: 140px; }");
-    dateRow->addWidget(dateEdit);
-
-    QPushButton *clearDateBtn = new QPushButton(tr("清除日期"), widget);
-    clearDateBtn->setStyleSheet(
-        "QPushButton { border: 1px solid palette(mid); border-radius: 4px;"
-        " padding: 4px 10px; font-size: 11px; background: palette(base); }"
-        "QPushButton:hover { background: #FFF0F0; border-color: #E64545; color: #E64545; }");
-    clearDateBtn->setFixedHeight(28);
-    dateRow->addWidget(clearDateBtn);
-    dateRow->addStretch();
-    layout->addLayout(dateRow);
-
-    dlg.addContent(widget);
-
-    int cancelBtn = dlg.addButton(tr("取消"), false, DDialog::ButtonNormal);
-    int okBtn = dlg.addButton(tr("保存"), true, DDialog::ButtonRecommend);
-    Q_UNUSED(cancelBtn);
-
-    connect(clearDateBtn, &QPushButton::clicked, [dateEdit]() {
-        dateEdit->setDate(QDate::currentDate());
-        dateEdit->setSpecialValueText(tr("无期限"));
-    });
-
-    if (dlg.exec() == okBtn) {
-        QString newTitle = titleEdit->text().trimmed();
-        if (newTitle.isEmpty()) return;
-
-        todo.title = newTitle;
-        // If date has special value or was cleared, set dueDatetime to 0
-        if (dateEdit->date() == QDate::currentDate() && dateEdit->specialValueText() == tr("无期限")) {
-            todo.dueDatetime = 0;
-        } else {
-            todo.dueDatetime = QDateTime(dateEdit->date(), QTime(23, 59, 59)).toSecsSinceEpoch();
-        }
-        todo.modificationDatetime = QDateTime::currentSecsSinceEpoch();
-        mgr->updateTodo(todo);
-        refresh();
-    }
-}
-
-QList<TodoData> TodoWidget::presetExamples() const
-{
-    QList<TodoData> examples;
-    qint64 now = QDateTime::currentSecsSinceEpoch();
-
-    auto makeExample = [now](int id, const QString &title, int priority, qint64 dueOffsetSecs) {
-        TodoData t;
-        t.id = id;
-        t.title = title;
-        t.priority = priority;
-        t.creationDatetime = now;
-        t.dueDatetime = (dueOffsetSecs != 0) ? now + dueOffsetSecs : 0;
-        return t;
-    };
-
-    // 今日（id -1, -2）
-    examples.append(makeExample(-1, tr("🖊️ 试试输入待办事项"), 0, 3600));
-    examples.append(makeExample(-2, tr("📌 高优先级用 !! 开头"), 3, 7200));
-    // 逾期（id -3）
-    examples.append(makeExample(-3, tr("⏰ 逾期的待办会显示在这里"), 2, -86400));
-    // 本周（id -4）
-    examples.append(makeExample(-4, tr("📋 点击复选框标记完成"), 0, 86400 * 2));
-    // 已完成（id -5）
-    {
-        TodoData t;
-        t.id = -5;
-        t.title = tr("🎉 欢迎使用 UOS速记");
-        t.isCompleted = true;
-        examples.append(t);
-    }
-
-    return examples;
-}
-
-/// 根据 section 名称返回对应的预设示例列表
-QList<TodoData> TodoWidget::presetExamplesForSection(const QString &section) const
-{
-    QList<TodoData> all = presetExamples();
-    QList<TodoData> result;
-
-    // 根据 id 负值区分归属分区
-    for (const auto &t : all) {
-        bool match = false;
-        if (section == "today") {
-            match = (t.id >= -2);
-        } else if (section == "overdue") {
-            match = (t.id == -3);
-        } else if (section == "week") {
-            match = (t.id == -4);
-        } else if (section == "completed") {
-            match = (t.id == -5);
-        }
-        if (match) result.append(t);
-    }
-    return result;
-}
-
-void TodoWidget::updateOverallEmptyState()
-{
-    // 始终显示内容页（顶部有新建输入框），空状态在分区内显示提示
-    m_stack->setCurrentWidget(m_contentWidget);
-
-    // 无任何待办时，在今日分区显示引导文字
-    if (m_todayCount == 0 && m_overdueCount == 0
-        && m_weekCount == 0 && m_completedCount == 0) {
-        m_todayList->clear();
-        QListWidgetItem *hint = new QListWidgetItem(tr("在上方输入框输入内容，按 Enter 新建待办"));
-        hint->setFlags(Qt::NoItemFlags);
-        hint->setForeground(QColor("#999999"));
-        hint->setTextAlignment(Qt::AlignCenter);
-        m_todayList->addItem(hint);
-    }
-}
-
-// ─── 排序偏好 ────────────────────────────────────────────────
-
-void TodoWidget::loadSortPreference()
-{
-    QSettings settings("deepin", "uos-shorthand");
-    m_sortParam.field = static_cast<TodoSortParam::Field>(
-        settings.value("todos_sort_field", static_cast<int>(TodoSortParam::DueDate)).toInt());
-    m_sortParam.ascending = settings.value("todos_sort_ascending", true).toBool();
-}
-
-void TodoWidget::saveSortPreference()
-{
-    QSettings settings("deepin", "uos-shorthand");
-    settings.setValue("todos_sort_field", static_cast<int>(m_sortParam.field));
-    settings.setValue("todos_sort_ascending", m_sortParam.ascending);
 }

@@ -53,6 +53,9 @@ public:
     void setThreadCount(int n) { m_threadCount = n; }
     void setTranslate(bool translate) { m_translate = translate; }
 
+    // 测试连接：检查模型文件是否存在
+    void testConnection(std::function<void(bool success, const QString &message)> callback) override;
+
 signals:
     void modelLoadProgress(int percent);
     void transcriptionProgress(const QString &text, bool isPartial);

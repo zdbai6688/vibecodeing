@@ -29,6 +29,8 @@ public:
     virtual QString name() const = 0;
     virtual void transcribe(const QString &audioFile,
                             std::function<void(const AsrResult &)> callback) = 0;
+    // 测试连接：验证 API Key 和服务的可用性
+    virtual void testConnection(std::function<void(bool success, const QString &message)> callback) = 0;
 };
 
 // 讯飞 ASR 引擎
@@ -41,6 +43,7 @@ public:
     QString name() const override { return "讯飞语音"; }
     void transcribe(const QString &audioFile,
                     std::function<void(const AsrResult &)> callback) override;
+    void testConnection(std::function<void(bool success, const QString &message)> callback) override;
 
 private:
     QString m_appid;
@@ -48,7 +51,7 @@ private:
     QString m_apiSecret;
 };
 
-// 百度 ASR 引擎（占位）
+// 百度 ASR 引擎
 class BaiduAsrEngine : public QObject, public IAsrEngine
 {
     Q_OBJECT
@@ -58,6 +61,7 @@ public:
     QString name() const override { return "百度语音"; }
     void transcribe(const QString &audioFile,
                     std::function<void(const AsrResult &)> callback) override;
+    void testConnection(std::function<void(bool success, const QString &message)> callback) override;
 private:
     QString m_apiKey;
     QString m_secretKey;
@@ -73,6 +77,7 @@ public:
     QString name() const override { return "阿里云语音"; }
     void transcribe(const QString &audioFile,
                     std::function<void(const AsrResult &)> callback) override;
+    void testConnection(std::function<void(bool success, const QString &message)> callback) override;
 private:
     QString m_accessKeyId;
     QString m_accessKeySecret;
@@ -91,11 +96,17 @@ public:
 
     void setEngine(Engine engine);
     void setCredentials(Engine engine, const QString &key1, const QString &key2);
+    // 从 QSettings 重新加载所有 ASR 凭据并重建当前服务（设置页保存后调用，避免凭据过期）
+    void reloadCredentials();
     Engine currentEngine() const { return m_currentEngine; }
     IAsrEngine *currentService() const;
 
     void transcribe(const QString &audioFile,
                     std::function<void(const AsrResult &)> callback);
+
+    // 测试指定引擎的连接，使用已保存的凭据
+    void testEngine(Engine engine,
+                    std::function<void(bool success, const QString &message)> callback);
 
     static QString engineName(Engine e);
     static Engine engineFromName(const QString &name);

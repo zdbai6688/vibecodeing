@@ -203,26 +203,31 @@ void WhisperAsrEngine::performTranscription(const QString &audioFile,
         double rms = std::sqrt(sumSq / nSamples);
         qInfo() << "Whisper: 音频 RMS 能量=" << rms;
 
-        if (rms < 0.008) {
+        if (rms < 0.002) {
             whisper_free(ctx);
             result.success = false;
-            result.errorMessage = tr("未检测到语音内容，请检查麦克风或靠近麦克风说话后重试");
+            result.errorMessage = tr("未检测到语音内容（RMS=%1，请检查麦克风或靠近麦克风说话后重试）").arg(QString::number(rms, 'f', 4));
             QMetaObject::invokeMethod(QCoreApplication::instance(), [callback, result]() { callback(result); }, Qt::QueuedConnection);
             return;
         }
     }
 
-    struct whisper_full_params wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+struct whisper_full_params wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
     wparams.print_realtime = false;
     wparams.print_progress = false;
     wparams.print_timestamps = false;
     wparams.print_special = false;
     wparams.translate = m_translate;
-    wparams.language = m_language.toUtf8().constData();
+    wparams.language = "zh";              // 强制中文识别
     wparams.n_threads = m_threadCount;
     wparams.offset_ms = 0;
-    wparams.no_timestamps = false;      // 输出时间戳
-    wparams.single_segment = false;     // 输出多个分段
+    wparams.no_timestamps = false;        // 输出时间戳
+    wparams.single_segment = false;       // 输出多个分段
+    wparams.suppress_blank = true;        // 抑制空白输出
+    wparams.suppress_nst = true;          // 抑制非语音标记
+    wparams.temperature = 0.0f;           // 低温度提高准确率
+    wparams.temperature_inc = 0.2f;       // 逐步增加温度
+    wparams.max_tokens = 128;             // 每段最大token数
 
     if (whisper_full(ctx, wparams, pcmf32.data(), pcmf32.size()) != 0) {
         whisper_free(ctx);
@@ -236,6 +241,19 @@ void WhisperAsrEngine::performTranscription(const QString &audioFile,
     int nSegments = whisper_full_n_segments(ctx);
     QString fullText;
 
+    // 过滤掉 Whisper 的特殊标记（[Music], [BLANK_AUDIO], [SIGH] 等）
+    auto cleanText = [](const QString &text) -> QString {
+        // 只移除 Whisper 特定的特殊标记，保留用户输入的中括号内容
+        QString cleaned = text;
+        cleaned.replace(QRegularExpression(R"(\[BLANK_AUDIO\])"), "");
+        cleaned.replace(QRegularExpression(R"(\[Music\])"), "");
+        cleaned.replace(QRegularExpression(R"(\[SIGH\])"), "");
+        cleaned.replace(QRegularExpression(R"(\[LAUGH\])"), "");
+        cleaned.replace(QRegularExpression(R"(\[NOISE\])"), "");
+        cleaned.replace(QRegularExpression(R"(\[SPEECH\])"), "");
+        return cleaned.trimmed();
+    };
+
     // 说话人识别：基于每个分段的声学特征（能量 + 过零率）聚类
     struct SegFeature {
         int index;
@@ -248,7 +266,7 @@ void WhisperAsrEngine::performTranscription(const QString &audioFile,
     for (int i = 0; i < nSegments; ++i) {
         const char *text = whisper_full_get_segment_text(ctx, i);
         if (!text) continue;
-        QString segText = QString::fromUtf8(text).trimmed();
+        QString segText = cleanText(QString::fromUtf8(text));
         if (segText.isEmpty()) continue;
 
         AsrSegment seg;
@@ -355,4 +373,13 @@ QString WhisperAsrEngine::modelDownloadUrl(ModelSize size)
     case Large:  model = "ggml-large-v3.bin"; break;
     }
     return "https://hf-mirror.com/ggerganov/whisper.cpp/resolve/main/" + model;
+}
+
+void WhisperAsrEngine::testConnection(std::function<void(bool success, const QString &message)> callback)
+{
+    if (QFile::exists(m_modelPath)) {
+        callback(true, QStringLiteral("Whisper 模型文件已就绪"));
+    } else {
+        callback(false, QStringLiteral("Whisper 模型文件不存在: ") + m_modelPath);
+    }
 }

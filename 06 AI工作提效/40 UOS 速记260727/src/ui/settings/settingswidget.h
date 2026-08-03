@@ -36,6 +36,7 @@ private:
     DSwitchButton *m_compactStartSwitch;
     QCheckBox *m_trayNotifyCheck;
     QSpinBox *m_reminderInterval;
+    QLineEdit *m_recordingDirEdit;
     QLineEdit *m_shortcutEdit;
 
     QComboBox *m_themeCombo;

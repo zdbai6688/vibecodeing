@@ -4,6 +4,8 @@
 #include "notelistwidget.h"
 #include "application/shorthandapplication.h"
 #include "core/notemanager.h"
+#include "core/tagmanager.h"
+#include "core/todomanager.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -16,6 +18,9 @@
 #include <QDebug>
 #include <QCheckBox>
 #include <QMenu>
+#include <QAction>
+#include <QInputDialog>
+#include <QMessageBox>
 #include <QAction>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -151,6 +156,8 @@ void NoteListWidget::initUI()
     layout->addWidget(m_batchToolbar);
 
     // ─── 信号连接 ───────────────────────────────
+    m_list->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_list, &QListWidget::customContextMenuRequested, this, &NoteListWidget::onContextMenu);
     connect(m_list, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
         int noteId = item->data(Qt::UserRole).toInt();
         if (m_multiSelectMode) {
@@ -378,8 +385,8 @@ void NoteListWidget::saveSortPreference()
 void NoteListWidget::setMode(Mode mode)
 {
     m_mode = mode;
-    // 回收站模式下隐藏多选按钮
-    m_selectModeBtn->setVisible(mode != Trash);
+    // 回收站模式也显示多选按钮（支持批量永久删除/恢复）
+    m_selectModeBtn->setVisible(true);
     if (mode == Trash && m_multiSelectMode) {
         m_selectModeBtn->setChecked(false);
         exitMultiSelectMode();
@@ -578,4 +585,95 @@ QString NoteListWidget::getEmptyHint(Mode mode) const
     case Search: return tr("尝试更换搜索关键词");
     default: return QString();
     }
+}
+
+void NoteListWidget::onContextMenu(const QPoint &pos)
+{
+    QListWidgetItem *item = m_list->itemAt(pos);
+    if (!item) return;
+    int noteId = item->data(Qt::UserRole).toInt();
+    if (noteId <= 0) return;
+
+    auto *app = ShorthandApplication::instance();
+    if (!app || !app->noteManager()) return;
+
+    QMenu menu(this);
+    menu.setStyleSheet(R"(
+        QMenu { background: palette(window); border: 1px solid palette(mid); border-radius: 6px; padding: 4px; }
+        QMenu::item { padding: 6px 24px; border-radius: 4px; font-size: 13px; }
+        QMenu::item:selected { background: palette(highlight); color: palette(highlightedText); }
+        QMenu::separator { height: 1px; background: palette(midlight); margin: 4px 8px; }
+    )");
+
+    if (m_mode == Trash) {
+        // 回收站模式：恢复 / 永久删除 / 清空回收站
+        QAction *restoreAction = menu.addAction(tr("♻️ 恢复"));
+        connect(restoreAction, &QAction::triggered, this, [this, noteId, app]() {
+            app->noteManager()->restoreNote(noteId);
+            refresh();
+        });
+
+        QAction *deleteAction = menu.addAction(tr("🗑 永久删除"));
+        connect(deleteAction, &QAction::triggered, this, [this, noteId, app]() {
+            auto reply = QMessageBox::question(this, tr("永久删除"),
+                                               tr("确定要永久删除这条笔记吗？\n此操作不可恢复。"));
+            if (reply == QMessageBox::Yes) {
+                app->noteManager()->permanentDelete(noteId);
+                refresh();
+            }
+        });
+
+        menu.addSeparator();
+
+        QAction *clearAllAction = menu.addAction(tr("🧹 清空回收站"));
+        connect(clearAllAction, &QAction::triggered, this, [this, app]() {
+            auto reply = QMessageBox::question(this, tr("清空回收站"),
+                                               tr("确定要清空回收站吗？\n所有笔记将被永久删除，此操作不可恢复。"));
+            if (reply == QMessageBox::Yes) {
+                app->noteManager()->permanentDeleteAll();
+                refresh();
+            }
+        });
+    } else {
+        // 正常模式：标签 / 删除
+        QMenu *tagMenu = menu.addMenu(tr("设置标签"));
+        QList<TagData> tags = app->tagManager()->getAllTags();
+        for (const TagData &tag : tags) {
+            QAction *tagAction = tagMenu->addAction(tag.name);
+            connect(tagAction, &QAction::triggered, this, [this, noteId, tag, app]() {
+                NoteData note = app->noteManager()->getNote(noteId);
+                if (note.id > 0) {
+                    note.tag = tag.name;
+                    app->noteManager()->updateNote(note);
+                    refresh();
+                }
+            });
+        }
+        if (!tags.isEmpty()) tagMenu->addSeparator();
+        QAction *clearTag = tagMenu->addAction(tr("无标签"));
+        connect(clearTag, &QAction::triggered, this, [this, noteId, app]() {
+            NoteData note = app->noteManager()->getNote(noteId);
+            if (note.id > 0) {
+                note.tag.clear();
+                app->noteManager()->updateNote(note);
+                refresh();
+            }
+        });
+
+        menu.addSeparator();
+
+        QAction *deleteAction = menu.addAction(tr("删除"));
+        connect(deleteAction, &QAction::triggered, this, [this, noteId, app]() {
+            app->noteManager()->deleteNote(noteId);
+            refresh();
+        });
+    }
+
+    QAction *todoAction = menu.addAction(tr("设置新待办"));
+    connect(todoAction, &QAction::triggered, this, [this, noteId, app]() {
+        app->noteManager()->convertToTodo(noteId);
+        refresh();
+    });
+
+    menu.exec(QCursor::pos());
 }

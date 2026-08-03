@@ -313,6 +313,102 @@ void AliyunAsrEngine::transcribe(const QString &audioFile,
 }
 
 // ============================================================
+// 测试连接实现
+// ============================================================
+
+void BaiduAsrEngine::testConnection(std::function<void(bool success, const QString &message)> callback)
+{
+    QString tokenUrl = QString("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%1&client_secret=%2")
+                           .arg(m_apiKey, m_secretKey);
+
+    QNetworkAccessManager *mgr = new QNetworkAccessManager(this);
+    QNetworkReply *reply = mgr->get(QNetworkRequest(QUrl(tokenUrl)));
+
+    connect(reply, &QNetworkReply::finished, this, [reply, mgr, callback]() {
+        reply->deleteLater();
+        mgr->deleteLater();
+        QByteArray data = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        QJsonObject obj = doc.object();
+        if (obj.contains("access_token") && !obj["access_token"].toString().isEmpty()) {
+            callback(true, QString::fromUtf8("连接成功，Access Token 已获取"));
+        } else {
+            QString err = obj["error_description"].toString();
+            if (err.isEmpty()) err = obj["error"].toString();
+            if (err.isEmpty()) err = QString::fromUtf8("未知错误");
+            callback(false, QString::fromUtf8("连接失败：%1").arg(err));
+        }
+    });
+}
+
+void XfyunAsrEngine::testConnection(std::function<void(bool success, const QString &message)> callback)
+{
+    QString scriptPath = QCoreApplication::applicationDirPath() + "/../src/services/xfyun_asr.js";
+    if (!QFile::exists(scriptPath)) {
+        scriptPath = QCoreApplication::applicationDirPath() + "/../share/uos-shorthand/services/xfyun_asr.js";
+    }
+    if (!QFile::exists(scriptPath)) {
+        scriptPath = QCoreApplication::applicationDirPath() + "/xfyun_asr.js";
+    }
+
+    if (!QFile::exists(scriptPath)) {
+        callback(false, QString::fromUtf8("找不到 xfyun_asr.js 脚本文件"));
+        return;
+    }
+
+    QProcess *proc = new QProcess(this);
+    proc->setProgram("node");
+    proc->setArguments({scriptPath, QStringLiteral("--test"), m_appid, m_apiKey, m_apiSecret});
+
+    connect(proc, &QProcess::finished, this, [proc, callback](int exitCode) {
+        proc->deleteLater();
+        QByteArray output = proc->readAllStandardOutput();
+        QByteArray errOutput = proc->readAllStandardError();
+
+        QJsonDocument doc = QJsonDocument::fromJson(output);
+        if (doc.isObject()) {
+            QJsonObject obj = doc.object();
+            bool ok = obj["success"].toBool();
+            QString msg = obj["message"].toString();
+            if (msg.isEmpty()) msg = obj["error"].toString();
+            callback(ok, msg);
+        } else {
+            callback(false, QString::fromUtf8("连接失败：%1").arg(QString::fromUtf8(errOutput)));
+        }
+    });
+
+    proc->start();
+}
+
+void AliyunAsrEngine::testConnection(std::function<void(bool success, const QString &message)> callback)
+{
+    QString url = QString("https://nls-meta.cn-shanghai.aliyuncs.com/api/createToken?AccessKeyId=%1&KeySecret=%2")
+                      .arg(m_accessKeyId, m_accessKeySecret);
+
+    QNetworkAccessManager *mgr = new QNetworkAccessManager(this);
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+    QNetworkReply *reply = mgr->post(request, QByteArray("{}"));
+
+    connect(reply, &QNetworkReply::finished, this, [reply, mgr, callback]() {
+        reply->deleteLater();
+        mgr->deleteLater();
+        QByteArray data = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+        QJsonObject obj = doc.object();
+
+        if (obj.contains("Token") && !obj["Token"].toString().isEmpty()) {
+            callback(true, QString::fromUtf8("连接成功，Access Token 已获取"));
+        } else {
+            QString err = obj["ErrMsg"].toString();
+            if (err.isEmpty()) err = obj["Message"].toString();
+            if (err.isEmpty()) err = QString::fromUtf8("未知错误（请检查 AccessKey）");
+            callback(false, QString::fromUtf8("连接失败：%1").arg(err));
+        }
+    });
+}
+
+// ============================================================
 // AsrServiceManager
 // ============================================================
 
@@ -372,6 +468,20 @@ void AsrServiceManager::setCredentials(Engine engine, const QString &key1, const
     }
 }
 
+void AsrServiceManager::reloadCredentials()
+{
+    QSettings settings;
+    m_xfyunAppid = settings.value("asr/xunfei_appid").toString();
+    m_xfyunApiKey = settings.value("asr/xunfei_key").toString();
+    m_xfyunApiSecret = settings.value("asr/xunfei_secret").toString();
+    m_baiduApiKey = settings.value("asr/baidu_key").toString();
+    m_baiduSecretKey = settings.value("asr/baidu_secret").toString();
+    m_aliyunAccessKeyId = settings.value("asr/aliyun_key").toString();
+    m_aliyunAccessKeySecret = settings.value("asr/aliyun_secret").toString();
+    // 凭据可能已变化，重建当前服务以使用最新配置
+    ensureService();
+}
+
 IAsrEngine *AsrServiceManager::currentService() const
 {
     return m_currentService;
@@ -389,6 +499,46 @@ void AsrServiceManager::transcribe(const QString &audioFile,
     }
     m_currentService->transcribe(audioFile, callback);
 }
+void AsrServiceManager::testEngine(Engine engine,
+                                    std::function<void(bool success, const QString &message)> callback)
+{
+    // 如果是 Whisper，直接检查模型文件
+    if (engine == Whisper) {
+        QString modelPath = WhisperAsrEngine::defaultModelPath(WhisperAsrEngine::Tiny);
+        if (QFile::exists(modelPath)) {
+            callback(true, QString::fromUtf8("Whisper 模型文件已就绪"));
+        } else {
+            callback(false, QString::fromUtf8("Whisper 模型文件不存在，请将 ggml-tiny.bin 放到 %1").arg(modelPath));
+        }
+        return;
+    }
+
+    // 创建对应引擎的临时实例并调用 testConnection
+    IAsrEngine *svc = nullptr;
+    switch (engine) {
+    case Xfyun:
+        svc = new XfyunAsrEngine(m_xfyunAppid, m_xfyunApiKey, m_xfyunApiSecret, this);
+        break;
+    case Baidu:
+        svc = new BaiduAsrEngine(m_baiduApiKey, m_baiduSecretKey, this);
+        break;
+    case Aliyun:
+        svc = new AliyunAsrEngine(m_aliyunAccessKeyId, m_aliyunAccessKeySecret, this);
+        break;
+    default:
+        callback(false, QString::fromUtf8("不支持的引擎"));
+        return;
+    }
+
+    // 获取原始指针，在 lambda 中安全删除
+    IAsrEngine *rawSvc = svc;
+    rawSvc->testConnection([this, rawSvc, callback](bool ok, const QString &msg) {
+        delete rawSvc;
+        callback(ok, msg);
+    });
+}
+
+
 
 QString AsrServiceManager::engineName(Engine e)
 {

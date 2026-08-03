@@ -39,6 +39,11 @@ public:
     qint64 durationMs() const { return m_durationMs; }
     int audioLevel() const { return m_audioLevel; }  // 0-100
 
+    // 录音存储目录：优先读取设置页配置（recording/storage_dir），未配置时返回默认目录
+    static QString recordingDir();
+    // 在录音存储目录下生成带时间戳的录音文件路径
+    static QString makeRecordingPath(const QString &prefix);
+
 signals:
     void stateChanged(AudioRecorder::State newState);
     void durationChanged(qint64 ms);
