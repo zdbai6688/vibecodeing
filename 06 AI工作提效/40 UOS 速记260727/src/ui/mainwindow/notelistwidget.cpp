@@ -570,9 +570,9 @@ QString NoteListWidget::getEmptyTitle(Mode mode) const
 {
     switch (mode) {
     case AllNotes: return tr("还没有笔记");
-    case TagFilter: return tr("该标签下暂无笔记");
+    case TagFilter: return tr("该标签下暂无内容");
     case Trash: return tr("回收站为空");
-    case Search: return tr("未找到匹配的笔记");
+    case Search: return tr("没有找到与「%1」相关的内容").arg(m_searchKeyword);
     default: return tr("暂无内容");
     }
 }
@@ -580,8 +580,8 @@ QString NoteListWidget::getEmptyTitle(Mode mode) const
 QString NoteListWidget::getEmptyHint(Mode mode) const
 {
     switch (mode) {
-    case AllNotes: return tr("点击左下角「+ 新建」按钮开始记录\n首行为标题，下方内容自由书写");
-    case Trash: return tr("删除的笔记会出现在这里");
+    case AllNotes: return tr("点击「+ 新建笔记」或按 Ctrl+N 开始记录");
+    case Trash: return tr("删除的笔记会在这里保留，可随时恢复");
     case Search: return tr("尝试更换搜索关键词");
     default: return QString();
     }

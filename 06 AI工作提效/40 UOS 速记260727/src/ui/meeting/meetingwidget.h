@@ -28,8 +28,10 @@ public:
     explicit MeetingWidget(QWidget *parent = nullptr);
     void refresh();
 
-private slots:
+public slots:
     void onNewMeeting();
+
+private slots:
     void onStartRecording();
     void onStopRecording(const QString &filePath = QString());
     void onDeleteMeeting();

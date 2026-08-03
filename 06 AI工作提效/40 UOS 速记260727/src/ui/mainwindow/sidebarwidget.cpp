@@ -10,19 +10,29 @@
 #include <DLabel>
 #include <DFontSizeManager>
 #include <DGuiApplicationHelper>
+#include <DPalette>
 #include <QDebug>
 #include <QAction>
+#include <QHBoxLayout>
+#include <QScrollArea>
+#include <QDateTime>
 
 SidebarWidget::SidebarWidget(QWidget *parent)
     : QWidget(parent)
 {
-    setFixedWidth(200);
+    setObjectName("SidebarWidget");
+    setFixedWidth(EXPANDED_WIDTH);
+    m_currentWidth = EXPANDED_WIDTH;
+
+    m_badgeNotes = nullptr;
+    m_badgeTodos = nullptr;
+
     initUI();
-    updateStyleSheet();
+    refreshStyleSheet();
 
     // 监听主题变化
     connect(DGuiApplicationHelper::instance(), &DGuiApplicationHelper::themeTypeChanged,
-            this, &SidebarWidget::updateStyleSheet);
+            this, &SidebarWidget::refreshStyleSheet);
 
     auto *app = ShorthandApplication::instance();
     connect(app->tagManager(), &TagManager::dataChanged, this, &SidebarWidget::updateTagList);
@@ -32,231 +42,518 @@ SidebarWidget::SidebarWidget(QWidget *parent)
     connect(app->todoManager(), &TodoManager::dataChanged, this, [this, app]() {
         updateBadge(app->noteManager()->noteCount(), app->todoManager()->pendingCount());
     });
-}
 
-void SidebarWidget::updateStyleSheet()
-{
-    auto *helper = DGuiApplicationHelper::instance();
-    bool dark = (helper->themeType() == DGuiApplicationHelper::DarkType);
-
-    QString gradStart = dark ? "#1f2a3a" : "#D8DCF0";
-    QString gradEnd   = dark ? "#2d3a4a" : "#C8CCE2";
-    QString textColor = dark ? "#E0E0E0" : "#222222";
-    QString textMuted = dark ? "#AAAAAA" : "#666666";
-    QString accent    = dark ? "#78A9FF" : "#2178E5";
-    QString accentBg  = dark ? "#78A9FF" : "#2178E5";
-    QString hoverBg   = dark ? "rgba(120,169,255,0.12)" : "rgba(33,120,229,0.08)";
-    QString btnBg     = dark ? "#353535" : "#F0F0F0";
-    QString btnBgHov  = dark ? "#454545" : "#E0E0E0";
-    QString badgeBg   = accent;
-    QString badgeText = dark ? "#1e1e1e" : "#FFFFFF";
-
-    setStyleSheet(QString(R"(
-        SidebarWidget {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                                        stop:0 %1, stop:1 %2);
-        }
-        QPushButton#navBtn {
-            background: transparent; border: none; border-radius: 6px;
-            padding: 8px 12px; text-align: left; font-size: 13px; color: %3;
-        }
-        QPushButton#navBtn:hover { background: %5; }
-        QPushButton#navBtn:checked {
-            background: %6; color: %8; font-weight: 600;
-        }
-        QPushButton#navBtn:checked QLabel { color: %8; }
-        QPushButton#newBtn {
-            background: %7; color: %3; border: none; border-radius: 6px;
-            padding: 8px; font-size: 13px;
-        }
-        QPushButton#newBtn:hover { background: %9; }
-        QLabel#sectionLabel {
-            color: %4; font-size: 11px; font-weight: 600;
-            padding: 4px 12px 2px 12px; letter-spacing: 0.5px;
-        }
-        QLabel#badge {
-            color: %4; font-size: 11px; padding: 0 4px;
-        }
-    )").arg(gradStart, gradEnd, textColor, textMuted, hoverBg,
-            accentBg, btnBg, badgeText, btnBgHov));
-
-    // 更新 badge 和 tag 列表样式
-    if (m_badgeNotes) {
-        m_badgeNotes->setStyleSheet(QString(R"(
-            QLabel {
-                background: %1; color: %2; font-size: 11px; font-weight: 600;
-                border-radius: 11px; padding: 0;
-            }
-        )").arg(badgeBg, badgeText));
-    }
-    if (m_badgeTodos) {
-        m_badgeTodos->setStyleSheet(QString(R"(
-            QLabel {
-                background: %1; color: %2; font-size: 11px; font-weight: 600;
-                border-radius: 11px; padding: 0;
-            }
-        )").arg(badgeBg, badgeText));
-    }
-
-    if (m_tagList) {
-        m_tagList->setStyleSheet(QString(R"(
-            QListWidget { background: transparent; border: none; padding: 0 6px; }
-            QListWidget::item {
-                border-radius: 6px; padding: 6px 12px; font-size: 13px; color: %1;
-            }
-            QListWidget::item:hover { background: %2; }
-            QListWidget::item:selected { background: %3; color: %4; }
-        )").arg(textColor, hoverBg, accentBg,
-               dark ? "#1e1e1e" : "#FFFFFF"));
-    }
-}
-
-QPushButton *SidebarWidget::makeNavBtn(const QString &icon, const QString &text, QLabel *&badgeLabel)
-{
-    QWidget *row = new QWidget(this);
-    QHBoxLayout *rowLayout = new QHBoxLayout(row);
-    rowLayout->setContentsMargins(12, 0, 12, 0);
-    rowLayout->setSpacing(6);
-
-    QPushButton *btn = new QPushButton(icon + "  " + text, this);
-    btn->setObjectName("navBtn");
-    btn->setCheckable(true);
-    btn->setCursor(Qt::PointingHandCursor);
-    btn->setFixedHeight(34);
-
-    badgeLabel = new QLabel("", this);
-    badgeLabel->setFixedSize(22, 22);
-    badgeLabel->setAlignment(Qt::AlignCenter);
-    badgeLabel->hide();
-
-    rowLayout->addWidget(btn, 1);
-    rowLayout->addWidget(badgeLabel);
-    m_layout->addWidget(row);
-    return btn;
-}
-
-void SidebarWidget::addSectionLabel(const QString &text)
-{
-    DLabel *label = new DLabel(text, this);
-    label->setObjectName("sectionLabel");
-    label->setFixedHeight(20);
-    m_layout->addWidget(label);
-    m_layout->addSpacing(2);
+    // 启动时读取真实数量
+    updateBadge(app->noteManager()->noteCount(), app->todoManager()->pendingCount());
 }
 
 void SidebarWidget::initUI()
 {
-    m_layout = new QVBoxLayout(this);
-    m_layout->setContentsMargins(0, 12, 0, 12);
-    m_layout->setSpacing(0);
+    m_mainLayout = new QVBoxLayout(this);
+    m_mainLayout->setContentsMargins(0, 0, 0, 0);
+    m_mainLayout->setSpacing(0);
 
-    // Logo
-    DLabel *logo = new DLabel(tr("UOS 速记"), this);
-    logo->setStyleSheet("font-size: 16px; font-weight: 700; padding: 8px 16px 16px 16px;");
-    // 使用 DPalette 设置主题色
-    QPalette pa = logo->palette();
-    auto *dguiHelper = DGuiApplicationHelper::instance();
-    if (dguiHelper) {
-        QColor accentColor = dguiHelper->themeType() == DGuiApplicationHelper::DarkType
-            ? QColor("#78A9FF") : QColor("#2178E5");
-        pa.setColor(QPalette::WindowText, accentColor);
-    } else {
-        pa.setColor(QPalette::WindowText, QColor("#2178E5"));
-    }
-    logo->setPalette(pa);
-    m_layout->addWidget(logo);
+    // ===== Header 区域 =====
+    m_headerWidget = new QWidget(this);
+    m_headerWidget->setObjectName("sidebarHeader");
+    QHBoxLayout *headerLayout = new QHBoxLayout(m_headerWidget);
+    headerLayout->setContentsMargins(12, 8, 8, 8);
+    headerLayout->setSpacing(6);
 
-    // 核心功能
-    addSectionLabel(tr("【核心功能】"));
-    QLabel *dummy = nullptr;
-    m_btnNotes = makeNavBtn("📝", tr("笔记"), m_badgeNotes);
-    m_btnNotes->setChecked(true);
-    m_btnTodos = makeNavBtn("✅", tr("待办事项"), m_badgeTodos);
-    m_btnMeetings = makeNavBtn("🎤", tr("会议记录"), dummy);
-    m_layout->addSpacing(12);
+    m_logoIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x93\x9D"), this);
+    m_logoIcon->setObjectName("logoIcon");
+    m_logoIcon->setFixedSize(28, 28);
+    m_logoIcon->setAlignment(Qt::AlignCenter);
 
-    // 标签筛选
-    addSectionLabel(tr("【标签筛选】"));
-    m_tagList = new QListWidget(this);
+    m_logoText = new QLabel(tr("UOS速记"), this);
+    m_logoText->setObjectName("logoText");
+
+    m_collapseBtn = new QPushButton(this);
+    m_collapseBtn->setObjectName("collapseBtn");
+    m_collapseBtn->setFixedSize(24, 24);
+    m_collapseBtn->setCursor(Qt::PointingHandCursor);
+    m_collapseBtn->setToolTip(tr("折叠侧栏"));
+    m_collapseBtn->setText(QString::fromUtf8("\xE2\x97\x80")); // ◀
+    connect(m_collapseBtn, &QPushButton::clicked, this, &SidebarWidget::toggleCollapse);
+
+    headerLayout->addWidget(m_logoIcon);
+    headerLayout->addWidget(m_logoText, 1);
+    headerLayout->addWidget(m_collapseBtn);
+    m_mainLayout->addWidget(m_headerWidget);
+
+    // ===== 可滚动内容区域 =====
+    QScrollArea *scroll = new QScrollArea(this);
+    scroll->setObjectName("sidebarScroll");
+    scroll->setWidgetResizable(true);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll->setFrameShape(QFrame::NoFrame);
+
+    QWidget *scrollContent = new QWidget(scroll);
+    QVBoxLayout *scrollLayout = new QVBoxLayout(scrollContent);
+    scrollLayout->setContentsMargins(6, 8, 6, 8);
+    scrollLayout->setSpacing(2);
+
+    // ===== 第一组：核心功能 =====
+    m_coreGroup = new QWidget(this);
+    m_coreGroup->setObjectName("coreGroup");
+    QVBoxLayout *coreLayout = new QVBoxLayout(m_coreGroup);
+    coreLayout->setContentsMargins(0, 0, 0, 0);
+    coreLayout->setSpacing(1);
+
+    // 核心功能区段标题
+    DLabel *sectionCore = new DLabel(tr("核心功能"), this);
+    sectionCore->setObjectName("sectionCore");
+    sectionCore->setFixedHeight(24);
+    sectionCore->setContentsMargins(12, 4, 12, 2);
+    QFont f = sectionCore->font();
+    f.setPointSize(9);
+    f.setBold(true);
+    sectionCore->setFont(f);
+    coreLayout->addWidget(sectionCore);
+
+    // 笔记按钮
+    m_btnNotes = new QPushButton(this);
+    m_btnNotes->setObjectName("navBtn");
+    m_btnNotes->setCheckable(true);
+    m_btnNotes->setCursor(Qt::PointingHandCursor);
+    m_btnNotes->setFixedHeight(34);
+    QHBoxLayout *notesLayout = new QHBoxLayout(m_btnNotes);
+    notesLayout->setContentsMargins(10, 0, 6, 0);
+    notesLayout->setSpacing(6);
+    QLabel *notesIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x93\x9D"), m_btnNotes);
+    notesIcon->setObjectName("navIcon");
+    notesIcon->setFixedSize(20, 20);
+    notesIcon->setAlignment(Qt::AlignCenter);
+    QLabel *notesText = new QLabel(tr("全部笔记"), m_btnNotes);
+    notesText->setObjectName("navText");
+    m_badgeNotes = new QLabel("", m_btnNotes);
+    m_badgeNotes->setObjectName("navBadge");
+    m_badgeNotes->setFixedSize(22, 20);
+    m_badgeNotes->setAlignment(Qt::AlignCenter);
+    m_badgeNotes->hide();
+    notesLayout->addWidget(notesIcon);
+    notesLayout->addWidget(notesText, 1);
+    notesLayout->addWidget(m_badgeNotes);
+    coreLayout->addWidget(m_btnNotes);
+
+    // 待办按钮
+    m_btnTodos = new QPushButton(this);
+    m_btnTodos->setObjectName("navBtn");
+    m_btnTodos->setCheckable(true);
+    m_btnTodos->setCursor(Qt::PointingHandCursor);
+    m_btnTodos->setFixedHeight(34);
+    QHBoxLayout *todosLayout = new QHBoxLayout(m_btnTodos);
+    todosLayout->setContentsMargins(10, 0, 6, 0);
+    todosLayout->setSpacing(6);
+    QLabel *todosIcon = new QLabel(QString::fromUtf8("\xE2\x9C\x85"), m_btnTodos);
+    todosIcon->setObjectName("navIcon");
+    todosIcon->setFixedSize(20, 20);
+    todosIcon->setAlignment(Qt::AlignCenter);
+    QLabel *todosText = new QLabel(tr("待办"), m_btnTodos);
+    todosText->setObjectName("navText");
+    m_badgeTodos = new QLabel("", m_btnTodos);
+    m_badgeTodos->setObjectName("navBadge");
+    m_badgeTodos->setFixedSize(22, 20);
+    m_badgeTodos->setAlignment(Qt::AlignCenter);
+    m_badgeTodos->hide();
+    todosLayout->addWidget(todosIcon);
+    todosLayout->addWidget(todosText, 1);
+    todosLayout->addWidget(m_badgeTodos);
+    coreLayout->addWidget(m_btnTodos);
+
+    // 会议按钮
+    m_btnMeetings = new QPushButton(this);
+    m_btnMeetings->setObjectName("navBtn");
+    m_btnMeetings->setCheckable(true);
+    m_btnMeetings->setCursor(Qt::PointingHandCursor);
+    m_btnMeetings->setFixedHeight(34);
+    QHBoxLayout *meetingsLayout = new QHBoxLayout(m_btnMeetings);
+    meetingsLayout->setContentsMargins(10, 0, 10, 0);
+    meetingsLayout->setSpacing(6);
+    QLabel *meetingsIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x8E\xA4"), m_btnMeetings);
+    meetingsIcon->setObjectName("navIcon");
+    meetingsIcon->setFixedSize(20, 20);
+    meetingsIcon->setAlignment(Qt::AlignCenter);
+    QLabel *meetingsText = new QLabel(tr("会议"), m_btnMeetings);
+    meetingsText->setObjectName("navText");
+    meetingsLayout->addWidget(meetingsIcon);
+    meetingsLayout->addWidget(meetingsText, 1);
+    coreLayout->addWidget(m_btnMeetings);
+
+    // 周报按钮
+    m_btnWeekly = new QPushButton(this);
+    m_btnWeekly->setObjectName("navBtn");
+    m_btnWeekly->setCheckable(true);
+    m_btnWeekly->setCursor(Qt::PointingHandCursor);
+    m_btnWeekly->setFixedHeight(34);
+    QHBoxLayout *weeklyLayout = new QHBoxLayout(m_btnWeekly);
+    weeklyLayout->setContentsMargins(10, 0, 10, 0);
+    weeklyLayout->setSpacing(6);
+    QLabel *weeklyIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x93\x8A"), m_btnWeekly);
+    weeklyIcon->setObjectName("navIcon");
+    weeklyIcon->setFixedSize(20, 20);
+    weeklyIcon->setAlignment(Qt::AlignCenter);
+    QLabel *weeklyText = new QLabel(tr("周报"), m_btnWeekly);
+    weeklyText->setObjectName("navText");
+    weeklyLayout->addWidget(weeklyIcon);
+    weeklyLayout->addWidget(weeklyText, 1);
+    coreLayout->addWidget(m_btnWeekly);
+
+    scrollLayout->addWidget(m_coreGroup);
+
+    // ===== 第二组：标签筛选 =====
+    m_tagGroup = new QWidget(this);
+    m_tagGroup->setObjectName("tagGroup");
+    QVBoxLayout *tagGroupLayout = new QVBoxLayout(m_tagGroup);
+    tagGroupLayout->setContentsMargins(0, 0, 0, 0);
+    tagGroupLayout->setSpacing(1);
+
+    DLabel *sectionTags = new DLabel(tr("标签筛选"), this);
+    sectionTags->setObjectName("sectionTags");
+    sectionTags->setFixedHeight(24);
+    sectionTags->setContentsMargins(12, 4, 12, 2);
+    QFont ft = sectionTags->font();
+    ft.setPointSize(9);
+    ft.setBold(true);
+    sectionTags->setFont(ft);
+    tagGroupLayout->addWidget(sectionTags);
+
+    m_tagList = new QListWidget(m_tagGroup);
     m_tagList->setObjectName("tagList");
-    m_tagList->setFrameShape(QFrame::NoFrame);
-    m_tagList->setMaximumHeight(130);
     m_tagList->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_tagList->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_tagList->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    m_tagList->setFrameShape(QFrame::NoFrame);
     connect(m_tagList, &QListWidget::customContextMenuRequested,
             this, &SidebarWidget::showTagContextMenu);
-    m_layout->addWidget(m_tagList);
-    m_layout->addSpacing(12);
-
-    // 归档
-    addSectionLabel(tr("【归档】"));
-    m_btnWeekly = makeNavBtn("📊", tr("周报"), dummy);
-    m_btnCompleted = makeNavBtn("✅", tr("已完成待办"), dummy);
-    m_btnTrash = makeNavBtn("🗑", tr("最近删除"), dummy);
-
-    m_layout->addStretch();
-
-    // 设置
-    m_btnSettings = makeNavBtn("⚙", tr("设置"), dummy);
-    m_layout->addSpacing(8);
-
-    // 新建按钮
-    m_btnNewNote = new QPushButton(tr("+ 新建"), this);
-    m_btnNewNote->setObjectName("newBtn");
-    m_btnNewNote->setCursor(Qt::PointingHandCursor);
-    m_btnNewNote->setFixedHeight(38);
-    QHBoxLayout *newRow = new QHBoxLayout();
-    newRow->setContentsMargins(12, 0, 12, 0);
-    newRow->addWidget(m_btnNewNote);
-    m_layout->addLayout(newRow);
-    m_layout->addSpacing(8);
-
-    // 信号
-    connect(m_btnNotes, &QPushButton::clicked, this, [this]() { setActiveSection(0); emit notesClicked(); });
-    connect(m_btnTodos, &QPushButton::clicked, this, [this]() { setActiveSection(1); emit todosClicked(); });
-    connect(m_btnMeetings, &QPushButton::clicked, this, [this]() { setActiveSection(2); emit meetingsClicked(); });
-    connect(m_btnWeekly, &QPushButton::clicked, this, [this]() { setActiveSection(5); emit weeklyClicked(); });
-    connect(m_btnCompleted, &QPushButton::clicked, this, [this]() { setActiveSection(4); emit completedTodosClicked(); });
-    connect(m_btnTrash, &QPushButton::clicked, this, [this]() { setActiveSection(3); emit trashClicked(); });
-    connect(m_btnSettings, &QPushButton::clicked, this, [this]() { setActiveSection(6); emit settingsClicked(); });
-    connect(m_btnNewNote, &QPushButton::clicked, this, [this]() { emit newNoteClicked(); });
     connect(m_tagList, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
         QString tag = item->data(Qt::UserRole).toString();
         emit tagClicked(tag);
     });
+    tagGroupLayout->addWidget(m_tagList);
+    scrollLayout->addWidget(m_tagGroup);
 
+    // ===== 第三组：归档 =====
+    m_archiveGroup = new QWidget(this);
+    m_archiveGroup->setObjectName("archiveGroup");
+    QVBoxLayout *archiveLayout = new QVBoxLayout(m_archiveGroup);
+    archiveLayout->setContentsMargins(0, 0, 0, 0);
+    archiveLayout->setSpacing(1);
+
+    DLabel *sectionArchive = new DLabel(tr("归档"), this);
+    sectionArchive->setObjectName("sectionArchive");
+    sectionArchive->setFixedHeight(24);
+    sectionArchive->setContentsMargins(12, 4, 12, 2);
+    QFont fa = sectionArchive->font();
+    fa.setPointSize(9);
+    fa.setBold(true);
+    sectionArchive->setFont(fa);
+    archiveLayout->addWidget(sectionArchive);
+
+    m_btnTrash = new QPushButton(this);
+    m_btnTrash->setObjectName("navBtn");
+    m_btnTrash->setCheckable(true);
+    m_btnTrash->setCursor(Qt::PointingHandCursor);
+    m_btnTrash->setFixedHeight(34);
+    QHBoxLayout *trashLayout = new QHBoxLayout(m_btnTrash);
+    trashLayout->setContentsMargins(10, 0, 10, 0);
+    trashLayout->setSpacing(6);
+    QLabel *trashIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x97\x91"), m_btnTrash);
+    trashIcon->setObjectName("navIcon");
+    trashIcon->setFixedSize(20, 20);
+    trashIcon->setAlignment(Qt::AlignCenter);
+    QLabel *trashText = new QLabel(tr("最近删除"), m_btnTrash);
+    trashText->setObjectName("navText");
+    trashLayout->addWidget(trashIcon);
+    trashLayout->addWidget(trashText, 1);
+    archiveLayout->addWidget(m_btnTrash);
+
+    scrollLayout->addWidget(m_archiveGroup);
+
+    // 弹性空间
+    scrollLayout->addStretch(1);
+
+    scroll->setWidget(scrollContent);
+    m_mainLayout->addWidget(scroll, 1);
+
+    // ===== 底部设置按钮 =====
+    QWidget *bottomWidget = new QWidget(this);
+    bottomWidget->setObjectName("sidebarBottom");
+    QVBoxLayout *bottomLayout = new QVBoxLayout(bottomWidget);
+    bottomLayout->setContentsMargins(6, 4, 6, 8);
+    bottomLayout->setSpacing(2);
+
+    m_btnSettings = new QPushButton(this);
+    m_btnSettings->setObjectName("navBtn");
+    m_btnSettings->setCheckable(true);
+    m_btnSettings->setCursor(Qt::PointingHandCursor);
+    m_btnSettings->setFixedHeight(34);
+    QHBoxLayout *settingsLayout = new QHBoxLayout(m_btnSettings);
+    settingsLayout->setContentsMargins(10, 0, 10, 0);
+    settingsLayout->setSpacing(6);
+    QLabel *settingsIcon = new QLabel(QString::fromUtf8("\xE2\x9A\x99"), m_btnSettings);
+    settingsIcon->setObjectName("navIcon");
+    settingsIcon->setFixedSize(20, 20);
+    settingsIcon->setAlignment(Qt::AlignCenter);
+    QLabel *settingsText = new QLabel(tr("设置"), m_btnSettings);
+    settingsText->setObjectName("navText");
+    settingsLayout->addWidget(settingsIcon);
+    settingsLayout->addWidget(settingsText, 1);
+    bottomLayout->addWidget(m_btnSettings);
+    m_mainLayout->addWidget(bottomWidget);
+
+    // ===== 信号连接 =====
+    connect(m_btnNotes, &QPushButton::clicked, this, &SidebarWidget::notesClicked);
+    connect(m_btnTodos, &QPushButton::clicked, this, &SidebarWidget::todosClicked);
+    connect(m_btnMeetings, &QPushButton::clicked, this, &SidebarWidget::meetingsClicked);
+    connect(m_btnWeekly, &QPushButton::clicked, this, &SidebarWidget::weeklyClicked);
+    connect(m_btnTrash, &QPushButton::clicked, this, &SidebarWidget::trashClicked);
+    connect(m_btnSettings, &QPushButton::clicked, this, &SidebarWidget::settingsClicked);
+
+    // 初始化标签列表
     updateTagList();
-
-    // 启动时读取真实数量
-    auto *app = ShorthandApplication::instance();
-    updateBadge(app->noteManager()->noteCount(), app->todoManager()->pendingCount());
 }
 
 void SidebarWidget::setActiveSection(int index)
 {
+    m_activeSection = index;
     m_btnNotes->setChecked(index == 0);
     m_btnTodos->setChecked(index == 1);
     m_btnMeetings->setChecked(index == 2);
-    m_btnTrash->setChecked(index == 3);
-    m_btnCompleted->setChecked(index == 4);
     m_btnWeekly->setChecked(index == 5);
+    m_btnTrash->setChecked(index == 3);
     m_btnSettings->setChecked(index == 6);
 }
 
 void SidebarWidget::updateBadge(int notes, int todos)
 {
-    if (notes > 0) {
-        m_badgeNotes->setText(QString::number(notes));
+    // PRD §3.3: 角标规则
+    if (notes > 0 && m_badgeNotes) {
+        m_badgeNotes->setText(formatBadgeText(notes));
         m_badgeNotes->show();
-    } else {
+    } else if (m_badgeNotes) {
         m_badgeNotes->hide();
     }
-    if (todos > 0) {
-        m_badgeTodos->setText(QString::number(todos));
+
+    if (todos > 0 && m_badgeTodos) {
+        m_badgeTodos->setText(formatBadgeText(todos));
         m_badgeTodos->show();
-    } else {
+    } else if (m_badgeTodos) {
         m_badgeTodos->hide();
     }
 }
+
+QString SidebarWidget::formatBadgeText(int count) const
+{
+    // PRD §3.3: ≤99 显示数字，>99 显示 "99+"
+    if (count <= 0) return "";
+    if (count > 99) return "99+";
+    return QString::number(count);
+}
+
+void SidebarWidget::setCollapsed(bool collapsed)
+{
+    if (m_collapsed == collapsed) return;
+    m_collapsed = collapsed;
+
+    int targetWidth = m_collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+
+    QPropertyAnimation *anim = new QPropertyAnimation(this, "sidebarWidth", this);
+    anim->setDuration(180);
+    anim->setStartValue(m_currentWidth);
+    anim->setEndValue(targetWidth);
+    anim->setEasingCurve(QEasingCurve::InOutCubic);
+    anim->start(QAbstractAnimation::DeleteWhenStopped);
+
+    m_currentWidth = targetWidth;
+    updateItemVisibility();
+
+    m_collapseBtn->setText(m_collapsed
+        ? QString::fromUtf8("\xE2\x96\xB6")   // ▶
+        : QString::fromUtf8("\xE2\x97\x80")); // ◀
+    m_collapseBtn->setToolTip(m_collapsed ? tr("展开侧栏") : tr("折叠侧栏"));
+
+    emit collapseChanged(m_collapsed);
+}
+
+void SidebarWidget::toggleCollapse()
+{
+    setCollapsed(!m_collapsed);
+}
+
+void SidebarWidget::setSidebarWidth(int w)
+{
+    m_currentWidth = w;
+    setFixedWidth(w);
+    updateGeometry();
+}
+
+void SidebarWidget::updateItemVisibility()
+{
+    bool show = !m_collapsed;
+
+    // 折叠时隐藏文字标签、角标和分组标题
+    QList<QLabel*> textLabels = findChildren<QLabel*>("navText");
+    for (auto *label : textLabels) {
+        label->setVisible(show);
+    }
+
+    // 折叠标签列表
+    if (m_tagList) {
+        m_tagList->setVisible(show);
+    }
+
+    // 分组标题
+    QList<DLabel*> sectionLabels = findChildren<DLabel*>();
+    for (auto *label : sectionLabels) {
+        QString on = label->objectName();
+        if (on == "sectionCore" || on == "sectionTags" || on == "sectionArchive") {
+            label->setVisible(show);
+        }
+    }
+
+    // Logo 文字
+    if (m_logoText) m_logoText->setVisible(show);
+    if (m_collapseBtn) m_collapseBtn->setVisible(show);
+}
+
+// ─── 样式 ──────────────────────────────────────────────────────
+
+void SidebarWidget::refreshStyleSheet()
+{
+    auto *helper = DGuiApplicationHelper::instance();
+    bool dark = (helper->themeType() == DGuiApplicationHelper::DarkType);
+
+    DPalette pal = helper->applicationPalette();
+    QColor accent = pal.color(DPalette::Highlight);
+
+    // 扁平背景 — 视觉规范 §1.4 bg-sidebar
+    QColor bgSidebar = dark ? QColor("#232527") : QColor("#F2F5FA");
+    QColor textPrimary = dark ? QColor("#E0E0E0") : QColor("#222222");
+    QColor textSecondary = dark ? QColor("#AAAAAA") : QColor("#666666");
+    QColor borderColor = dark ? QColor("#38393B") : QColor("#E5E6EB");
+    QColor badgeBg = accent;
+    QColor badgeText = dark ? QColor("#1E1E1E") : QColor("#FFFFFF");
+
+    QString accentStr = accent.name();
+    QString accentSoftStr = QString("rgba(%1,%2,%3,%4)")
+        .arg(accent.red()).arg(accent.green()).arg(accent.blue())
+        .arg(dark ? 0.12 : 0.10);
+    QString bgSidebarStr = bgSidebar.name();
+    QString textPrimaryStr = textPrimary.name();
+    QString textSecondaryStr = textSecondary.name();
+    QString borderStr = borderColor.name();
+    QString badgeBgStr = badgeBg.name();
+    QString badgeTextStr = badgeText.name();
+
+    setStyleSheet(QString(R"(
+        SidebarWidget#SidebarWidget {
+            background: %1;
+            border-right: 1px solid %2;
+        }
+        #sidebarHeader {
+            border-bottom: 1px solid %2;
+        }
+        #logoIcon {
+            font-size: 18px;
+        }
+        #logoText {
+            font-size: 14px;
+            font-weight: 600;
+            color: %3;
+        }
+        #collapseBtn {
+            background: transparent;
+            border: none;
+            color: %4;
+            font-size: 11px;
+            border-radius: 4px;
+        }
+        #collapseBtn:hover {
+            background: rgba(128,128,128,0.15);
+        }
+        DLabel#sectionCore,
+        DLabel#sectionTags,
+        DLabel#sectionArchive {
+            color: %4;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 12px 2px 12px;
+            background: transparent;
+            border: none;
+        }
+        QPushButton#navBtn {
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            text-align: left;
+        }
+        QPushButton#navBtn:hover {
+            background: rgba(128,128,128,0.10);
+        }
+        QPushButton#navBtn:checked {
+            background: %6;
+        }
+        QLabel#navIcon {
+            font-size: 16px;
+            color: %3;
+        }
+        QPushButton#navBtn:checked QLabel#navIcon {
+            color: %5;
+        }
+        QLabel#navText {
+            font-size: 13px;
+            color: %3;
+        }
+        QPushButton#navBtn:checked QLabel#navText {
+            color: %5;
+            font-weight: 600;
+        }
+        QLabel#navBadge {
+            background: %7;
+            color: %8;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 10px;
+            padding: 0 4px;
+            min-width: 18px;
+        }
+        QListWidget#tagList {
+            background: transparent;
+            border: none;
+            padding: 0 4px;
+        }
+        QListWidget#tagList::item {
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 13px;
+            color: %3;
+        }
+        QListWidget#tagList::item:hover {
+            background: rgba(128,128,128,0.10);
+        }
+        QListWidget#tagList::item:selected {
+            background: %6;
+            color: %5;
+            font-weight: 500;
+        }
+        QScrollArea#sidebarScroll {
+            background: transparent;
+            border: none;
+        }
+        QScrollArea#sidebarScroll > QWidget > QWidget {
+            background: transparent;
+        }
+        #sidebarBottom {
+            border-top: 1px solid %2;
+            background: transparent;
+        }
+    )").arg(bgSidebarStr, borderStr, textPrimaryStr, textSecondaryStr,
+            accentStr, accentSoftStr, badgeBgStr, badgeTextStr));
+}
+
+// ─── 标签管理 ──────────────────────────────────────────────────
 
 void SidebarWidget::updateTagList()
 {
@@ -282,13 +579,10 @@ void SidebarWidget::showTagContextMenu(const QPoint &pos)
     connect(actNew, &QAction::triggered, this, &SidebarWidget::onCreateTag);
 
     if (item) {
-        // 选中右键点击的项
         m_tagList->setCurrentItem(item);
-
         menu.addSeparator();
         QAction *actRename = menu.addAction(tr("重命名"));
         connect(actRename, &QAction::triggered, this, &SidebarWidget::onRenameTag);
-
         QAction *actDelete = menu.addAction(tr("删除"));
         connect(actDelete, &QAction::triggered, this, &SidebarWidget::onDeleteTag);
     }
@@ -303,48 +597,40 @@ void SidebarWidget::onCreateTag()
     QString name = QInputDialog::getText(this, tr("新建标签"),
                                           tr("请输入标签名称："),
                                           QLineEdit::Normal, QString(), &ok);
-    if (!ok || name.trimmed().isEmpty())
-        return;
+    if (!ok || name.trimmed().isEmpty()) return;
 
     name = name.trimmed();
-    // 检查是否已存在同名标签
     if (app->tagManager()->getTagByName(name).id > 0) {
         QMessageBox::warning(this, tr("重复标签"),
                              tr("标签「%1」已存在，请使用其他名称。").arg(name));
         return;
     }
-
     app->tagManager()->createTag(name);
 }
 
 void SidebarWidget::onRenameTag()
 {
     QListWidgetItem *item = m_tagList->currentItem();
-    if (!item)
-        return;
+    if (!item) return;
 
     QString oldName = item->data(Qt::UserRole).toString();
     int tagId = item->data(Qt::UserRole + 1).toInt();
-    if (tagId <= 0)
-        return;
+    if (tagId <= 0) return;
 
     auto *app = ShorthandApplication::instance();
     bool ok = false;
     QString newName = QInputDialog::getText(this, tr("重命名标签"),
                                              tr("请输入新名称："),
                                              QLineEdit::Normal, oldName, &ok);
-    if (!ok || newName.trimmed().isEmpty() || newName.trimmed() == oldName)
-        return;
+    if (!ok || newName.trimmed().isEmpty() || newName.trimmed() == oldName) return;
 
     newName = newName.trimmed();
-    // 检查是否与其他标签重名
     TagData existing = app->tagManager()->getTagByName(newName);
     if (existing.id > 0 && existing.id != tagId) {
         QMessageBox::warning(this, tr("重复标签"),
                              tr("标签「%1」已存在，请使用其他名称。").arg(newName));
         return;
     }
-
     TagData current = app->tagManager()->getTag(tagId);
     app->tagManager()->updateTag(tagId, newName, current.color);
 }
@@ -352,13 +638,11 @@ void SidebarWidget::onRenameTag()
 void SidebarWidget::onDeleteTag()
 {
     QListWidgetItem *item = m_tagList->currentItem();
-    if (!item)
-        return;
+    if (!item) return;
 
     QString tagName = item->data(Qt::UserRole).toString();
     int tagId = item->data(Qt::UserRole + 1).toInt();
-    if (tagId <= 0)
-        return;
+    if (tagId <= 0) return;
 
     auto *app = ShorthandApplication::instance();
     QMessageBox::StandardButton btn = QMessageBox::question(

@@ -512,7 +512,7 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
     };
 
     if (pending.isEmpty()) {
-        QListWidgetItem *hint = new QListWidgetItem(tr("暂无待办，在上方输入框输入内容创建"));
+        QListWidgetItem *hint = new QListWidgetItem(tr("没有待办事项，点击「+ 新建待办」，或从会议纪要中提取"));
         hint->setFlags(Qt::NoItemFlags);
         hint->setForeground(QColor("#BBBBBB"));
         hint->setTextAlignment(Qt::AlignCenter);

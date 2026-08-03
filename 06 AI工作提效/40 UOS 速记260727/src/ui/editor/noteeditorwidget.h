@@ -31,8 +31,10 @@ public:
     void loadNote(int noteId);
     void clearEditor();
 
-private slots:
+public slots:
     void onSave();
+
+private slots:
     void onDelete();
     void onTagChanged();
     void togglePreview();

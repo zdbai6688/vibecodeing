@@ -8,6 +8,10 @@
 #include <QStackedWidget>
 #include <QWidget>
 #include <QHBoxLayout>
+#include <QSplitter>
+#include <QFrame>
+#include <DToolButton>
+#include <DMenu>
 
 class SidebarWidget;
 class NoteListWidget;
@@ -41,6 +45,10 @@ protected:
 
 private slots:
     void onNewNote();
+    void onNewTodo();
+    void onNewMeeting();
+    void onNewNoteWithTag();
+    void onUnifiedCreate();
     void onNoteSelected(int noteId);
     void onSwitchToNotes();
     void onSwitchToTodos();
@@ -52,12 +60,15 @@ private slots:
     void onSearch(const QString &keyword);
     void onShowSettings();
     void onToggleDesktopMode();
+    void onSidebarCollapseChanged(bool collapsed);
 
 private:
     void initUI();
     void initConnections();
     void setupGlobalShortcut();
     void showMiddleWidget(QWidget *w);
+    void updateCreateButtonTooltip();
+    void rebuildTitlebar();
 
     SidebarWidget *m_sidebar;
     QWidget *m_middlePanel;
@@ -72,6 +83,14 @@ private:
     GlobalShortcutManager *m_globalShortcut;
     QWidget *m_blankEditor;
     QHBoxLayout *m_mainLayout;
+    QSplitter *m_splitter;
+    QFrame *m_sep1;
+
+    // 标题栏按钮
+    DToolButton *m_createBtn;
+    DToolButton *m_moreBtn;
+    DToolButton *m_exportBtn;
+    DMenu *m_createMenu;
 };
 
 #endif // MAINWINDOW_H

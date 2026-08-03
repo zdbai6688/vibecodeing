@@ -33,13 +33,19 @@
 #include <QLabel>
 #include <QFrame>
 #include <QSettings>
+#include <QAction>
+
+// 快捷键 ID 枚举
+enum ShortcutId {
+    ShortcutQuickEntry = 1001
+};
 
 MainWindow::MainWindow(QWidget *parent)
     : DMainWindow(parent)
 {
     setWindowTitle(tr("UOS速记"));
     setObjectName("MainWindow");
-    setMinimumSize(1100, 680);
+    setMinimumSize(1100, 700);   // PRD §5.2: 最小窗口 1100×700
 
     qInfo() << "[MainWindow] initUI";
     initUI();
@@ -61,35 +67,67 @@ void MainWindow::initUI()
     titlebar->setTitle("");
     titlebar->setIcon(QIcon::fromTheme("uos-shorthand"));
 
-    // 右上角新建按钮（悬浮）
-    DToolButton *newBtn = new DToolButton(this);
-    newBtn->setIcon(QIcon::fromTheme("list-add"));
-    newBtn->setToolTip(tr("新建笔记 (Ctrl+N)"));
-    newBtn->setFixedSize(32, 32);
-    titlebar->addWidget(newBtn, Qt::AlignRight);
+    // ===== 统一新建入口（PRD §4.1）=====
+    m_createBtn = new DToolButton(this);
+    m_createBtn->setIcon(QIcon::fromTheme("list-add"));
+    m_createBtn->setToolTip(tr("新建 (Ctrl+N)"));
+    m_createBtn->setFixedSize(32, 32);
 
-    // 更多下拉按钮
-    DToolButton *moreBtn = new DToolButton(this);
-    moreBtn->setText("⋯");
-    moreBtn->setToolTip(tr("更多"));
-    moreBtn->setFixedSize(32, 32);
-    titlebar->addWidget(moreBtn, Qt::AlignRight);
+    // 新建菜单（按上下文创建）
+    m_createMenu = new DMenu(this);
+    QAction *actNewNote = m_createMenu->addAction(QIcon::fromTheme("document-new"),
+                                                   tr("新建笔记 (Ctrl+N)"));
+    actNewNote->setData("note");
+    QAction *actNewTodo = m_createMenu->addAction(QIcon::fromTheme("task-new"),
+                                                   tr("新建待办 (Ctrl+Shift+N)"));
+    actNewTodo->setData("todo");
+    QAction *actNewMeeting = m_createMenu->addAction(QIcon::fromTheme("audio-input-microphone"),
+                                                      tr("新建会议"));
+    actNewMeeting->setData("meeting");
+    QAction *actNewNoteWithTag = m_createMenu->addAction(QIcon::fromTheme("document-new"),
+                                                          tr("新建笔记并选择标签"));
+    actNewNoteWithTag->setData("note-tag");
+
+    connect(m_createMenu, &DMenu::triggered, this, [this](QAction *act) {
+        QString data = act->data().toString();
+        if (data == "note") onNewNote();
+        else if (data == "todo") onNewTodo();
+        else if (data == "meeting") onNewMeeting();
+        else if (data == "note-tag") onNewNoteWithTag();
+    });
+
+    // 点击新建按钮：按当前上下文创建（PRD §4.1）
+    connect(m_createBtn, &DToolButton::clicked, this, &MainWindow::onUnifiedCreate);
+
+    titlebar->addWidget(m_createBtn, Qt::AlignRight);
 
     // 导出按钮
-    DToolButton *exportBtn = new DToolButton(this);
-    exportBtn->setIcon(QIcon::fromTheme("document-save"));
-    exportBtn->setToolTip(tr("导出"));
-    exportBtn->setFixedSize(32, 32);
-    titlebar->addWidget(exportBtn, Qt::AlignRight);
+    m_exportBtn = new DToolButton(this);
+    m_exportBtn->setIcon(QIcon::fromTheme("document-save"));
+    m_exportBtn->setToolTip(tr("导出"));
+    m_exportBtn->setFixedSize(32, 32);
+    titlebar->addWidget(m_exportBtn, Qt::AlignRight);
 
-    // 菜单按钮
-    DToolButton *menuBtn = new DToolButton(this);
-    menuBtn->setText("≡");
-    menuBtn->setToolTip(tr("菜单"));
-    menuBtn->setFixedSize(32, 32);
-    titlebar->addWidget(menuBtn, Qt::AlignRight);
+    // 更多按钮
+    m_moreBtn = new DToolButton(this);
+    m_moreBtn->setText("⋯");
+    m_moreBtn->setToolTip(tr("更多"));
+    m_moreBtn->setFixedSize(32, 32);
+    DMenu *moreMenu = new DMenu(this);
+    QAction *actQuickEntry = moreMenu->addAction(tr("快速录入 (Alt+Space)"));
+    connect(actQuickEntry, &QAction::triggered, this, &MainWindow::onShowQuickEntry);
+    moreMenu->addSeparator();
+    QAction *actSettings = moreMenu->addAction(QIcon::fromTheme("settings-configure"),
+                                                tr("设置"));
+    connect(actSettings, &QAction::triggered, this, &MainWindow::onShowSettings);
+    moreMenu->addSeparator();
+    QAction *actDesktopMode = moreMenu->addAction(tr("桌面便签模式"));
+    connect(actDesktopMode, &QAction::triggered, this, &MainWindow::onToggleDesktopMode);
+    m_moreBtn->setMenu(moreMenu);
+    m_moreBtn->setPopupMode(DToolButton::InstantPopup);
+    titlebar->addWidget(m_moreBtn, Qt::AlignRight);
 
-    // 主内容区 - 三栏布局
+    // ===== 主内容区 - 三栏布局 =====
     QWidget *centralWidget = new QWidget(this);
     m_mainLayout = new QHBoxLayout(centralWidget);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -99,10 +137,11 @@ void MainWindow::initUI()
     m_sidebar = new SidebarWidget(this);
     m_mainLayout->addWidget(m_sidebar);
 
-    QFrame *sep1 = new QFrame(this);
-    sep1->setFrameShape(QFrame::VLine);
-    sep1->setStyleSheet("QFrame { color: palette(midlight); }");
-    m_mainLayout->addWidget(sep1);
+    m_sep1 = new QFrame(this);
+    m_sep1->setFrameShape(QFrame::VLine);
+    m_sep1->setObjectName("separator1");
+    m_sep1->setStyleSheet("#separator1 { color: palette(midlight); background: palette(midlight); width: 1px; }");
+    m_mainLayout->addWidget(m_sep1);
 
     // 中间内容栏
     m_middlePanel = new QWidget(this);
@@ -126,7 +165,8 @@ void MainWindow::initUI()
 
     QFrame *sep2 = new QFrame(this);
     sep2->setFrameShape(QFrame::VLine);
-    sep2->setStyleSheet("QFrame { color: palette(midlight); }");
+    sep2->setObjectName("separator2");
+    sep2->setStyleSheet("#separator2 { color: palette(midlight); background: palette(midlight); width: 1px; }");
     m_mainLayout->addWidget(sep2);
 
     // 右侧编辑器
@@ -146,35 +186,27 @@ void MainWindow::initUI()
     blankIcon->setStyleSheet("font-size: 48px;");
     blankIcon->setAlignment(Qt::AlignCenter);
     blankLayout->addWidget(blankIcon);
-    QLabel *blankHint = new QLabel(tr("暂无内容"), m_blankEditor);
-    blankHint->setStyleSheet("color: palette(windowText); font-size: 13px;");
+    QLabel *blankHint = new QLabel(tr("选择左侧笔记开始编辑，或点击「+」新建"), m_blankEditor);
+    blankHint->setStyleSheet("font-size: 14px; color: palette(windowText);");
     blankHint->setAlignment(Qt::AlignCenter);
     blankLayout->addWidget(blankHint);
-    QLabel *blankSubHint = new QLabel(tr("在左侧选择笔记或创建新笔记"), m_blankEditor);
-    blankSubHint->setStyleSheet("color: palette(placeholderText); font-size: 12px;");
+    QLabel *blankSubHint = new QLabel(tr("Ctrl+N 新建笔记  ·  Ctrl+Shift+N 新建待办  ·  Alt+Space 快速录入"),
+                                       m_blankEditor);
+    blankSubHint->setStyleSheet("font-size: 12px; color: palette(buttonText);");
     blankSubHint->setAlignment(Qt::AlignCenter);
     blankLayout->addWidget(blankSubHint);
 
-    m_mainLayout->addWidget(m_blankEditor, 1);
-    m_mainLayout->addWidget(m_editor, 1);
+    m_mainLayout->addWidget(m_editor, 2);
+    m_mainLayout->addWidget(m_blankEditor, 2);
+    m_blankEditor->show();
     m_editor->hide();
 
     setCentralWidget(centralWidget);
-
-    // 设置弹窗
-    m_settingsDialog = new SettingsDialog(this);
-
-    // 快速录入
-    m_quickEntry = new QuickEntryDialog(this);
-    m_quickEntry->hide();
-
-    connect(newBtn, &DToolButton::clicked, this, &MainWindow::onNewNote);
 }
 
 void MainWindow::initConnections()
 {
-    auto *app = ShorthandApplication::instance();
-
+    // 侧边栏导航
     connect(m_sidebar, &SidebarWidget::notesClicked, this, &MainWindow::onSwitchToNotes);
     connect(m_sidebar, &SidebarWidget::todosClicked, this, &MainWindow::onSwitchToTodos);
     connect(m_sidebar, &SidebarWidget::meetingsClicked, this, &MainWindow::onSwitchToMeetings);
@@ -184,75 +216,98 @@ void MainWindow::initConnections()
     connect(m_sidebar, &SidebarWidget::settingsClicked, this, &MainWindow::onShowSettings);
     connect(m_sidebar, &SidebarWidget::tagClicked, this, &MainWindow::onSwitchToTag);
     connect(m_sidebar, &SidebarWidget::newNoteClicked, this, &MainWindow::onNewNote);
+    connect(m_sidebar, &SidebarWidget::collapseChanged, this, &MainWindow::onSidebarCollapseChanged);
 
+    // 笔记列表
     connect(m_noteList, &NoteListWidget::noteSelected, this, &MainWindow::onNoteSelected);
+    // 待办
     connect(m_todoWidget, &TodoWidget::todoSelected, this, &MainWindow::onTodoSelected);
-    connect(m_todoWidget, &TodoWidget::todoStatusChanged, this, [this]() { m_todoWidget->refresh(); });
-    connect(app->noteManager(), &NoteManager::dataChanged, this, [this]() { m_noteList->refresh(); });
-
-    connect(app->trayManager(), &TrayManager::showMainWindowRequested, this, [this]() {
-        show(); raise(); activateWindow();
-    });
-    connect(app->trayManager(), &TrayManager::quickEntryRequested, this, &MainWindow::onShowQuickEntry);
-    connect(app->trayManager(), &TrayManager::quitRequested, qApp, &QApplication::quit);
-    connect(app->trayManager(), &TrayManager::toggleDesktopModeRequested, this, &MainWindow::onToggleDesktopMode);
-
-    connect(app->desktopModeManager(), &DesktopModeManager::desktopModeEntered, this, [this, app]() {
-        app->trayManager()->updateDesktopModeAction(true);
-        QList<QPair<int, QString>> notes;
-        for (int id : app->desktopModeManager()->stickyNoteIds()) {
-            NoteData d = app->noteManager()->getNote(id);
-            if (d.id > 0) notes.append({id, d.title.isEmpty() ? d.content.left(30) : d.title.left(30)});
-        }
-        app->trayManager()->updateStickyNotesSubmenu(notes);
-    });
-    connect(app->desktopModeManager(), &DesktopModeManager::desktopModeExited, this, [this, app]() {
-        app->trayManager()->updateDesktopModeAction(false);
-    });
-    connect(app->trayManager(), &TrayManager::showStickyNoteRequested, this, [this](int noteId) {
-        focusNote(noteId);
-        show(); raise(); activateWindow();
+    // 界面切换时更新创建按钮提示
+    connect(m_middleStack, &QStackedWidget::currentChanged, this, [this]() {
+        updateCreateButtonTooltip();
     });
 }
 
 void MainWindow::setupGlobalShortcut()
 {
-    QSettings settings;
-    QString shortcutKey = settings.value("shortcut/quick_entry", QString(SHORTCUT_QUICK_ENTRY)).toString();
+    // 全局快捷键 Alt+Space 快速录入（PRD §4.3）
+    QString shortcutKey = QString(SHORTCUT_QUICK_ENTRY);
+    m_globalShortcut = ShorthandApplication::instance()->globalShortcut();
 
-    // 使用 GlobalShortcutManager 注册全局快捷键（X11 下系统级生效）
-    m_globalShortcut = new GlobalShortcutManager(this);
-    bool registered = m_globalShortcut->registerShortcut(QKeySequence(shortcutKey), 1);
+    // 注册全局快捷键 - 使用信号/槽机制
+    bool registered = m_globalShortcut->registerShortcut(
+        QKeySequence(shortcutKey), ShortcutQuickEntry);
+
     if (registered) {
-        connect(m_globalShortcut, &GlobalShortcutManager::shortcutActivated, this, [this](quint32 id) {
-            if (id == 1) onShowQuickEntry();
+        connect(m_globalShortcut, &GlobalShortcutManager::shortcutActivated,
+                this, [this](quint32 id) {
+            if (id == ShortcutQuickEntry) {
+                onShowQuickEntry();
+            }
         });
-        qInfo() << "[MainWindow] 全局快捷键已注册:" << shortcutKey;
+        qInfo() << "[MainWindow] 全局快捷键注册成功:" << shortcutKey;
     } else {
-        // 非 X11 环境下降级为应用内 QShortcut
+        qWarning() << "[MainWindow] 全局快捷键注册失败，使用应用内快捷键回退:" << shortcutKey;
         QShortcut *fallback = new QShortcut(QKeySequence(shortcutKey), this);
         connect(fallback, &QShortcut::activated, this, &MainWindow::onShowQuickEntry);
         qInfo() << "[MainWindow] 使用应用内快捷键(回退):" << shortcutKey;
     }
 
-    QShortcut *newNoteShortcut = new QShortcut(QKeySequence("Ctrl+N"), this);
+    // Ctrl+N 新建笔记（PRD §4.1）
+    QShortcut *newNoteShortcut = new QShortcut(QKeySequence(SHORTCUT_NEW_NOTE), this);
     connect(newNoteShortcut, &QShortcut::activated, this, &MainWindow::onNewNote);
+
+    // Ctrl+Shift+N 新建待办（PRD §4.1）
+    QShortcut *newTodoShortcut = new QShortcut(QKeySequence("Ctrl+Shift+N"), this);
+    connect(newTodoShortcut, &QShortcut::activated, this, &MainWindow::onNewTodo);
+
+    // Ctrl+F 搜索
+    QShortcut *searchShortcut = new QShortcut(QKeySequence(SHORTCUT_SEARCH), this);
+    connect(searchShortcut, &QShortcut::activated, this, [this]() {
+        m_noteList->setFocus();
+    });
+
+    // Ctrl+S 保存
+    QShortcut *saveShortcut = new QShortcut(QKeySequence(SHORTCUT_SAVE), this);
+    connect(saveShortcut, &QShortcut::activated, this, [this]() {
+        m_editor->onSave();
+    });
 }
 
-void MainWindow::showMiddleWidget(QWidget *w)
+void MainWindow::onSidebarCollapseChanged(bool collapsed)
 {
-    m_middleStack->setCurrentWidget(w);
+    // 调整分隔线可见性
+    m_sep1->setVisible(!collapsed);
+    updateCreateButtonTooltip();
+}
+
+void MainWindow::updateCreateButtonTooltip()
+{
+    QWidget *current = m_middleStack->currentWidget();
+    if (current == m_todoWidget) {
+        m_createBtn->setToolTip(tr("新建待办 (Ctrl+Shift+N)"));
+    } else if (current == m_meetingWidget) {
+        m_createBtn->setToolTip(tr("新建会议"));
+    } else {
+        m_createBtn->setToolTip(tr("新建笔记 (Ctrl+N)"));
+    }
+}
+
+void MainWindow::onUnifiedCreate()
+{
+    // PRD §4.1: "+" 按当前上下文新建
+    QWidget *current = m_middleStack->currentWidget();
+    if (current == m_todoWidget) {
+        onNewTodo();
+    } else if (current == m_meetingWidget) {
+        onNewMeeting();
+    } else {
+        onNewNote();
+    }
 }
 
 void MainWindow::onNewNote()
 {
-    // 根据当前视图创建对应类型
-    if (m_middleStack->currentWidget() == m_todoWidget) {
-        // 待办页面：聚焦待办输入框，让用户直接输入
-        m_todoWidget->focusNewTodoInput();
-        return;
-    }
-
     NoteData note;
     note.title = tr("无标题笔记");
     note.content = "";
@@ -273,6 +328,38 @@ void MainWindow::onNewNote()
     }
 }
 
+void MainWindow::onNewTodo()
+{
+    auto *app = ShorthandApplication::instance();
+    Q_UNUSED(app);
+    // 切换到待办视图并聚焦输入
+    m_sidebar->setActiveSection(1);
+    showMiddleWidget(m_todoWidget);
+    m_todoWidget->refresh();
+    m_todoWidget->focusNewTodoInput();
+}
+
+void MainWindow::onNewMeeting()
+{
+    m_sidebar->setActiveSection(2);
+    showMiddleWidget(m_meetingWidget);
+    m_meetingWidget->refresh();
+    // 触发新建会议
+    m_meetingWidget->onNewMeeting();
+}
+
+void MainWindow::onNewNoteWithTag()
+{
+    // 新建笔记并弹出标签选择
+    onNewNote();
+    // 后续可在 NoteEditorWidget 中处理标签选择
+}
+
+void MainWindow::showMiddleWidget(QWidget *w)
+{
+    m_middleStack->setCurrentWidget(w);
+}
+
 void MainWindow::onNoteSelected(int noteId)
 {
     if (noteId > 0) {
@@ -285,7 +372,6 @@ void MainWindow::onNoteSelected(int noteId)
 void MainWindow::onTodoSelected(int todoId)
 {
     if (todoId > 0) {
-        // 待办与笔记共享 notes_todos 表，直接用 NoteEditorWidget 加载
         m_editor->loadNote(todoId);
         m_blankEditor->hide();
         m_editor->show();
@@ -294,7 +380,9 @@ void MainWindow::onTodoSelected(int todoId)
 
 void MainWindow::onShowQuickEntry()
 {
-    m_quickEntry->setFocus();
+    if (m_quickEntry) {
+        m_quickEntry->setFocus();
+    }
 }
 
 void MainWindow::loadInitialNotes()
@@ -334,9 +422,11 @@ void MainWindow::focusNote(int noteId)
 
 void MainWindow::onShowSettings()
 {
-    m_settingsDialog->loadSettings();
-    m_settingsDialog->exec();
-    m_settingsDialog->saveSettings();
+    if (m_settingsDialog) {
+        m_settingsDialog->loadSettings();
+        m_settingsDialog->exec();
+        m_settingsDialog->saveSettings();
+    }
 }
 
 void MainWindow::onSwitchToNotes()
@@ -419,7 +509,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Escape && m_quickEntry->isVisible()) {
+    if (event->key() == Qt::Key_Escape && m_quickEntry && m_quickEntry->isVisible()) {
         m_quickEntry->hide();
         event->accept();
         return;
