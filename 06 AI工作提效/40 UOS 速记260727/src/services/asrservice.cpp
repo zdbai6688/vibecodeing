@@ -69,7 +69,9 @@ void XfyunAsrEngine::transcribe(const QString &audioFile,
             QJsonObject obj = doc.object();
             result.success = obj["success"].toBool();
             result.text = obj["text"].toString();
-            result.errorMessage = obj["error"].toString();
+            // 优先使用中文错误消息(message)，fallback到短代码(error)
+            QString msg = obj["message"].toString();
+            result.errorMessage = msg.isEmpty() ? obj["error"].toString() : msg;
         } else {
             result.success = false;
             result.errorMessage = "解析响应失败";

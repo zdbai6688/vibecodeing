@@ -224,7 +224,7 @@ void AudioRecorder::timerEvent(QTimerEvent *event)
     // 从 GStreamer level 元素获取实时音频电平
     if (m_level) {
         GstStructure *s = nullptr;
-        g_signal_emit_by_name(m_level, "get-level", (int)1, 0.0, &s);
+        g_signal_emit_by_name(m_level, "get-level", (gdouble)1.0, 0.0, &s);
         if (s) {
             gdouble peak_dB;
             if (gst_structure_get_double(s, "peak", &peak_dB)) {

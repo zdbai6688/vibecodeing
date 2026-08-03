@@ -138,9 +138,8 @@ QJsonObject TongyiService::buildRequestBody(const AiCompletionRequest &req) cons
 {
     QJsonObject body;
     body["model"] = "qwen-turbo";
-    body["temperature"] = req.temperature;
-    body["max_tokens"] = req.maxTokens;
 
+    QJsonObject input;
     QJsonArray msgs;
     for (const auto &msg : req.messages) {
         QJsonObject m;
@@ -148,7 +147,13 @@ QJsonObject TongyiService::buildRequestBody(const AiCompletionRequest &req) cons
         m["content"] = msg.content;
         msgs.append(m);
     }
-    body["messages"] = msgs;
+    input["messages"] = msgs;
+    body["input"] = input;
+
+    QJsonObject params;
+    params["temperature"] = req.temperature;
+    params["max_tokens"] = req.maxTokens;
+    body["parameters"] = params;
     return body;
 }
 
