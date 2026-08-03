@@ -212,13 +212,13 @@ void WhisperAsrEngine::performTranscription(const QString &audioFile,
         }
     }
 
-struct whisper_full_params wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+    struct whisper_full_params wparams = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
     wparams.print_realtime = false;
     wparams.print_progress = false;
     wparams.print_timestamps = false;
     wparams.print_special = false;
     wparams.translate = m_translate;
-    wparams.language = "zh";              // 强制中文识别
+    wparams.language = m_language.isEmpty() ? "zh" : m_language.toUtf8().constData();  // 默认中文识别
     wparams.n_threads = m_threadCount;
     wparams.offset_ms = 0;
     wparams.no_timestamps = false;        // 输出时间戳

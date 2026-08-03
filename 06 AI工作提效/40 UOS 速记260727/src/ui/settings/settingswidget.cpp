@@ -374,13 +374,13 @@ void SettingsWidget::initAsrSection(QVBoxLayout *parent)
         updateCredVisibility();
         reloadAsr();
     });
-    connect(m_baiduAsrKey, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/baidu_key", v); reloadAsr(); });
-    connect(m_baiduAsrSecret, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/baidu_secret", v); reloadAsr(); });
-    connect(m_xunfeiAsrAppId, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/xunfei_appid", v); reloadAsr(); });
-    connect(m_xunfeiAsrKey, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/xunfei_key", v); reloadAsr(); });
-    connect(m_xunfeiAsrSecret, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/xunfei_secret", v); reloadAsr(); });
-    connect(m_aliyunAsrKey, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/aliyun_key", v); reloadAsr(); });
-    connect(m_aliyunAsrSecret, &QLineEdit::textChanged, this, [reloadAsr](const QString &v) { QSettings().setValue("asr/aliyun_secret", v); reloadAsr(); });
+    connect(m_baiduAsrKey, &QLineEdit::editingFinished, this, [this, reloadAsr]() { QSettings().setValue("asr/baidu_key", m_baiduAsrKey->text()); reloadAsr(); });
+    connect(m_baiduAsrSecret, &QLineEdit::editingFinished, this, [this, reloadAsr]() { QSettings().setValue("asr/baidu_secret", m_baiduAsrSecret->text()); reloadAsr(); });
+    connect(m_xunfeiAsrAppId, &QLineEdit::editingFinished, this, [this, reloadAsr]() { QSettings().setValue("asr/xunfei_appid", m_xunfeiAsrAppId->text()); reloadAsr(); });
+    connect(m_xunfeiAsrKey, &QLineEdit::editingFinished, this, [this, reloadAsr]() { QSettings().setValue("asr/xunfei_key", m_xunfeiAsrKey->text()); reloadAsr(); });
+    connect(m_xunfeiAsrSecret, &QLineEdit::editingFinished, this, [this, reloadAsr]() { QSettings().setValue("asr/xunfei_secret", m_xunfeiAsrSecret->text()); reloadAsr(); });
+    connect(m_aliyunAsrKey, &QLineEdit::editingFinished, this, [this, reloadAsr]() { QSettings().setValue("asr/aliyun_key", m_aliyunAsrKey->text()); reloadAsr(); });
+    connect(m_aliyunAsrSecret, &QLineEdit::editingFinished, this, [this, reloadAsr]() { QSettings().setValue("asr/aliyun_secret", m_aliyunAsrSecret->text()); reloadAsr(); });
     connect(m_asrTestBtn, &DPushButton::clicked, this, [this]() {
         auto *app = ShorthandApplication::instance();
         auto *asr = app ? app->asrService() : nullptr;

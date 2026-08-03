@@ -34,18 +34,18 @@ static void stylePrimaryBtn(QPushButton *btn)
     btn->setFixedHeight(36);
     btn->setStyleSheet(R"(
         QPushButton {
-            background: #2178E5; color: #FFFFFF; border: none;
+            background: palette(highlight); color: palette(highlightedText); border: none;
             border-radius: 6px; padding: 4px 24px; font-size: 13px; font-weight: 600;
         }
-        QPushButton:hover { background: #1A6AD4; }
-        QPushButton:disabled { background: #CCCCCC; color: #888888; }
+        QPushButton:hover { background: palette(dark); }
+        QPushButton:disabled { background: palette(mid); color: palette(windowText); }
     )");
 }
 
 MeetingWidget::MeetingWidget(QWidget *parent)
     : QWidget(parent)
 {
-    setStyleSheet("MeetingWidget { background: #FFFFFF; }");
+    setStyleSheet("MeetingWidget { background: palette(base); }");
     m_player = new AudioPlayer(this);
     m_recorder = new AudioRecorder(this);
     m_recordingAnimTimer = new QTimer(this);
@@ -84,12 +84,12 @@ void MeetingWidget::initUI()
     emptyLayout->addWidget(emptyIcon);
 
     QLabel *emptyTitle = new QLabel(tr("会议记录"), m_emptyPage);
-    emptyTitle->setStyleSheet("font-size: 18px; font-weight: 700; color: #222222;");
+    emptyTitle->setStyleSheet("font-size: 18px; font-weight: 700;");
     emptyTitle->setAlignment(Qt::AlignCenter);
     emptyLayout->addWidget(emptyTitle);
 
     QLabel *emptyDesc = new QLabel(tr("记录会议音频，支持语音转文字和 AI 摘要"), m_emptyPage);
-    emptyDesc->setStyleSheet("font-size: 13px; color: #999999;");
+    emptyDesc->setStyleSheet("font-size: 13px; color: palette(placeholderText);");
     emptyDesc->setAlignment(Qt::AlignCenter);
     emptyLayout->addWidget(emptyDesc);
 
@@ -103,7 +103,7 @@ void MeetingWidget::initUI()
     QPushButton *manualBtn = new QPushButton(tr("📝 新建会议"), m_emptyPage);
     manualBtn->setFixedHeight(38);
     manualBtn->setCursor(Qt::PointingHandCursor);
-    manualBtn->setStyleSheet("QPushButton { background: white; color: #2178E5; border: 1px solid #2178E5; border-radius: 6px; padding: 4px 32px; font-size: 14px; } QPushButton:hover { background: #F0F5FF; }");
+    manualBtn->setStyleSheet("QPushButton { background: transparent; color: #2178E5; border: 1px solid #2178E5; border-radius: 6px; padding: 4px 32px; font-size: 14px; } QPushButton:hover { background: palette(light); }");
     emptyLayout->addWidget(manualBtn, 0, Qt::AlignCenter);
     connect(manualBtn, &QPushButton::clicked, this, &MeetingWidget::onNewMeeting);
 
@@ -129,7 +129,7 @@ void MeetingWidget::initUI()
     m_searchEdit = new QLineEdit(this);
     m_searchEdit->setPlaceholderText(tr("搜索会议..."));
     m_searchEdit->setFixedHeight(32);
-    m_searchEdit->setStyleSheet("QLineEdit { border:1px solid #EAECEF; border-radius:6px; padding:4px 12px; font-size:13px; background:palette(window); } QLineEdit:focus { border-color:#2178E5; }");
+    m_searchEdit->setStyleSheet("QLineEdit { border:1px solid palette(mid); border-radius:6px; padding:4px 12px; font-size:13px; background:palette(window); } QLineEdit:focus { border-color:palette(highlight); }");
     listLayout->addWidget(m_searchEdit);
 
     m_meetingList = new QListWidget(this);
@@ -139,10 +139,10 @@ void MeetingWidget::initUI()
         QListWidget { background: transparent; border: none; }
         QListWidget::item {
             border-radius: 6px; padding: 12px 16px; margin: 2px 0;
-            background: #F8F9FA; border: 1px solid #EAECEF;
+            background: palette(base); border: 1px solid palette(midlight);
         }
-        QListWidget::item:hover { background: #EEF0F3; }
-        QListWidget::item:selected { background: #EEF2FF; border-color: #2178E5; }
+        QListWidget::item:hover { background: palette(light); }
+        QListWidget::item:selected { background: palette(highlight); border-color: palette(highlight); }
     )");
     listLayout->addWidget(m_meetingList, 1);
     m_stack->addWidget(m_listPage);
@@ -156,7 +156,7 @@ void MeetingWidget::initUI()
     // 返回 + 标题
     QHBoxLayout *detailHeader = new QHBoxLayout();
     m_backBtn = new QPushButton(tr("← 返回列表"), this);
-    m_backBtn->setStyleSheet("QPushButton { background:transparent; border:none; color:#999; font-size:12px; } QPushButton:hover { color:#2178E5; }");
+    m_backBtn->setStyleSheet("QPushButton { background:transparent; border:none; color:palette(placeholderText); font-size:12px; } QPushButton:hover { color:palette(highlight); }");
     detailHeader->addWidget(m_backBtn);
     detailHeader->addStretch();
     m_deleteBtn = new QPushButton(tr("删除"), this);
@@ -165,21 +165,21 @@ void MeetingWidget::initUI()
     detailLayout->addLayout(detailHeader);
 
     m_titleLabel = new DLabel(this);
-    m_titleLabel->setStyleSheet("font-size: 16px; font-weight: 600; color: #222;");
+    m_titleLabel->setStyleSheet("font-size: 16px; font-weight: 600;");
     detailLayout->addWidget(m_titleLabel);
 
     m_dateLabel = new DLabel(this);
-    m_dateLabel->setStyleSheet("font-size: 11px; color: #999;");
+    m_dateLabel->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
     detailLayout->addWidget(m_dateLabel);
 
     QHBoxLayout *fileRow = new QHBoxLayout();
     m_fileLabel = new QLabel(this);
-    m_fileLabel->setStyleSheet("font-size: 11px; color: #999;");
+    m_fileLabel->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
     m_fileLabel->setVisible(false);
     fileRow->addWidget(m_fileLabel, 1);
     m_exportBtn = new QPushButton(tr("📤 导出录音"), this);
     m_exportBtn->setFixedHeight(26);
-    m_exportBtn->setStyleSheet("QPushButton { background:transparent; color:#2178E5; border:1px solid #2178E5; border-radius:4px; padding:2px 10px; font-size:11px; } QPushButton:hover { background:#F0F5FF; }");
+    m_exportBtn->setStyleSheet("QPushButton { background:transparent; color:#2178E5; border:1px solid #2178E5; border-radius:4px; padding:2px 10px; font-size:11px; } QPushButton:hover { background:palette(light); }");
     m_exportBtn->setVisible(false);
     fileRow->addWidget(m_exportBtn);
     detailLayout->addLayout(fileRow);
@@ -192,14 +192,14 @@ void MeetingWidget::initUI()
     m_recordingBtn->setStyleSheet("QPushButton { background:#E64545; color:white; border:none; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#CF3A3A; }");
     m_transcribeBtn = new QPushButton(tr("🎤 语音转写"), this);
     m_transcribeBtn->setFixedHeight(32);
-    m_transcribeBtn->setStyleSheet("QPushButton { background:#2178E5; color:white; border:none; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#1A6AD4; } QPushButton:disabled { background:#CCC; }");
+    m_transcribeBtn->setStyleSheet("QPushButton { background:#2178E5; color:white; border:none; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#1A6AD4; } QPushButton:disabled { background:palette(mid); color:palette(windowText); }");
     m_aiSummaryBtn = new QPushButton(tr("🤖 AI 纪要"), this);
     m_aiSummaryBtn->setFixedHeight(32);
-    m_aiSummaryBtn->setStyleSheet("QPushButton { background:white; color:#2178E5; border:1px solid #2178E5; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#F0F5FF; }");
+    m_aiSummaryBtn->setStyleSheet("QPushButton { background:transparent; color:#2178E5; border:1px solid #2178E5; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:palette(light); }");
 
     QPushButton *genTodoBtn = new QPushButton(tr("📋 生成待办"), this);
     genTodoBtn->setFixedHeight(32);
-    genTodoBtn->setStyleSheet("QPushButton { background:white; color:#52C41A; border:1px solid #52C41A; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#F0FFF0; }");
+    genTodoBtn->setStyleSheet("QPushButton { background:transparent; color:#52C41A; border:1px solid #52C41A; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:palette(light); }");
 
     actionRow->addWidget(m_recordingBtn);
     actionRow->addWidget(m_transcribeBtn);
@@ -253,25 +253,25 @@ void MeetingWidget::initUI()
 
     // 内容区（转写 + AI 纪要合并）
     DLabel *contentTitle = new DLabel(tr("会议内容"), this);
-    contentTitle->setStyleSheet("font-size: 12px; font-weight: 600; color: #666; padding: 4px 0;");
+    contentTitle->setStyleSheet("font-size: 12px; font-weight: 600; padding: 4px 0;");
     detailLayout->addWidget(contentTitle);
 
     m_transcriptEdit = new QTextBrowser(this);
     m_transcriptEdit->setPlaceholderText(tr("点击「语音转写」识别录音内容..."));
     m_transcriptEdit->setReadOnly(true);
-    m_transcriptEdit->setStyleSheet("QTextBrowser { border: 1px solid #EAECEF; border-radius: 6px; padding: 8px; font-size: 12px; color: #333; background: #FFFFFF; }");
+    m_transcriptEdit->setStyleSheet("QTextBrowser { border: 1px solid palette(midlight); border-radius: 6px; padding: 8px; font-size: 12px; background: palette(base); }");
     m_transcriptEdit->setMinimumHeight(200);
     m_transcriptEdit->setOpenExternalLinks(false);
     m_transcriptEdit->setOpenLinks(false);
     detailLayout->addWidget(m_transcriptEdit, 1);
 
     DLabel *summaryTitle = new DLabel(tr("AI 摘要"), this);
-    summaryTitle->setStyleSheet("font-size: 12px; font-weight: 600; color: #666; padding: 4px 0;");
+    summaryTitle->setStyleSheet("font-size: 12px; font-weight: 600; padding: 4px 0;");
     detailLayout->addWidget(summaryTitle);
     m_summaryEdit = new QTextEdit(this);
     m_summaryEdit->setPlaceholderText(tr("AI 生成的会议纪要..."));
     m_summaryEdit->setReadOnly(true);
-    m_summaryEdit->setStyleSheet("QTextEdit { border: 1px solid #EAECEF; border-radius: 6px; padding: 8px; font-size: 12px; color: #333; background: #FFFFFF; }");
+    m_summaryEdit->setStyleSheet("QTextEdit { border: 1px solid palette(midlight); border-radius: 6px; padding: 8px; font-size: 12px; background: palette(base); }");
     m_summaryEdit->setMinimumHeight(100);
     detailLayout->addWidget(m_summaryEdit);
 
