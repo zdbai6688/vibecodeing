@@ -201,11 +201,18 @@ void MainWindow::initUI()
     m_blankEditor->show();
     m_editor->hide();
 
+    // 初始化设置对话框和快速录入
+    m_settingsDialog = new SettingsDialog(this);
+    m_quickEntry = new QuickEntryDialog(this);
+    m_quickEntry->hide();
+
     setCentralWidget(centralWidget);
 }
 
 void MainWindow::initConnections()
 {
+    auto *app = ShorthandApplication::instance();
+
     // 侧边栏导航
     connect(m_sidebar, &SidebarWidget::notesClicked, this, &MainWindow::onSwitchToNotes);
     connect(m_sidebar, &SidebarWidget::todosClicked, this, &MainWindow::onSwitchToTodos);
@@ -225,6 +232,39 @@ void MainWindow::initConnections()
     // 界面切换时更新创建按钮提示
     connect(m_middleStack, &QStackedWidget::currentChanged, this, [this]() {
         updateCreateButtonTooltip();
+    });
+
+    // 数据变更自动刷新
+    connect(app->noteManager(), &NoteManager::dataChanged, this, [this]() {
+        m_noteList->refresh();
+    });
+
+    // 托盘信号连接（PRD §3 系统集成）
+    connect(app->trayManager(), &TrayManager::showMainWindowRequested, this, [this]() {
+        show(); raise(); activateWindow();
+    });
+    connect(app->trayManager(), &TrayManager::quickEntryRequested, this, &MainWindow::onShowQuickEntry);
+    connect(app->trayManager(), &TrayManager::quitRequested, qApp, &QApplication::quit);
+    connect(app->trayManager(), &TrayManager::toggleDesktopModeRequested, this, &MainWindow::onToggleDesktopMode);
+
+    // 桌面模式信号连接
+    connect(app->desktopModeManager(), &DesktopModeManager::desktopModeEntered, this, [this, app]() {
+        app->trayManager()->updateDesktopModeAction(true);
+        QList<QPair<int, QString>> notes;
+        for (int id : app->desktopModeManager()->stickyNoteIds()) {
+            NoteData d = app->noteManager()->getNote(id);
+            if (d.id > 0) notes.append({id, d.title.isEmpty() ? d.content.left(30) : d.title.left(30)});
+        }
+        app->trayManager()->updateStickyNotesSubmenu(notes);
+    });
+    connect(app->desktopModeManager(), &DesktopModeManager::desktopModeExited, this, [this, app]() {
+        app->trayManager()->updateDesktopModeAction(false);
+    });
+
+    // 托盘便签点击
+    connect(app->trayManager(), &TrayManager::showStickyNoteRequested, this, [this](int noteId) {
+        focusNote(noteId);
+        show(); raise(); activateWindow();
     });
 }
 

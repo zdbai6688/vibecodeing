@@ -68,7 +68,6 @@ private:
     void setupGlobalShortcut();
     void showMiddleWidget(QWidget *w);
     void updateCreateButtonTooltip();
-    void rebuildTitlebar();
 
     SidebarWidget *m_sidebar;
     QWidget *m_middlePanel;
@@ -83,7 +82,6 @@ private:
     GlobalShortcutManager *m_globalShortcut;
     QWidget *m_blankEditor;
     QHBoxLayout *m_mainLayout;
-    QSplitter *m_splitter;
     QFrame *m_sep1;
 
     // 标题栏按钮
