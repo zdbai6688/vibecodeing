@@ -18,6 +18,7 @@
 #include <QScrollBar>
 #include <QTextBlock>
 #include <QDir>
+#include <QCheckBox>
 #include <QStandardPaths>
 #include <QFileInfo>
 #include <QFileDialog>
@@ -120,6 +121,16 @@ void MeetingWidget::initUI()
     listTitle->setStyleSheet("font-size: 16px; font-weight: 600;");
     headerRow->addWidget(listTitle);
     headerRow->addStretch();
+    // 多选模式切换按钮
+    m_selectModeBtn = new QPushButton(tr("☐ 多选"), this);
+    m_selectModeBtn->setCheckable(true);
+    m_selectModeBtn->setFixedHeight(28);
+    m_selectModeBtn->setStyleSheet(
+        "QPushButton { border: 1px solid palette(mid); border-radius: 4px;"
+        " padding: 2px 8px; font-size: 11px; background: palette(base); }"
+        "QPushButton:hover { background: palette(light); }"
+        "QPushButton:checked { background: palette(highlight); color: white; border-color: palette(highlight); }");
+    headerRow->addWidget(m_selectModeBtn);
     m_newBtn = new QPushButton(tr("＋ 新建"), this);
     stylePrimaryBtn(m_newBtn);
     m_newBtn->setFixedHeight(30);
@@ -145,6 +156,38 @@ void MeetingWidget::initUI()
         QListWidget::item:selected { background: palette(highlight); border-color: palette(highlight); }
     )");
     listLayout->addWidget(m_meetingList, 1);
+    
+    // ─── 批量操作工具栏 ───────────────────────────
+    m_batchToolbar = new QWidget(this);
+    m_batchToolbar->setStyleSheet("background: palette(midlight); border-radius: 8px; padding: 4px;");
+    m_batchToolbar->hide();
+    QHBoxLayout *batchLayout = new QHBoxLayout(m_batchToolbar);
+    batchLayout->setContentsMargins(8, 4, 8, 4);
+    batchLayout->setSpacing(6);
+
+    m_selectionCountLabel = new DLabel(tr("已选择 0 项"), this);
+    m_selectionCountLabel->setStyleSheet("font-size: 11px; color: palette(windowText);");
+    batchLayout->addWidget(m_selectionCountLabel);
+
+    batchLayout->addStretch();
+
+    m_selectAllBtn = new QPushButton(tr("全选"), this);
+    m_selectAllBtn->setFixedHeight(28);
+    m_selectAllBtn->setStyleSheet(
+        "QPushButton { border: 1px solid palette(mid); border-radius: 4px;"
+        " padding: 2px 10px; font-size: 11px; background: palette(base); }"
+        "QPushButton:hover { background: palette(highlight); color: white; }");
+    batchLayout->addWidget(m_selectAllBtn);
+
+    m_batchDeleteBtn = new QPushButton(tr("🗑 删除"), this);
+    m_batchDeleteBtn->setFixedHeight(28);
+    m_batchDeleteBtn->setStyleSheet(
+        "QPushButton { border: 1px solid palette(mid); border-radius: 4px;"
+        " padding: 2px 10px; font-size: 11px; background: palette(base); }"
+        "QPushButton:hover { background: #E64545; color: white; }");
+    batchLayout->addWidget(m_batchDeleteBtn);
+
+    listLayout->addWidget(m_batchToolbar);
     m_stack->addWidget(m_listPage);
 
     // ─── 详情页（简洁版）────────────────────────────────────
@@ -290,9 +333,57 @@ void MeetingWidget::initConnections()
     connect(m_aiSummaryBtn, &QPushButton::clicked, this, &MeetingWidget::onAiSummary);
     connect(m_recordingBtn, &QPushButton::clicked, this, &MeetingWidget::onStartRecording);
     connect(m_recorder, &AudioRecorder::recordingFinished, this, &MeetingWidget::onStopRecording);
+    
+    // 多选模式切换
+    connect(m_selectModeBtn, &QPushButton::toggled, this, [this](bool checked) {
+        if (checked) enterMultiSelectMode();
+        else exitMultiSelectMode();
+    });
+    
+    // 全选按钮
+    connect(m_selectAllBtn, &QPushButton::clicked, this, [this]() {
+        bool allSelected = true;
+        for (int i = 0; i < m_meetingList->count(); ++i) {
+            QListWidgetItem *item = m_meetingList->item(i);
+            QWidget *w = m_meetingList->itemWidget(item);
+            if (w) {
+                QCheckBox *cb = w->findChild<QCheckBox *>("selectCheck");
+                if (cb && !cb->isChecked()) {
+                    allSelected = false;
+                    break;
+                }
+            }
+        }
+        bool check = !allSelected;
+        for (int i = 0; i < m_meetingList->count(); ++i) {
+            QListWidgetItem *item = m_meetingList->item(i);
+            QWidget *w = m_meetingList->itemWidget(item);
+            if (w) {
+                QCheckBox *cb = w->findChild<QCheckBox *>("selectCheck");
+                if (cb) cb->setChecked(check);
+            }
+        }
+        updateSelectionState();
+    });
+    
+    // 批量删除
+    connect(m_batchDeleteBtn, &QPushButton::clicked, this, &MeetingWidget::onBatchDelete);
+    
+    // 多选模式下点击列表项切换选择状态
     connect(m_meetingList, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
         int meetingId = item->data(Qt::UserRole).toInt();
-        showMeetingDetail(meetingId);
+        if (m_multiSelectMode) {
+            QWidget *w = m_meetingList->itemWidget(item);
+            if (w) {
+                QCheckBox *cb = w->findChild<QCheckBox *>("selectCheck");
+                if (cb) {
+                    cb->setChecked(!cb->isChecked());
+                    updateSelectionState();
+                }
+            }
+        } else if (meetingId > 0) {
+            showMeetingDetail(meetingId);
+        }
     });
 
     // 右键菜单
@@ -742,4 +833,69 @@ QString MeetingWidget::formatTime(qint64 ms) const
     return QString("%1:%2")
         .arg(mins, 2, 10, QChar('0'))
         .arg(secs, 2, 10, QChar('0'));
+}
+
+// ─── 多选模式 ────────────────────────────────────────────────────
+
+void MeetingWidget::enterMultiSelectMode()
+{
+    m_multiSelectMode = true;
+    m_batchToolbar->show();
+    refresh();
+    updateSelectionState();
+}
+
+void MeetingWidget::exitMultiSelectMode()
+{
+    m_multiSelectMode = false;
+    m_batchToolbar->hide();
+    refresh();
+}
+
+void MeetingWidget::updateSelectionState()
+{
+    QList<int> selected = getSelectedMeetingIds();
+    int count = selected.size();
+    m_selectionCountLabel->setText(tr("已选择 %1 项").arg(count));
+    m_batchDeleteBtn->setEnabled(count > 0);
+}
+
+QList<int> MeetingWidget::getSelectedMeetingIds() const
+{
+    QList<int> ids;
+    for (int i = 0; i < m_meetingList->count(); ++i) {
+        QListWidgetItem *item = m_meetingList->item(i);
+        QWidget *w = m_meetingList->itemWidget(item);
+        if (w) {
+            QCheckBox *cb = w->findChild<QCheckBox *>("selectCheck");
+            if (cb && cb->isChecked()) {
+                int meetingId = item->data(Qt::UserRole).toInt();
+                if (meetingId > 0) ids.append(meetingId);
+            }
+        }
+    }
+    return ids;
+}
+
+void MeetingWidget::onBatchDelete()
+{
+    QList<int> ids = getSelectedMeetingIds();
+    if (ids.isEmpty()) return;
+
+    auto *app = ShorthandApplication::instance();
+    if (!app || !app->meetingManager()) return;
+
+    DDialog dialog(this);
+    dialog.setTitle(tr("批量删除"));
+    dialog.setMessage(tr("确定要删除选中的 %1 条会议记录吗？").arg(ids.size()));
+    dialog.addButton(tr("取消"));
+    dialog.addButton(tr("删除"), true, DDialog::ButtonWarning);
+    if (dialog.exec() == 1) {
+        app->meetingManager()->batchDeleteMeetings(ids);
+        m_selectModeBtn->setChecked(false);
+        m_currentMeetingId = -1;
+        m_currentTranscripts.clear();
+        m_highlightedSegmentIndex = -1;
+        refresh();
+    }
 }

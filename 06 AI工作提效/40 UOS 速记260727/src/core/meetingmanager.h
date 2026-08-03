@@ -17,6 +17,8 @@ public:
     int createMeeting(const MeetingData &meeting);
     bool updateMeeting(const MeetingData &meeting);
     bool deleteMeeting(int id);
+    /// 批量删除会议记录
+    bool batchDeleteMeetings(const QList<int> &ids);
 
     MeetingData getMeeting(int id) const;
     QList<MeetingData> getAllMeetings() const;

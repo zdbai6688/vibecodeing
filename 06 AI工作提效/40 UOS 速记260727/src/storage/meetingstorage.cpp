@@ -101,6 +101,33 @@ bool MeetingStorage::deleteMeeting(int id)
     return query.exec();
 }
 
+bool MeetingStorage::batchDeleteMeetings(const QList<int> &ids)
+{
+    if (ids.isEmpty()) return true;
+    
+    QSqlQuery query(m_db->connection());
+    // 构建占位符列表
+    QStringList placeholders;
+    for (int i = 0; i < ids.size(); ++i) {
+        placeholders << QString(":id%1").arg(i);
+    }
+    QString placeholdersStr = placeholders.join(", ");
+    
+    // 删除关联转写
+    query.prepare(QString("DELETE FROM meeting_transcripts WHERE meeting_id IN (%1)").arg(placeholdersStr));
+    for (int i = 0; i < ids.size(); ++i) {
+        query.bindValue(QString(":id%1").arg(i), ids[i]);
+    }
+    query.exec();
+    
+    // 删除会议记录
+    query.prepare(QString("DELETE FROM meetings WHERE id IN (%1)").arg(placeholdersStr));
+    for (int i = 0; i < ids.size(); ++i) {
+        query.bindValue(QString(":id%1").arg(i), ids[i]);
+    }
+    return query.exec();
+}
+
 MeetingData MeetingStorage::getMeeting(int id) const
 {
     QSqlQuery query(m_db->connection());

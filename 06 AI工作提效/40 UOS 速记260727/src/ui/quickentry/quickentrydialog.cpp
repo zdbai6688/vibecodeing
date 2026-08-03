@@ -4,6 +4,7 @@
 #include "quickentrydialog.h"
 #include "application/shorthandapplication.h"
 #include "core/notemanager.h"
+#include "core/todomanager.h"
 #include "core/tagmanager.h"
 #include "ui/desktop/desktopmodemanager.h"
 
@@ -601,6 +602,8 @@ void QuickEntryDialog::onSave()
     int id = app->noteManager()->createNote(note);
     if (priority > 0 && id > 0) {
         app->noteManager()->convertToTodo(id, priority);
+        // 使用 TodoManager 更新多标签
+        app->todoManager()->setTodoTags(id, tags);
     }
 
     m_lastSavedNoteId = id;

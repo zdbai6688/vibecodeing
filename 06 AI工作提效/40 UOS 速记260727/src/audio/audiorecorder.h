@@ -12,6 +12,13 @@
 /**
  * 基于 GStreamer 的音频录制器
  * 支持：开始/暂停/继续/停止录音，实时音频电平，录音时长
+ *
+ * 录音参数（与系统语音记事本一致，确保 ASR 转写质量）：
+ * - 采样率: 16000Hz (语音识别最佳采样率)
+ * - 声道: 单声道 (mono)
+ * - 格式: S16LE (16-bit PCM)
+ * - 编码: WAV
+ * - 自动音量增益: 2.0x 确保语音信号幅度充足
  */
 class AudioRecorder : public QObject
 {
@@ -53,7 +60,6 @@ signals:
 
 private:
     static gboolean onBusMessage(GstBus *bus, GstMessage *msg, gpointer userData);
-    static gboolean onTimerTick(gpointer userData);
     void updateDuration();
     void timerEvent(QTimerEvent *event) override;
 
@@ -65,7 +71,8 @@ private:
     // GStreamer
     GstElement *m_pipeline = nullptr;
     GstElement *m_source = nullptr;
-    GstElement *m_encoder = nullptr;
+    GstElement *m_volume = nullptr;
+    GstElement *m_level = nullptr;
     GstElement *m_sink = nullptr;
 
     int m_timerId = 0;

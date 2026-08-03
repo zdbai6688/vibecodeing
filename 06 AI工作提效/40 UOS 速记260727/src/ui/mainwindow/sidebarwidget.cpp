@@ -29,6 +29,9 @@ SidebarWidget::SidebarWidget(QWidget *parent)
     connect(app->noteManager(), &NoteManager::dataChanged, this, [this, app]() {
         updateBadge(app->noteManager()->noteCount(), app->todoManager()->pendingCount());
     });
+    connect(app->todoManager(), &TodoManager::dataChanged, this, [this, app]() {
+        updateBadge(app->noteManager()->noteCount(), app->todoManager()->pendingCount());
+    });
 }
 
 void SidebarWidget::updateStyleSheet()
@@ -222,7 +225,10 @@ void SidebarWidget::initUI()
     });
 
     updateTagList();
-    updateBadge(0, 0);
+
+    // 启动时读取真实数量
+    auto *app = ShorthandApplication::instance();
+    updateBadge(app->noteManager()->noteCount(), app->todoManager()->pendingCount());
 }
 
 void SidebarWidget::setActiveSection(int index)

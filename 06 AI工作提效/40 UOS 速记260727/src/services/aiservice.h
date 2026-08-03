@@ -91,6 +91,8 @@ public:
     void setEngine(Engine engine);
     void setApiKey(const QString &key);
     void setApiKeyForEngine(Engine engine, const QString &key);
+    /// 从 QSettings 重新加载所有 AI 凭据并重建当前服务（设置页保存后调用，避免凭据过期）
+    void reloadCredentials();
 
     Engine currentEngine() const { return m_currentEngine; }
     IAiService *currentService() const;

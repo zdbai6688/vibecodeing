@@ -15,8 +15,10 @@
 #include <QDateEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QPushButton>
 #include <DLabel>
 #include <DDialog>
+#include <DSpinner>
 #include <QInputDialog>
 #include "storage/todostorage.h"
 
@@ -42,7 +44,6 @@ signals:
     void todoStatusChanged();
 
 private slots:
-    void onContextMenu(const QPoint &pos);
 
 private:
     void initUI();
@@ -52,10 +53,25 @@ private:
     void showTodoContextMenu(QListWidget *list, const QPoint &pos);
     void setTodoDueDate(int todoId);
 
+    // 批量操作
+    void enterMultiSelectMode();
+    void exitMultiSelectMode();
+    void updateSelectionState();
+    void onBatchDelete();
+    QList<int> getSelectedTodoIds() const;
+
     QLineEdit *m_newTodoInput;
     QListWidget *m_pendingList;
     QListWidget *m_completedList;
     QStringList m_filterTags;
+
+    // 批量操作控件
+    bool m_multiSelectMode = false;
+    QWidget *m_batchToolbar;
+    QPushButton *m_selectModeBtn;
+    QPushButton *m_selectAllBtn;
+    QPushButton *m_batchDeleteBtn;
+    DLabel *m_selectionCountLabel;
 };
 
 #endif // TODOWIDGET_H

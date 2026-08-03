@@ -43,6 +43,12 @@ private:
     void showMeetingList();
     void showMeetingDetail(int meetingId);
     void populateMeetingList(const QList<MeetingData> &meetings);
+    // 批量操作
+    void enterMultiSelectMode();
+    void exitMultiSelectMode();
+    void updateSelectionState();
+    void onBatchDelete();
+    QList<int> getSelectedMeetingIds() const;
     QString buildTranscriptHtml(int highlightIndex = -1) const;
     QString formatTime(qint64 ms) const;
 
@@ -54,6 +60,14 @@ private:
     QListWidget *m_meetingList;
     QLineEdit *m_searchEdit;
     QPushButton *m_newBtn;
+
+    // 批量操作
+    QPushButton *m_selectModeBtn;
+    bool m_multiSelectMode = false;
+    QWidget *m_batchToolbar;
+    QPushButton *m_selectAllBtn;
+    QPushButton *m_batchDeleteBtn;
+    DLabel *m_selectionCountLabel;
 
     DLabel *m_titleLabel;
     DLabel *m_dateLabel;

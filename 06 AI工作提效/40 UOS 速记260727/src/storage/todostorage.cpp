@@ -307,7 +307,8 @@ QList<TodoData> TodoStorage::getTodayTodos(const TodoSortParam &sort) const
     qint64 todayStart = QDateTime(QDate::currentDate(), QTime(0,0)).toSecsSinceEpoch();
     qint64 todayEnd = QDateTime(QDate::currentDate(), QTime(23,59,59)).toSecsSinceEpoch();
     QSqlQuery query(m_db->connection());
-    query.prepare("SELECT * FROM notes_todos WHERE is_todo=1 AND is_deleted=0 AND is_completed=0 AND due_datetime>=:start AND due_datetime<=:end"
+    query.prepare("SELECT * FROM notes_todos WHERE is_todo=1 AND is_deleted=0 AND is_completed=0"
+                  " AND ((due_datetime>=:start AND due_datetime<=:end) OR due_datetime=0)"
                   + buildTodoOrderClause(sort));
     query.bindValue(":start", todayStart);
     query.bindValue(":end", todayEnd);

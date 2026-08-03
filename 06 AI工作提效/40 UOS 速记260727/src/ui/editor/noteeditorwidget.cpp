@@ -32,6 +32,10 @@ NoteEditorWidget::NoteEditorWidget(QWidget *parent)
     m_screenshotMgr = new ScreenshotManager(this);
     qInfo() << "[Editor] ScreenshotManager";
     m_recorder = new AudioRecorder(this);
+    m_autoSaveTimer = new QTimer(this);
+    m_autoSaveTimer->setSingleShot(true);
+    m_autoSaveTimer->setInterval(800);
+    connect(m_autoSaveTimer, &QTimer::timeout, this, &NoteEditorWidget::onSave);
     qInfo() << "[Editor] AudioRecorder";
     setStyleSheet("NoteEditorWidget { background: palette(base); }");
     initUI();
@@ -326,7 +330,7 @@ void NoteEditorWidget::initConnections()
     });
 
     connect(m_tagCombo, &QComboBox::currentTextChanged, this, &NoteEditorWidget::onTagChanged);
-    connect(m_titleEdit, &QLineEdit::textChanged, this, [this]() { m_modified = true; });
+    connect(m_titleEdit, &QLineEdit::textChanged, this, [this]() { m_modified = true; m_autoSaveTimer->start(); });
     connect(m_contentEdit, &QTextEdit::textChanged, this, [this]() { m_modified = true; });
     connect(m_undoBtn, &QToolButton::clicked, this, &NoteEditorWidget::onUndo);
     connect(m_redoBtn, &QToolButton::clicked, this, &NoteEditorWidget::onRedo);

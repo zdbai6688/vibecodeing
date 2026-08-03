@@ -186,6 +186,7 @@ void MainWindow::initConnections()
     connect(m_sidebar, &SidebarWidget::newNoteClicked, this, &MainWindow::onNewNote);
 
     connect(m_noteList, &NoteListWidget::noteSelected, this, &MainWindow::onNoteSelected);
+    connect(m_todoWidget, &TodoWidget::todoSelected, this, &MainWindow::onTodoSelected);
     connect(m_todoWidget, &TodoWidget::todoStatusChanged, this, [this]() { m_todoWidget->refresh(); });
     connect(app->noteManager(), &NoteManager::dataChanged, this, [this]() { m_noteList->refresh(); });
 
@@ -245,8 +246,9 @@ void MainWindow::showMiddleWidget(QWidget *w)
 
 void MainWindow::onNewNote()
 {
-    // 根据当前视图创建对应类型：待办页面聚焦待办输入框，其他页面创建笔记
+    // 根据当前视图创建对应类型
     if (m_middleStack->currentWidget() == m_todoWidget) {
+        // 待办页面：聚焦待办输入框，让用户直接输入
         m_todoWidget->focusNewTodoInput();
         return;
     }
@@ -275,6 +277,16 @@ void MainWindow::onNoteSelected(int noteId)
 {
     if (noteId > 0) {
         m_editor->loadNote(noteId);
+        m_blankEditor->hide();
+        m_editor->show();
+    }
+}
+
+void MainWindow::onTodoSelected(int todoId)
+{
+    if (todoId > 0) {
+        // 待办与笔记共享 notes_todos 表，直接用 NoteEditorWidget 加载
+        m_editor->loadNote(todoId);
         m_blankEditor->hide();
         m_editor->show();
     }
@@ -340,6 +352,7 @@ void MainWindow::onSwitchToTodos()
     m_sidebar->setActiveSection(1);
     showMiddleWidget(m_todoWidget);
     m_todoWidget->refresh();
+    m_todoWidget->focusNewTodoInput();
 }
 
 void MainWindow::onSwitchToMeetings()

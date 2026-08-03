@@ -31,6 +31,7 @@ public:
     ~MainWindow() override;
 
     void onShowQuickEntry();
+    void onTodoSelected(int todoId);
     void loadInitialNotes();
     void focusNote(int noteId);
 

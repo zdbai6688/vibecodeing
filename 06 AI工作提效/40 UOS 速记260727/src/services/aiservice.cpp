@@ -62,8 +62,12 @@ AiCompletionResult DeepSeekService::parseResponse(const QByteArray &data) const
 
     QJsonObject obj = doc.object();
     if (obj.contains("error")) {
+        QJsonObject errObj = obj["error"].toObject();
         result.success = false;
-        result.errorMessage = obj["error"].toObject()["message"].toString();
+        result.errorMessage = errObj["message"].toString();
+        if (result.errorMessage.isEmpty()) {
+            result.errorMessage = QJsonDocument(errObj).toJson(QJsonDocument::Compact);
+        }
         return result;
     }
 
@@ -82,6 +86,14 @@ AiCompletionResult DeepSeekService::parseResponse(const QByteArray &data) const
 void DeepSeekService::complete(const AiCompletionRequest &req,
                                 std::function<void(const AiCompletionResult &)> callback)
 {
+    if (m_apiKey.isEmpty()) {
+        AiCompletionResult result;
+        result.success = false;
+        result.errorMessage = "DeepSeek API Key 未配置，请在设置中输入 API Key";
+        callback(result);
+        return;
+    }
+
     QUrl url("https://api.deepseek.com/chat/completions");
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -95,7 +107,15 @@ void DeepSeekService::complete(const AiCompletionRequest &req,
         if (reply->error() != QNetworkReply::NoError) {
             AiCompletionResult result;
             result.success = false;
-            result.errorMessage = reply->errorString();
+            // 尝试从响应体中提取详细错误信息
+            QByteArray responseData = reply->readAll();
+            QJsonDocument errDoc = QJsonDocument::fromJson(responseData);
+            if (errDoc.isObject() && errDoc.object().contains("error")) {
+                result.errorMessage = errDoc.object()["error"].toObject()["message"].toString();
+            }
+            if (result.errorMessage.isEmpty()) {
+                result.errorMessage = reply->errorString();
+            }
             callback(result);
             return;
         }
@@ -138,7 +158,7 @@ AiCompletionResult TongyiService::parseResponse(const QByteArray &data) const
     QJsonDocument doc = QJsonDocument::fromJson(data);
     if (doc.isNull() || !doc.isObject()) {
         result.success = false;
-        result.errorMessage = "Invalid JSON response";
+        result.errorMessage = "无效的 JSON 响应";
         return result;
     }
 
@@ -146,6 +166,9 @@ AiCompletionResult TongyiService::parseResponse(const QByteArray &data) const
     if (obj.contains("code") && obj["code"].toInt() != 200) {
         result.success = false;
         result.errorMessage = obj["message"].toString();
+        if (result.errorMessage.isEmpty()) {
+            result.errorMessage = QString("错误码: %1").arg(obj["code"].toInt());
+        }
         return result;
     }
 
@@ -153,7 +176,7 @@ AiCompletionResult TongyiService::parseResponse(const QByteArray &data) const
     QJsonArray choices = output["choices"].toArray();
     if (choices.isEmpty()) {
         result.success = false;
-        result.errorMessage = "No choices in response";
+        result.errorMessage = "响应中无有效内容";
         return result;
     }
 
@@ -165,7 +188,15 @@ AiCompletionResult TongyiService::parseResponse(const QByteArray &data) const
 void TongyiService::complete(const AiCompletionRequest &req,
                               std::function<void(const AiCompletionResult &)> callback)
 {
-    QUrl url("https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions");
+    if (m_apiKey.isEmpty()) {
+        AiCompletionResult result;
+        result.success = false;
+        result.errorMessage = "通义千问 API Key 未配置，请在设置中输入 API Key";
+        callback(result);
+        return;
+    }
+
+    QUrl url("https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation");
     QNetworkRequest request(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setRawHeader("Authorization", ("Bearer " + m_apiKey).toUtf8());
@@ -178,7 +209,18 @@ void TongyiService::complete(const AiCompletionRequest &req,
         if (reply->error() != QNetworkReply::NoError) {
             AiCompletionResult result;
             result.success = false;
-            result.errorMessage = reply->errorString();
+            QByteArray responseData = reply->readAll();
+            QJsonDocument errDoc = QJsonDocument::fromJson(responseData);
+            if (errDoc.isObject()) {
+                QJsonObject errObj = errDoc.object();
+                result.errorMessage = errObj["message"].toString();
+                if (result.errorMessage.isEmpty()) {
+                    result.errorMessage = errObj["code"].toString();
+                }
+            }
+            if (result.errorMessage.isEmpty()) {
+                result.errorMessage = reply->errorString();
+            }
             callback(result);
             return;
         }
@@ -236,6 +278,18 @@ void AiServiceManager::setApiKeyForEngine(Engine engine, const QString &key)
     }
 }
 
+void AiServiceManager::reloadCredentials()
+{
+    lockSettingsFile();
+    QSettings settings;
+    m_deepseekKey = CryptoUtil::decrypt(settings.value("ai/deepseek_key").toString());
+    m_tongyiKey = CryptoUtil::decrypt(settings.value("ai/tongyi_key").toString());
+    QString engineName = settings.value("ai/engine", "DeepSeek").toString();
+    m_currentEngine = engineFromName(engineName);
+    qInfo() << "AI 凭据已重新加载，引擎:" << engineName;
+    ensureService();
+}
+
 IAiService *AiServiceManager::currentService() const
 {
     return m_currentService;
@@ -252,7 +306,7 @@ void AiServiceManager::complete(const AiCompletionRequest &req,
     if (!m_currentService) {
         AiCompletionResult result;
         result.success = false;
-        result.errorMessage = "AI service not configured. Please set API Key in Settings.";
+        result.errorMessage = "AI 服务未配置。请在设置中输入 API Key。";
         callback(result);
         return;
     }

@@ -234,11 +234,24 @@ void SettingsWidget::initAiSection(QVBoxLayout *parent)
 
     parent->addWidget(aiGroup);
 
-    connect(m_aiEngineCombo, &QComboBox::currentTextChanged, this, [](const QString &engine) {
+    auto reloadAi = []() {
+        auto *app = ShorthandApplication::instance();
+        if (auto *ai = app ? app->aiService() : nullptr) {
+            ai->reloadCredentials();
+        }
+    };
+    connect(m_aiEngineCombo, &QComboBox::currentTextChanged, this, [reloadAi](const QString &engine) {
         QSettings().setValue("ai/engine", engine);
+        reloadAi();
     });
-    connect(m_deepseekKeyEdit, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("ai/deepseek_key", v); });
-    connect(m_tongyiKeyEdit, &QLineEdit::textChanged, this, [](const QString &v) { QSettings().setValue("ai/tongyi_key", v); });
+    connect(m_deepseekKeyEdit, &QLineEdit::textChanged, this, [reloadAi](const QString &v) {
+        QSettings().setValue("ai/deepseek_key", v);
+        reloadAi();
+    });
+    connect(m_tongyiKeyEdit, &QLineEdit::textChanged, this, [reloadAi](const QString &v) {
+        QSettings().setValue("ai/tongyi_key", v);
+        reloadAi();
+    });
     connect(m_testBtn, &DPushButton::clicked, this, [this]() {
         auto *app = ShorthandApplication::instance();
         auto *ai = app ? app->aiService() : nullptr;

@@ -9,6 +9,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <gst/gst.h>
+#include <gst/audio/audio.h>
+#include <cmath>
 
 // GStreamer 初始化（全局一次）
 static bool s_gstInitialized = false;
@@ -68,14 +70,24 @@ bool AudioRecorder::startRecording(const QString &filePath)
     // 确保目标目录存在
     QDir().mkpath(QFileInfo(path).absolutePath());
 
-    // 构建 GStreamer 管道:
-    // autoaudiosrc ! audioconvert ! audioresample ! capsfilter(16kHz mono 16bit) ! wavenc ! filesink
-    // 注意：filesink 的 location 不嵌入管道字符串，避免路径含空格/中文/特殊字符时解析失败，
-    // 保证录音文件精确落盘到 m_filePath（与 ASR 转写读取路径一致）。
+    // 构建 GStreamer 管道（与系统语音记事本录音参数一致）：
+    //
+    // autoaudiosrc
+    //   → audioconvert      格式转换
+    //   → audioresample     重采样至 16000Hz
+    //   → capsfilter        设置格式: 16000Hz, mono, S16LE
+    //   → volume            自动增益 2.0x（确保语音信号幅度充足，提高 ASR 识别率）
+    //   → level             实时电平检测（替换原来的假电平）
+    //   → wavenc            WAV 编码
+    //   → filesink          文件输出
+    //
+    // 注意：filesink 的 location 不嵌入管道字符串，避免路径含空格/中文/特殊字符时解析失败。
     QString pipelineStr = QString(
         "autoaudiosrc name=src ! "
         "audioconvert ! audioresample ! "
         "audio/x-raw, format=S16LE, rate=16000, channels=1 ! "
+        "volume name=volume volume=2.0 ! "
+        "level name=level interval=200000000 ! "
         "wavenc ! "
         "filesink name=file_sink"
     );
@@ -91,6 +103,8 @@ bool AudioRecorder::startRecording(const QString &filePath)
     }
 
     m_source = gst_bin_get_by_name(GST_BIN(m_pipeline), "src");
+    m_volume = gst_bin_get_by_name(GST_BIN(m_pipeline), "volume");
+    m_level = gst_bin_get_by_name(GST_BIN(m_pipeline), "level");
     m_sink = gst_bin_get_by_name(GST_BIN(m_pipeline), "file_sink");
     if (m_sink) {
         g_object_set(m_sink, "location", path.toUtf8().constData(), nullptr);
@@ -121,6 +135,7 @@ bool AudioRecorder::startRecording(const QString &filePath)
 
     m_state = Recording;
     m_durationMs = 0;
+    m_audioLevel = 0;
     m_startTime = QDateTime::currentMSecsSinceEpoch();
     m_timerId = startTimer(250); // 250ms 更新时长和电平
 
@@ -182,6 +197,8 @@ bool AudioRecorder::stopRecording()
         gst_object_unref(m_pipeline);
         m_pipeline = nullptr;
         m_source = nullptr;
+        m_volume = nullptr;
+        m_level = nullptr;
         m_sink = nullptr;
     }
 
@@ -204,10 +221,23 @@ void AudioRecorder::timerEvent(QTimerEvent *event)
     Q_UNUSED(event)
     updateDuration();
 
-    // 获取音频电平（简化实现）
-    if (m_pipeline) {
-        // 可以通过 level 元素获取更精确的电平，这里简化处理
-        m_audioLevel = (m_audioLevel + 30) % 100;
+    // 从 GStreamer level 元素获取实时音频电平
+    if (m_level) {
+        GstStructure *s = nullptr;
+        g_signal_emit_by_name(m_level, "get-level", (int)1, 0.0, &s);
+        if (s) {
+            gdouble peak_dB;
+            if (gst_structure_get_double(s, "peak", &peak_dB)) {
+                // 将 dB 值映射到 0-100 范围
+                // 通常语音峰值在 -30dB ~ -6dB 之间
+                // -60dB 以下视为静音（0%），0dB 为最大（100%）
+                const double minDb = -60.0;
+                const double maxDb = -3.0;
+                double normalized = (peak_dB - minDb) / (maxDb - minDb);
+                m_audioLevel = qBound(0, static_cast<int>(normalized * 100.0), 100);
+            }
+            gst_structure_free(s);
+        }
         emit audioLevelChanged(m_audioLevel);
     }
 }

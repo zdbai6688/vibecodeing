@@ -11,6 +11,7 @@
 #include <QTextBrowser>
 #include <QVBoxLayout>
 #include <QMenu>
+#include <QTimer>
 #include "storage/notestorage.h"
 #include "services/aiservice.h"
 #include "services/exportservice.h"
@@ -73,6 +74,7 @@ private:
     QPushButton *m_todoToggleBtn;
     QPushButton *m_previewBtn;
     QPushButton *m_voiceBtn;
+    QTimer *m_autoSaveTimer;
     ScreenshotManager *m_screenshotMgr;
     AudioRecorder *m_recorder;
 };
