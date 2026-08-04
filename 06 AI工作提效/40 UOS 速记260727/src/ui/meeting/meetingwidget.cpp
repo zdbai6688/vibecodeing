@@ -294,10 +294,25 @@ void MeetingWidget::initUI()
         });
     });
 
-    // 内容区（转写 + AI 纪要合并）
-    DLabel *contentTitle = new DLabel(tr("会议内容"), this);
-    contentTitle->setStyleSheet("font-size: 12px; font-weight: 600; padding: 4px 0;");
-    detailLayout->addWidget(contentTitle);
+    // 内容区（转写 + AI 纪要）
+    // 顶部说明文字，明确两个栏目的用途
+    DLabel *contentDesc = new DLabel(tr("左侧「🎤 转写内容」为语音转写文字；右侧「🤖 AI 会议纪要」为 AI 自动生成的会议总结"), this);
+    contentDesc->setStyleSheet("font-size: 11px; color: palette(placeholderText); padding: 2px 0 4px 0;");
+    contentDesc->setWordWrap(true);
+    detailLayout->addWidget(contentDesc);
+
+    QHBoxLayout *contentLayout = new QHBoxLayout();
+    contentLayout->setSpacing(12);
+
+    // 左侧：转写内容
+    QWidget *transcriptPanel = new QWidget(this);
+    QVBoxLayout *transcriptPanelLayout = new QVBoxLayout(transcriptPanel);
+    transcriptPanelLayout->setContentsMargins(0, 0, 0, 0);
+    transcriptPanelLayout->setSpacing(4);
+
+    DLabel *transcriptTitle = new DLabel(tr("🎤 转写内容"), this);
+    transcriptTitle->setStyleSheet("font-size: 12px; font-weight: 600; padding: 4px 0;");
+    transcriptPanelLayout->addWidget(transcriptTitle);
 
     m_transcriptEdit = new QTextBrowser(this);
     m_transcriptEdit->setPlaceholderText(tr("点击「语音转写」识别录音内容..."));
@@ -306,17 +321,28 @@ void MeetingWidget::initUI()
     m_transcriptEdit->setMinimumHeight(200);
     m_transcriptEdit->setOpenExternalLinks(false);
     m_transcriptEdit->setOpenLinks(false);
-    detailLayout->addWidget(m_transcriptEdit, 1);
+    transcriptPanelLayout->addWidget(m_transcriptEdit, 1);
+    contentLayout->addWidget(transcriptPanel, 1);
 
-    DLabel *summaryTitle = new DLabel(tr("AI 摘要"), this);
+    // 右侧：AI 会议纪要
+    QWidget *summaryPanel = new QWidget(this);
+    QVBoxLayout *summaryPanelLayout = new QVBoxLayout(summaryPanel);
+    summaryPanelLayout->setContentsMargins(0, 0, 0, 0);
+    summaryPanelLayout->setSpacing(4);
+
+    DLabel *summaryTitle = new DLabel(tr("🤖 AI 会议纪要"), this);
     summaryTitle->setStyleSheet("font-size: 12px; font-weight: 600; padding: 4px 0;");
-    detailLayout->addWidget(summaryTitle);
+    summaryPanelLayout->addWidget(summaryTitle);
+
     m_summaryEdit = new QTextEdit(this);
     m_summaryEdit->setPlaceholderText(tr("AI 生成的会议纪要..."));
     m_summaryEdit->setReadOnly(true);
     m_summaryEdit->setStyleSheet("QTextEdit { border: 1px solid palette(midlight); border-radius: 6px; padding: 8px; font-size: 12px; background: palette(base); }");
     m_summaryEdit->setMinimumHeight(100);
-    detailLayout->addWidget(m_summaryEdit);
+    summaryPanelLayout->addWidget(m_summaryEdit);
+    contentLayout->addWidget(summaryPanel, 1);
+
+    detailLayout->addLayout(contentLayout, 1);
 
     m_stack->addWidget(m_detailPage);
 
