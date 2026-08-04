@@ -31,7 +31,7 @@ const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, dialog, shell } = 
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
-const { spawn, execSync, execFileSync } = require('child_process')
+const { spawn, exec, execSync, execFileSync } = require('child_process')
 
 /** Check if a binary is available on PATH */
 function hasBin(bin) {
@@ -2595,6 +2595,15 @@ ipcMain.handle('execute-tool', async (_, tool, params) => {
 
 // ========== 软件包管理器 IPC ==========
 
+// 异步执行 shell 命令，避免大量子进程同步阻塞主进程（如软件包列表涉及数千次查询）
+function execAsync(cmd, timeout = 30000, maxBuffer = 32 * 1024 * 1024) {
+  return new Promise((resolve) => {
+    exec(cmd, { timeout, encoding: 'utf-8', maxBuffer }, (err, stdout) => {
+      resolve((stdout || '').toString())
+    })
+  })
+}
+
 ipcMain.handle('pkg-manager', async (_, action, params) => {
   const { execSync } = require('child_process')
   const fs = require('fs')
@@ -2603,38 +2612,30 @@ ipcMain.handle('pkg-manager', async (_, action, params) => {
   try {
     switch(action) {
       case 'list-installed': {
-        // 使用 apt list --installed 获取更快的输出
+        // 一次性读取 dpkg 数据库（名称/版本/架构/描述），避免对每个软件包逐个 execSync 阻塞主进程
         try {
-          const raw = execSync("apt list --installed 2>/dev/null", { timeout: 15000, encoding: 'utf-8' }).toString()
-          const lines = raw.split('\n').filter(l => l && !l.startsWith('Listing...'))
-          const packages = lines.map(l => {
-            // Format: pkgname/stable,now version arch [installed]
-            const match = l.match(/^([^/]+)\/(\S+)\s+(\S+)\s+(\S+)\s+\[installed(?:,\w+)*\]/)
-            if(!match) return null
-            const name = match[1]
-            // Get description
-            let desc = ''
-            try {
-              const descRaw = execSync("apt-cache show " + name + " 2>/dev/null | grep -m1 '^Description' | sed 's/Description: //'", { timeout: 5000, encoding: 'utf-8' }).toString().trim()
-              desc = descRaw
-            } catch {}
-            return { name, version: match[3], arch: match[4], desc }
-          }).filter(Boolean)
+          const raw = await execAsync("dpkg-query -W -f='\\n##PKG##\\n${binary:Package}\\t${Version}\\t${Architecture}\\t${db:Status-Abbrev}\\n${Description}\\n' 2>/dev/null")
+          const records = raw.split('##PKG##\n')
+          const packages = []
+          for(const rec of records){
+            const nl = rec.indexOf('\n')
+            if(nl === -1) continue
+            const head = rec.slice(0, nl).trim()
+            const parts = head.split('\t')
+            const name = parts[0]
+            if(!name || !parts[3] || !parts[3].startsWith('i')) continue
+            const descLines = rec.slice(nl + 1).split('\n').map(s => s.replace(/^\s+/, '')).filter(Boolean)
+            packages.push({ name, version: parts[1] || '', arch: parts[2] || '', desc: descLines[0] || '' })
+          }
           return { success: true, packages }
         } catch(e) {
-          // Fallback to dpkg -l
-          const raw = execSync("dpkg -l 2>/dev/null", { timeout: 10000, encoding: 'utf-8' }).toString()
+          // 兜底：dpkg -l（不再逐包查询描述，避免阻塞主进程）
+          const raw = await execAsync("dpkg -l 2>/dev/null")
           const lines = raw.split('\n').filter(l => /^[a-z]/.test(l))
           const packages = lines.map(l => {
             const parts = l.split(/\s+/)
             if(parts.length < 4) return null
-            const name = parts[1]
-            let desc = ''
-            try {
-              const descRaw = execSync("dpkg -s " + name + " 2>/dev/null | grep '^Description' | sed 's/Description: //'", { timeout: 5000, encoding: 'utf-8' }).toString().trim()
-              desc = descRaw
-            } catch {}
-            return { name, version: parts[2], arch: parts[3]||'', desc }
+            return { name: parts[1], version: parts[2], arch: parts[3] || '', desc: '' }
           }).filter(Boolean)
           return { success: true, packages }
         }
@@ -2643,20 +2644,30 @@ ipcMain.handle('pkg-manager', async (_, action, params) => {
       case 'search': {
         const keyword = params?.keyword || ''
         if(!keyword) return { success: false, error: '请输入搜索关键词' }
-        const raw = execSync("apt-cache search " + keyword.replace(/[^a-zA-Z0-9._-]/g, '') + " 2>/dev/null", { timeout: 30000, encoding: 'utf-8' }).toString()
-        const lines = raw.split('\n').filter(l => l.trim())
+        const safeKw = keyword.replace(/[^a-zA-Z0-9._-]/g, '')
+        if(!safeKw) return { success: false, error: '请输入搜索关键词' }
+        const raw = await execAsync("apt-cache search " + safeKw + " 2>/dev/null")
+        // 与前端展示一致，最多处理 80 条结果，避免海量匹配时长时间阻塞
+        const lines = raw.split('\n').filter(l => l.trim()).slice(0, 80)
         const packages = lines.map(l => {
           const idx = l.indexOf(' - ')
           if(idx === -1) return { package: l.trim(), version: '', desc: '' }
-          const name = l.substring(0, idx).trim()
-          const desc = l.substring(idx + 3).trim()
-          let version = ''
-          try {
-            const vRaw = execSync("apt-cache show " + name + " 2>/dev/null | grep '^Version' | head -1 | sed 's/Version: //'", { timeout: 5000, encoding: 'utf-8' }).toString().trim()
-            version = vRaw
-          } catch {}
-          return { package: name, version, desc }
+          return { package: l.substring(0, idx).trim(), desc: l.substring(idx + 3).trim(), version: '' }
         })
+        // 批量获取版本信息（单次 apt-cache show 查询全部结果，避免逐包 execSync）
+        try {
+          const names = packages.map(p => p.package).join(' ')
+          if(names){
+            const vRaw = await execAsync("apt-cache show " + names + " 2>/dev/null | grep -E '^(Package|Version):'")
+            const verMap = {}
+            let cur = ''
+            for(const l of vRaw.split('\n')){
+              if(l.startsWith('Package: ')) cur = l.slice(9).trim()
+              else if(l.startsWith('Version: ') && cur) verMap[cur] = l.slice(9).trim()
+            }
+            for(const p of packages){ if(verMap[p.package]) p.version = verMap[p.package] }
+          }
+        } catch {}
         return { success: true, packages }
       }
 
