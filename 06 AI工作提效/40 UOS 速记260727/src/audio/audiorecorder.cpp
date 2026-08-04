@@ -70,13 +70,17 @@ bool AudioRecorder::startRecording(const QString &filePath)
     // 确保目标目录存在
     QDir().mkpath(QFileInfo(path).absolutePath());
 
-    // 构建 GStreamer 管道（与系统语音记事本录音参数一致）：
+    // 构建 GStreamer 管道（参考系统语音记事本 deepin-voice-note 的录音链路优化）：
     //
     // autoaudiosrc
     //   → audioconvert      格式转换
     //   → audioresample     重采样至 16000Hz
-    //   → capsfilter        设置格式: 16000Hz, mono, S16LE
-    //   → volume            自动增益 2.0x（确保语音信号幅度充足，提高 ASR 识别率）
+    //   → audiorate         校准采样率，保证输出严格 16000Hz（ASR 依赖精确采样率）
+    //   → audiochebband     80–4000Hz 带通滤波，滤除低频噪声/高频杂音，突出人声
+    //   → volume            适度增益 1.5x（原 2.0x 容易削波，此处降低）
+    //   → audiodynamic      软拐点压缩器，压制突发高峰，防止削波失真
+    //   → audioconvert      转换回 S16LE
+    //   → capsfilter        设置格式: 16000Hz, mono, S16LE（与 ASR 引擎一致）
     //   → level             实时电平检测（替换原来的假电平）
     //   → wavenc            WAV 编码
     //   → filesink          文件输出
@@ -84,9 +88,12 @@ bool AudioRecorder::startRecording(const QString &filePath)
     // 注意：filesink 的 location 不嵌入管道字符串，避免路径含空格/中文/特殊字符时解析失败。
     QString pipelineStr = QString(
         "autoaudiosrc name=src ! "
-        "audioconvert ! audioresample ! "
+        "audioconvert ! audioresample ! audiorate ! "
+        "audiochebband name=band mode=1 lower-frequency=80 upper-frequency=4000 ! "
+        "volume name=volume volume=1.5 ! "
+        "audiodynamic name=dynamic mode=0 characteristics=0 threshold=0.25 ratio=3.0 ! "
+        "audioconvert ! "
         "audio/x-raw, format=S16LE, rate=16000, channels=1 ! "
-        "volume name=volume volume=2.0 ! "
         "level name=level interval=200000000 ! "
         "wavenc ! "
         "filesink name=file_sink"

@@ -25,6 +25,9 @@ public:
     /// 解密 Base64 编码的密文，返回明文 API Key
     static QString decrypt(const QString &cipherText);
 
+    /// 归一化解密：循环解开历史遗留的多层加密（重复保存导致），保证返回真正的明文
+    static QString decryptDeep(const QString &text);
+
     /// 快速检查一段文本是否已加密（以特定前缀开头）
     static bool isEncrypted(const QString &text);
 

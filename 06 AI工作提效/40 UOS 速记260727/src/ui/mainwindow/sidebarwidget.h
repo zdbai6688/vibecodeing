@@ -89,6 +89,7 @@ private:
     QPushButton *m_btnTodos;
     QPushButton *m_btnMeetings;
     QPushButton *m_btnWeekly;
+    QPushButton *m_btnCompleted;
     QPushButton *m_btnTrash;
     QPushButton *m_btnSettings;
 

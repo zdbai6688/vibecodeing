@@ -243,8 +243,8 @@ AiServiceManager::AiServiceManager(QObject *parent)
 {
     lockSettingsFile();
     QSettings settings;
-    m_deepseekKey = CryptoUtil::decrypt(settings.value("ai/deepseek_key").toString());
-    m_tongyiKey = CryptoUtil::decrypt(settings.value("ai/tongyi_key").toString());
+    m_deepseekKey = CryptoUtil::decryptDeep(settings.value("ai/deepseek_key").toString());
+    m_tongyiKey = CryptoUtil::decryptDeep(settings.value("ai/tongyi_key").toString());
     QString engineName = settings.value("ai/engine", "DeepSeek").toString();
     m_currentEngine = engineFromName(engineName);
     ensureService();
@@ -269,14 +269,16 @@ void AiServiceManager::setApiKey(const QString &key)
 
 void AiServiceManager::setApiKeyForEngine(Engine engine, const QString &key)
 {
+    // 兼容历史遗留的已加密/多层加密字符串：先归一化为明文，避免重复加密
+    const QString plain = CryptoUtil::decryptDeep(key);
     lockSettingsFile();
     QSettings settings;
     if (engine == DeepSeek) {
-        m_deepseekKey = key;
-        settings.setValue("ai/deepseek_key", CryptoUtil::encrypt(key));
+        m_deepseekKey = plain;
+        settings.setValue("ai/deepseek_key", CryptoUtil::encrypt(plain));
     } else {
-        m_tongyiKey = key;
-        settings.setValue("ai/tongyi_key", CryptoUtil::encrypt(key));
+        m_tongyiKey = plain;
+        settings.setValue("ai/tongyi_key", CryptoUtil::encrypt(plain));
     }
     if (engine == m_currentEngine) {
         ensureService();
@@ -287,8 +289,8 @@ void AiServiceManager::reloadCredentials()
 {
     lockSettingsFile();
     QSettings settings;
-    m_deepseekKey = CryptoUtil::decrypt(settings.value("ai/deepseek_key").toString());
-    m_tongyiKey = CryptoUtil::decrypt(settings.value("ai/tongyi_key").toString());
+    m_deepseekKey = CryptoUtil::decryptDeep(settings.value("ai/deepseek_key").toString());
+    m_tongyiKey = CryptoUtil::decryptDeep(settings.value("ai/tongyi_key").toString());
     QString engineName = settings.value("ai/engine", "DeepSeek").toString();
     m_currentEngine = engineFromName(engineName);
     qInfo() << "AI 凭据已重新加载，引擎:" << engineName;

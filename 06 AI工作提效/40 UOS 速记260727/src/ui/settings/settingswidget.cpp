@@ -5,6 +5,7 @@
 #include "application/shorthandapplication.h"
 #include "services/aiservice.h"
 #include "services/asrservice.h"
+#include "services/cryptoutil.h"
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QUrl>
@@ -245,11 +246,12 @@ void SettingsWidget::initAiSection(QVBoxLayout *parent)
         reloadAi();
     });
     connect(m_deepseekKeyEdit, &QLineEdit::textChanged, this, [reloadAi](const QString &v) {
-        QSettings().setValue("ai/deepseek_key", v);
+        // 只加密一层：先把可能的历史加密串归一化为明文，再统一加密存储
+        QSettings().setValue("ai/deepseek_key", CryptoUtil::encrypt(CryptoUtil::decryptDeep(v)));
         reloadAi();
     });
     connect(m_tongyiKeyEdit, &QLineEdit::textChanged, this, [reloadAi](const QString &v) {
-        QSettings().setValue("ai/tongyi_key", v);
+        QSettings().setValue("ai/tongyi_key", CryptoUtil::encrypt(CryptoUtil::decryptDeep(v)));
         reloadAi();
     });
     connect(m_testBtn, &DPushButton::clicked, this, [this]() {
@@ -437,8 +439,8 @@ void SettingsWidget::loadSettings()
     int idx = m_aiEngineCombo->findText(engine);
     if (idx >= 0) m_aiEngineCombo->setCurrentIndex(idx);
 
-    m_deepseekKeyEdit->setText(settings.value("ai/deepseek_key").toString());
-    m_tongyiKeyEdit->setText(settings.value("ai/tongyi_key").toString());
+    m_deepseekKeyEdit->setText(CryptoUtil::decryptDeep(settings.value("ai/deepseek_key").toString()));
+    m_tongyiKeyEdit->setText(CryptoUtil::decryptDeep(settings.value("ai/tongyi_key").toString()));
 
     QString asrEngine = settings.value("asr/engine", "离线语音 (Whisper)").toString();
     int asrIdx = m_asrEngineCombo->findText(asrEngine);

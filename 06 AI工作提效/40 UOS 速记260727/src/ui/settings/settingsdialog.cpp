@@ -5,6 +5,7 @@
 #include "application/shorthandapplication.h"
 #include "services/aiservice.h"
 #include "services/asrservice.h"
+#include "services/cryptoutil.h"
 #include "globaldef.h"
 
 #include <QVBoxLayout>
@@ -23,6 +24,10 @@
 #include <QFile>
 #include <QTextStream>
 #include <DGroupBox>
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QUrl>
 
 SettingsDialog::SettingsDialog(QWidget *parent)
     : DDialog(parent)
@@ -252,11 +257,50 @@ QWidget *SettingsDialog::createAiPage()
     layout->addWidget(tip);
 
     connect(m_aiTestBtn, &DPushButton::clicked, this, [this]() {
-        DDialog d(this);
-        d.setTitle(tr("提示"));
-        d.setMessage(tr("测试功能需要联网，将在后续版本中完善。"));
-        d.addButton(tr("确定"));
-        d.exec();
+        auto *app = ShorthandApplication::instance();
+        auto *ai = app ? app->aiService() : nullptr;
+        if (!ai) {
+            DDialog d(this);
+            d.setTitle(tr("测试连接"));
+            d.setMessage(tr("AI 服务未初始化"));
+            d.addButton(tr("确定"));
+            d.exec();
+            return;
+        }
+        m_aiTestBtn->setEnabled(false);
+        m_aiTestBtn->setText(tr("测试中..."));
+        // 使用输入框中的明文（loadSettings 已归一化解密），并用当前引擎实测
+        QString key = m_aiEngineCombo->currentIndex() == 0
+            ? m_deepseekKeyEdit->text() : m_tongyiKeyEdit->text();
+        if (key.trimmed().isEmpty()) {
+            m_aiTestBtn->setEnabled(true);
+            m_aiTestBtn->setText(tr("测试连接"));
+            DDialog d(this);
+            d.setTitle(tr("测试连接"));
+            d.setMessage(tr("请先输入 API Key"));
+            d.addButton(tr("确定"));
+            d.exec();
+            return;
+        }
+        QUrl url(m_aiEngineCombo->currentIndex() == 0
+            ? QString("https://api.deepseek.com/v1/models")
+            : QString("https://dashscope.aliyuncs.com/api/v1/models"));
+        QNetworkAccessManager *mgr = new QNetworkAccessManager(this);
+        QNetworkRequest req(url);
+        req.setRawHeader("Authorization", ("Bearer " + key.trimmed()).toUtf8());
+        QNetworkReply *reply = mgr->get(req);
+        connect(reply, &QNetworkReply::finished, this, [this, reply, mgr]() {
+            reply->deleteLater();
+            mgr->deleteLater();
+            m_aiTestBtn->setEnabled(true);
+            m_aiTestBtn->setText(tr("测试连接"));
+            bool ok = reply->error() == QNetworkReply::NoError;
+            DDialog d(this);
+            d.setTitle(tr("测试连接"));
+            d.setMessage(ok ? tr("✅ 连接成功，API Key 有效") : tr("❌ 连接失败：%1").arg(reply->errorString()));
+            d.addButton(tr("确定"));
+            d.exec();
+        });
     });
 
     layout->addStretch();
@@ -412,8 +456,8 @@ void SettingsDialog::loadSettings()
     QString engine = settings.value("ai/engine", "DeepSeek").toString();
     int idx = m_aiEngineCombo->findText(engine);
     if (idx >= 0) m_aiEngineCombo->setCurrentIndex(idx);
-    m_deepseekKeyEdit->setText(settings.value("ai/deepseek_key").toString());
-    m_tongyiKeyEdit->setText(settings.value("ai/tongyi_key").toString());
+    m_deepseekKeyEdit->setText(CryptoUtil::decryptDeep(settings.value("ai/deepseek_key").toString()));
+    m_tongyiKeyEdit->setText(CryptoUtil::decryptDeep(settings.value("ai/tongyi_key").toString()));
 
     // ASR settings
     QString asrEngine = settings.value("asr/engine", "离线语音 (Whisper)").toString();
@@ -446,8 +490,7 @@ void SettingsDialog::saveSettings()
 
     // AI settings
     settings.setValue("ai/engine", m_aiEngineCombo->currentText());
-    settings.setValue("ai/deepseek_key", m_deepseekKeyEdit->text());
-    settings.setValue("ai/tongyi_key", m_tongyiKeyEdit->text());
+    // AI Key 统一由 setApiKeyForEngine 加密存储（内部会归一化已加密的历史值）
 
     // 实时更新 AI 服务
     auto *app = ShorthandApplication::instance();

@@ -59,6 +59,16 @@ QString CryptoUtil::decrypt(const QString &cipherText)
     return QString::fromUtf8(result);
 }
 
+QString CryptoUtil::decryptDeep(const QString &text)
+{
+    QString result = text;
+    // 最多解开 32 层，防止异常数据导致死循环
+    for (int i = 0; i < 32 && isEncrypted(result); ++i) {
+        result = decrypt(result);
+    }
+    return result;
+}
+
 bool CryptoUtil::isEncrypted(const QString &text)
 {
     return text.startsWith(ENC_PREFIX);

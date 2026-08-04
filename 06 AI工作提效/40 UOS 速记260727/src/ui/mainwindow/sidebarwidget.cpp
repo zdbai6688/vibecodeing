@@ -181,25 +181,6 @@ void SidebarWidget::initUI()
     meetingsLayout->addWidget(meetingsText, 1);
     coreLayout->addWidget(m_btnMeetings);
 
-    // 周报按钮
-    m_btnWeekly = new QPushButton(this);
-    m_btnWeekly->setObjectName("navBtn");
-    m_btnWeekly->setCheckable(true);
-    m_btnWeekly->setCursor(Qt::PointingHandCursor);
-    m_btnWeekly->setFixedHeight(34);
-    QHBoxLayout *weeklyLayout = new QHBoxLayout(m_btnWeekly);
-    weeklyLayout->setContentsMargins(10, 0, 10, 0);
-    weeklyLayout->setSpacing(6);
-    QLabel *weeklyIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x93\x8A"), m_btnWeekly);
-    weeklyIcon->setObjectName("navIcon");
-    weeklyIcon->setFixedSize(20, 20);
-    weeklyIcon->setAlignment(Qt::AlignCenter);
-    QLabel *weeklyText = new QLabel(tr("周报"), m_btnWeekly);
-    weeklyText->setObjectName("navText");
-    weeklyLayout->addWidget(weeklyIcon);
-    weeklyLayout->addWidget(weeklyText, 1);
-    coreLayout->addWidget(m_btnWeekly);
-
     scrollLayout->addWidget(m_coreGroup);
 
     // ===== 第二组：标签筛选 =====
@@ -269,6 +250,44 @@ void SidebarWidget::initUI()
     trashLayout->addWidget(trashText, 1);
     archiveLayout->addWidget(m_btnTrash);
 
+    // 周报按钮（靠后位置，与已完成待办一起放在归档组）
+    m_btnWeekly = new QPushButton(this);
+    m_btnWeekly->setObjectName("navBtn");
+    m_btnWeekly->setCheckable(true);
+    m_btnWeekly->setCursor(Qt::PointingHandCursor);
+    m_btnWeekly->setFixedHeight(34);
+    QHBoxLayout *weeklyLayout = new QHBoxLayout(m_btnWeekly);
+    weeklyLayout->setContentsMargins(10, 0, 10, 0);
+    weeklyLayout->setSpacing(6);
+    QLabel *weeklyIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x93\x8A"), m_btnWeekly);
+    weeklyIcon->setObjectName("navIcon");
+    weeklyIcon->setFixedSize(20, 20);
+    weeklyIcon->setAlignment(Qt::AlignCenter);
+    QLabel *weeklyText = new QLabel(tr("周报"), m_btnWeekly);
+    weeklyText->setObjectName("navText");
+    weeklyLayout->addWidget(weeklyIcon);
+    weeklyLayout->addWidget(weeklyText, 1);
+    archiveLayout->addWidget(m_btnWeekly);
+
+    // 已完成待办按钮（靠后位置）
+    m_btnCompleted = new QPushButton(this);
+    m_btnCompleted->setObjectName("navBtn");
+    m_btnCompleted->setCheckable(true);
+    m_btnCompleted->setCursor(Qt::PointingHandCursor);
+    m_btnCompleted->setFixedHeight(34);
+    QHBoxLayout *completedLayout = new QHBoxLayout(m_btnCompleted);
+    completedLayout->setContentsMargins(10, 0, 10, 0);
+    completedLayout->setSpacing(6);
+    QLabel *completedIcon = new QLabel(QString::fromUtf8("\xE2\x98\x91\xEF\xB8\x8F"), m_btnCompleted);
+    completedIcon->setObjectName("navIcon");
+    completedIcon->setFixedSize(20, 20);
+    completedIcon->setAlignment(Qt::AlignCenter);
+    QLabel *completedText = new QLabel(tr("已完成待办"), m_btnCompleted);
+    completedText->setObjectName("navText");
+    completedLayout->addWidget(completedIcon);
+    completedLayout->addWidget(completedText, 1);
+    archiveLayout->addWidget(m_btnCompleted);
+
     scrollLayout->addWidget(m_archiveGroup);
 
     // 弹性空间
@@ -308,6 +327,7 @@ void SidebarWidget::initUI()
     connect(m_btnTodos, &QPushButton::clicked, this, &SidebarWidget::todosClicked);
     connect(m_btnMeetings, &QPushButton::clicked, this, &SidebarWidget::meetingsClicked);
     connect(m_btnWeekly, &QPushButton::clicked, this, &SidebarWidget::weeklyClicked);
+    connect(m_btnCompleted, &QPushButton::clicked, this, &SidebarWidget::completedTodosClicked);
     connect(m_btnTrash, &QPushButton::clicked, this, &SidebarWidget::trashClicked);
     connect(m_btnSettings, &QPushButton::clicked, this, &SidebarWidget::settingsClicked);
 
@@ -322,6 +342,7 @@ void SidebarWidget::setActiveSection(int index)
     m_btnTodos->setChecked(index == 1);
     m_btnMeetings->setChecked(index == 2);
     m_btnWeekly->setChecked(index == 5);
+    m_btnCompleted->setChecked(index == 4);
     m_btnTrash->setChecked(index == 3);
     m_btnSettings->setChecked(index == 6);
 }
