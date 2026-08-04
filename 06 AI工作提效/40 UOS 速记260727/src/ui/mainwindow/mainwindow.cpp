@@ -481,6 +481,8 @@ void MainWindow::onSwitchToTodos()
 {
     m_sidebar->setActiveSection(1);
     showMiddleWidget(m_todoWidget);
+    // 回到待办视图时清除标签筛选
+    m_todoWidget->clearFilterTags();
     m_todoWidget->refresh();
     m_todoWidget->focusNewTodoInput();
 }
@@ -516,19 +518,19 @@ void MainWindow::onSwitchToCompletedTodos()
 
 void MainWindow::onSwitchToTag(const QString &tag)
 {
-    // 如果当前在待办视图，则切换到待办视图并过滤
+    // 若当前停留在待办视图，标签筛选作用于待办列表
     if (m_sidebar->isTodoActive()) {
-        m_sidebar->setActiveSection(1);
         onSwitchToTodos();
         m_todoWidget->setFilterTags({tag});
         m_todoWidget->refresh();
-        return;
+    } else {
+        onSwitchToNotes();
+        m_noteList->setMode(NoteListWidget::TagFilter);
+        m_noteList->setFilterTag(tag);
+        m_noteList->refresh();
     }
-    m_sidebar->setActiveSection(0);
-    showMiddleWidget(m_noteList);
-    m_noteList->setMode(NoteListWidget::TagFilter);
-    m_noteList->setFilterTag(tag);
-    m_noteList->refresh();
+    // 标签视图激活：取消导航按钮高亮，仅高亮当前标签（与导航互斥）
+    m_sidebar->activateTag(tag);
 }
 
 void MainWindow::onSearch(const QString &keyword)

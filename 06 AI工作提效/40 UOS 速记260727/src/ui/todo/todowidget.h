@@ -36,6 +36,7 @@ public:
     void refresh();
     void selectTodo(int todoId);
     void setFilterTags(const QStringList &tags);
+    void clearFilterTags();
     QStringList filterTags() const { return m_filterTags; }
     void focusNewTodoInput();
 

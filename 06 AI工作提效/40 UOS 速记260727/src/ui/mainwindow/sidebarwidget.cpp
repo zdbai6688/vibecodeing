@@ -338,6 +338,7 @@ void SidebarWidget::initUI()
 void SidebarWidget::setActiveSection(int index)
 {
     m_activeSection = index;
+    m_tagActive = false;
     m_btnNotes->setChecked(index == 0);
     m_btnTodos->setChecked(index == 1);
     m_btnMeetings->setChecked(index == 2);
@@ -345,6 +346,38 @@ void SidebarWidget::setActiveSection(int index)
     m_btnCompleted->setChecked(index == 4);
     m_btnTrash->setChecked(index == 3);
     m_btnSettings->setChecked(index == 6);
+
+    // 切换导航时取消标签选中，保证导航与标签视图互斥
+    if (m_tagList) {
+        m_tagList->clearSelection();
+        m_tagList->setCurrentItem(nullptr);
+    }
+}
+
+void SidebarWidget::activateTag(const QString &tag)
+{
+    m_tagActive = true;
+
+    // 标签视图下不选中任何导航按钮（与导航视图互斥）
+    m_btnNotes->setChecked(false);
+    m_btnTodos->setChecked(false);
+    m_btnMeetings->setChecked(false);
+    m_btnWeekly->setChecked(false);
+    m_btnCompleted->setChecked(false);
+    m_btnTrash->setChecked(false);
+    m_btnSettings->setChecked(false);
+
+    // 仅高亮当前标签
+    if (!m_tagList) return;
+    m_tagList->clearSelection();
+    for (int i = 0; i < m_tagList->count(); ++i) {
+        QListWidgetItem *item = m_tagList->item(i);
+        if (item->data(Qt::UserRole).toString() == tag) {
+            item->setSelected(true);
+            m_tagList->setCurrentItem(item);
+            break;
+        }
+    }
 }
 
 void SidebarWidget::updateBadge(int notes, int todos)

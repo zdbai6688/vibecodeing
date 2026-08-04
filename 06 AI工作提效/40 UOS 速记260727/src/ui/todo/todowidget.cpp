@@ -556,6 +556,11 @@ void TodoWidget::setFilterTags(const QStringList &tags)
     refresh();
 }
 
+void TodoWidget::clearFilterTags()
+{
+    m_filterTags.clear();
+}
+
 void TodoWidget::focusNewTodoInput()
 {
     m_newTodoInput->setFocus();

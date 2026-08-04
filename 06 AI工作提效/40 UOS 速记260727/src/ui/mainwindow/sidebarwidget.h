@@ -38,6 +38,7 @@ public:
     explicit SidebarWidget(QWidget *parent = nullptr);
 
     void setActiveSection(int index);
+    void activateTag(const QString &tag);
     bool isCollapsed() const { return m_collapsed; }
     bool isTodoActive() const { return m_activeSection == 1; }
     int sidebarWidth() const { return m_currentWidth; }
@@ -105,6 +106,7 @@ private:
 
     // State
     bool m_collapsed = false;
+    bool m_tagActive = false;
     int m_currentWidth = 200;
     int m_activeSection = 0;
     static const int EXPANDED_WIDTH = 200;
