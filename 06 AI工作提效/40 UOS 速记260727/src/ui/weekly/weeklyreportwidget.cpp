@@ -162,7 +162,7 @@ void WeeklyReportWidget::initUI()
     dayTodoCardLayout->setContentsMargins(16, 12, 16, 12);
     dayTodoCardLayout->setSpacing(8);
 
-    m_dayTodoTitle = new QLabel(tr("📅 点击上方日期查看该日待办"), this);
+    m_dayTodoTitle = new QLabel(tr("📅 每日待办详情（单击日历日期查看该日任务）"), this);
     m_dayTodoTitle->setStyleSheet("font-size: 13px; font-weight: 600; color: #222;");
     dayTodoCardLayout->addWidget(m_dayTodoTitle);
 
@@ -183,7 +183,7 @@ void WeeklyReportWidget::initUI()
     statsCardLayout->setContentsMargins(16, 12, 16, 12);
     statsCardLayout->setSpacing(8);
 
-    DLabel *statsTitle = new DLabel(tr("📊 本周统计"), this);
+    DLabel *statsTitle = new DLabel(tr("📊 本周统计（待办完成情况概览）"), this);
     statsTitle->setStyleSheet("font-size: 14px; font-weight: 600; color: #222;");
     statsCardLayout->addWidget(statsTitle);
 
@@ -224,7 +224,7 @@ void WeeklyReportWidget::initUI()
     listCardLayout->setContentsMargins(16, 12, 16, 12);
     listCardLayout->setSpacing(10);
 
-    DLabel *pendingTitle = new DLabel(tr("📋 未完成事项"), this);
+    DLabel *pendingTitle = new DLabel(tr("📋 未完成事项（待处理的代办任务）"), this);
     pendingTitle->setStyleSheet("font-size: 13px; font-weight: 600; color: #222;");
     listCardLayout->addWidget(pendingTitle);
     m_pendingList = new QListWidget(this);
@@ -233,7 +233,7 @@ void WeeklyReportWidget::initUI()
     m_pendingList->setStyleSheet("QListWidget { background: transparent; border: none; } QListWidget::item { font-size: 12px; color: #666; padding: 4px 8px; }");
     listCardLayout->addWidget(m_pendingList);
 
-    DLabel *completedTitle = new DLabel(tr("✅ 已完成事项"), this);
+    DLabel *completedTitle = new DLabel(tr("✅ 已完成事项（本周已完成的任务）"), this);
     completedTitle->setStyleSheet("font-size: 13px; font-weight: 600; color: #222;");
     listCardLayout->addWidget(completedTitle);
     m_completedList = new QListWidget(this);
@@ -250,9 +250,15 @@ void WeeklyReportWidget::initUI()
     previewCardLayout->setContentsMargins(16, 12, 16, 12);
     previewCardLayout->setSpacing(8);
 
-    DLabel *previewTitle = new DLabel(tr("📝 周报预览"), this);
+    DLabel *previewTitle = new DLabel(tr("📝 周报预览（基于本周待办数据自动生成）"), this);
     previewTitle->setStyleSheet("font-size: 13px; font-weight: 600; color: #222;");
     previewCardLayout->addWidget(previewTitle);
+
+    // 添加说明文字，明确右侧/底部周报预览栏目的用途
+    DLabel *previewDesc = new DLabel(tr("💡 本区域展示生成的周报内容。点击下方「AI 生成周报」按钮，系统将自动汇总本周待办数据并生成 Markdown 格式周报，支持导出为文件。"), this);
+    previewDesc->setStyleSheet("font-size: 11px; color: #999; padding: 0 0 4px 0;");
+    previewDesc->setWordWrap(true);
+    previewCardLayout->addWidget(previewDesc);
 
     m_reportPreview = new QTextEdit(this);
     m_reportPreview->setMinimumHeight(160);

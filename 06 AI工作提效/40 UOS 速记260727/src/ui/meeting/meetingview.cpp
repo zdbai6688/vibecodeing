@@ -85,10 +85,16 @@ void MeetingView::initUI()
     mainLayout->addLayout(controlLayout);
 
     // 内容区：转写 + 摘要
+    // 添加说明文字，明确左右栏目功能
+    DLabel *contentDesc = new DLabel(tr("左侧「🎤 转写内容」为实时录音转写文字；右侧「🤖 AI 会议纪要」为 AI 自动生成的会议总结"), this);
+    contentDesc->setStyleSheet("font-size: 12px; color: #666; padding: 4px 0;");
+    contentDesc->setWordWrap(true);
+    mainLayout->addWidget(contentDesc);
+
     QHBoxLayout *contentLayout = new QHBoxLayout();
 
     // 左侧：转写内容
-    QGroupBox *transcriptGroup = new QGroupBox(tr("转写内容"), this);
+    QGroupBox *transcriptGroup = new QGroupBox(tr("🎤 转写内容"), this);
     QVBoxLayout *transLayout = new QVBoxLayout(transcriptGroup);
     m_transcriptEdit = new QTextEdit(this);
     m_transcriptEdit->setPlaceholderText(tr("录音内容将实时显示在这里...\n\n"
@@ -99,7 +105,7 @@ void MeetingView::initUI()
     contentLayout->addWidget(transcriptGroup, 1);
 
     // 右侧：AI 摘要
-    QGroupBox *summaryGroup = new QGroupBox(tr("AI 会议纪要"), this);
+    QGroupBox *summaryGroup = new QGroupBox(tr("🤖 AI 会议纪要"), this);
     QVBoxLayout *sumLayout = new QVBoxLayout(summaryGroup);
     m_summaryEdit = new QTextEdit(this);
     m_summaryEdit->setPlaceholderText(tr("点击「AI 摘要」生成会议纪要..."));
