@@ -520,11 +520,12 @@ void MainWindow::onSwitchToTag(const QString &tag)
 {
     // 若当前停留在待办视图，标签筛选作用于待办列表
     if (m_sidebar->isTodoActive()) {
-        onSwitchToTodos();
+        m_sidebar->setActiveSection(1);
+        showMiddleWidget(m_todoWidget);
         m_todoWidget->setFilterTags({tag});
-        m_todoWidget->refresh();
     } else {
-        onSwitchToNotes();
+        m_sidebar->setActiveSection(0);
+        showMiddleWidget(m_noteList);
         m_noteList->setMode(NoteListWidget::TagFilter);
         m_noteList->setFilterTag(tag);
         m_noteList->refresh();

@@ -106,7 +106,6 @@ private:
 
     // State
     bool m_collapsed = false;
-    bool m_tagActive = false;
     int m_currentWidth = 200;
     int m_activeSection = 0;
     static const int EXPANDED_WIDTH = 200;
