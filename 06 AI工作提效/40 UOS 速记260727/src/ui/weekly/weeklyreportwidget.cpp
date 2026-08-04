@@ -224,7 +224,7 @@ void WeeklyReportWidget::initUI()
     listCardLayout->setContentsMargins(16, 12, 16, 12);
     listCardLayout->setSpacing(10);
 
-    DLabel *pendingTitle = new DLabel(tr("📋 未完成事项（待处理的代办任务）"), this);
+    DLabel *pendingTitle = new DLabel(tr("📋 未完成事项（待处理的待办任务）"), this);
     pendingTitle->setStyleSheet("font-size: 13px; font-weight: 600; color: #222;");
     listCardLayout->addWidget(pendingTitle);
     m_pendingList = new QListWidget(this);
