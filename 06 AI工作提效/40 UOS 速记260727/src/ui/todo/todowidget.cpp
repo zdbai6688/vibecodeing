@@ -224,7 +224,6 @@ void TodoWidget::initUI()
     });
 
     connect(m_completedList, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
-        int todoId = item->data(Qt::UserRole).toInt();
         if (m_multiSelectMode) {
             QWidget *w = m_completedList->itemWidget(item);
             if (w) {
