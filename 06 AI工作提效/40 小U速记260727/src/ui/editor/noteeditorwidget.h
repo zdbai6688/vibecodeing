@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QTextEdit>
 #include <QLineEdit>
+#include <QLabel>
 #include <QComboBox>
 #include <QPushButton>
 #include <QToolButton>
@@ -42,6 +43,7 @@ private slots:
     void onScreenshot();
     void onUndo();
     void onRedo();
+    void updateWordCount();
     void onInsertImage();
 
 private:
@@ -56,6 +58,7 @@ private:
     bool m_previewMode = false;
 
     QLineEdit *m_titleEdit;
+    QLabel *m_wordCountLabel;
     QToolButton *m_undoBtn;
     QToolButton *m_redoBtn;
     QComboBox *m_fontCombo;

@@ -175,6 +175,17 @@ void NoteEditorWidget::onInsertImage()
 void NoteEditorWidget::onUndo() { m_contentEdit->undo(); }
 void NoteEditorWidget::onRedo() { m_contentEdit->redo(); }
 
+void NoteEditorWidget::updateWordCount()
+{
+    if (!m_wordCountLabel || !m_contentEdit) return;
+    const QString text = m_contentEdit->toPlainText();
+    int count = 0;
+    for (const QChar &c : text) {
+        if (!c.isSpace()) ++count;   // 统计非空白字符（中英文均计 1 字）
+    }
+    m_wordCountLabel->setText(tr("%1 字").arg(count));
+}
+
 void NoteEditorWidget::initUI()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
@@ -249,6 +260,10 @@ void NoteEditorWidget::initUI()
     QLabel *dateLabel = new QLabel(QDateTime::currentDateTime().toString("MM-dd HH:mm"), this);
     dateLabel->setStyleSheet("color: palette(windowText); font-size: 11px;");
     bottomLayout->addWidget(dateLabel);
+
+    m_wordCountLabel = new QLabel(tr("0 字"), this);
+    m_wordCountLabel->setStyleSheet("color: palette(placeholderText); font-size: 11px;");
+    bottomLayout->addWidget(m_wordCountLabel);
 
     QPushButton *moreBtn = new QPushButton(tr("⋯"), this);
     moreBtn->setFixedSize(26, 26);
@@ -330,6 +345,7 @@ void NoteEditorWidget::initConnections()
     connect(m_tagCombo, &QComboBox::currentTextChanged, this, &NoteEditorWidget::onTagChanged);
     connect(m_titleEdit, &QLineEdit::textChanged, this, [this]() { m_modified = true; m_autoSaveTimer->start(); });
     connect(m_contentEdit, &QTextEdit::textChanged, this, [this]() { m_modified = true; });
+    connect(m_contentEdit, &QTextEdit::textChanged, this, &NoteEditorWidget::updateWordCount);
     connect(m_undoBtn, &QToolButton::clicked, this, &NoteEditorWidget::onUndo);
     connect(m_redoBtn, &QToolButton::clicked, this, &NoteEditorWidget::onRedo);
 }
@@ -351,6 +367,7 @@ void NoteEditorWidget::loadNote(int noteId)
     if (m_previewMode) togglePreview();
     m_modified = false;
     setEnabled(true);
+    updateWordCount();
 }
 
 void NoteEditorWidget::clearEditor()
@@ -361,6 +378,7 @@ void NoteEditorWidget::clearEditor()
     m_tagCombo->setCurrentIndex(0);
     m_modified = false;
     setEnabled(false);
+    updateWordCount();
     if (m_previewMode) togglePreview();
 }
 
