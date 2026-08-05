@@ -353,25 +353,25 @@ extra-cmake-modules              # KF6GlobalAccel (Wayland)
 
 | ID | 任务 | 需求关联 | 复杂度 | 依赖 | 验证 | 状态 |
 |----|------|---------|--------|------|------|------|
-| P0-T1 | 目录名确认并入库(统一规范名, add 新路径, 清理旧路径跟踪) | 梳理报告 P0-1 | S | - | git status 干净, git log 可见新目录提交 | Pending |
-| P0-T2 | 合并分叉: rebase 到 origin(拉取 ffbbece/3c95c5a), 解决 sidebarwidget 冲突并推送; 打 v1.0.0 tag | 梳理报告 P0-2 | M | P0-T1 | ahead=0 behind=0; git tag 含 v1.0.0 | Pending |
-| P0-T3 | 清理残留(.bak/bak2/todowidget_clean.cpp/new_ui.py)与失效 build 目录 | 梳理报告 P2-9 | S | P0-T1 | 无 .bak; 干净目录可构建 | Pending |
-| P1-T1 | IDE-178 置 done(开发/审查/验收均完成) | IDE-178 | S | - | issue status=done | Pending |
-| P1-T2 | IDE-169 功能验证测试: 36 项 GUI 用例逐项执行并出报告; 修复单测 QWARN | IDE-169; 梳理报告 P2-7 | M | P0-T2 | test-report 全勾选; ctest 无 QWARN | Pending |
-| P1-T3 | 例行任务收口: IDE-175 每日代码审查 done; IDE-167/168 按流程推进 | - | S | - | 看板状态更新 | Pending |
-| P2-T1 | 生成 docs/project-context.md(sdlc-context 8 节) | 梳理报告 P2-6 | S | P0-T2 | 文件存在且与 git 状态一致 | Pending |
-| P2-T2 | dev-plan.md 更新入库 + remaining-work.md 状态刷新 | 本计划 | S | P2-T1 | 文档与代码一致 | Pending |
-| P2-T3 | 修复 AsrService unused-parameter 编译警告 | 梳理报告验证项 | S | P0-T2 | 构建 0 警告 | Pending |
+| P0-T1 | 目录名确认并入库(统一规范名, add 新路径, 清理旧路径跟踪) | 梳理报告 P0-1 | S | - | git status 干净, git log 可见新目录提交 |Done|
+| P0-T2 | 合并分叉: rebase 到 origin(拉取 ffbbece/3c95c5a), 解决 sidebarwidget 冲突并推送; 打 v1.0.0 tag | 梳理报告 P0-2 | M | P0-T1 | ahead=0 behind=0; git tag 含 v1.0.0 |Done|
+| P0-T3 | 清理残留(.bak/bak2/todowidget_clean.cpp/new_ui.py)与失效 build 目录 | 梳理报告 P2-9 | S | P0-T1 | 无 .bak; 干净目录可构建 |Done|
+| P1-T1 | IDE-178 置 done(开发/审查/验收均完成) | IDE-178 | S | - | issue status=done |Done|
+| P1-T2 | IDE-169 功能验证测试: 36 项 GUI 用例逐项执行并出报告; 修复单测 QWARN | IDE-169; 梳理报告 P2-7 | M | P0-T2 | test-report 全勾选; ctest 无 QWARN |In Progress|
+| P1-T3 | 例行任务收口: IDE-175 每日代码审查 done; IDE-167/168 按流程推进 | - | S | - | 看板状态更新 |Done|
+| P2-T1 | 生成 docs/project-context.md(sdlc-context 8 节) | 梳理报告 P2-6 | S | P0-T2 | 文件存在且与 git 状态一致 |Done|
+| P2-T2 | dev-plan.md 更新入库 + remaining-work.md 状态刷新 | 本计划 | S | P2-T1 | 文档与代码一致 |Done|
+| P2-T3 | 修复 AsrService unused-parameter 编译警告 | 梳理报告验证项 | S | P0-T2 | 构建 0 警告 |Done|
 | P3-T1 | 周报日程联动(Phase C): 周视图每日待办展示/点击详情/按标签统计/AI 周报标签维度 | IDE-163 C; spec §2.2 周报 | L | todo_tags 已就绪 | 周报页显示每日待办+标签完成率, AI 周报含标签维度; 新增单测 | Pending |
 | P3-T2 | 待办 UI 对齐(Phase D): 日历网格/拖拽改期/标签徽章/简单卡片 | IDE-163 D; remaining #10 | L | P3-T1 | 待办按日期分布, 拖拽改期生效 | Pending |
-| P4-T1 | 紧凑模式贴边自动隐藏 + 悬停重现 | remaining #5 | M | - | 拖到屏幕边缘自动隐藏 | Pending |
-| P4-T2 | 多紧凑窗口(独立保存) | remaining #6 | L | P4-T1 | 多便签并存互不干扰 | Pending |
-| P4-T3 | 全局快捷键自定义(设置页) | remaining #7 | M | - | 改键生效 | Pending |
-| P4-T4 | 开机自启紧凑模式 | remaining #8 | S | P4-T1 | 启动直接出紧凑窗 | Pending |
-| P4-T5 | 深色主题完整适配(硬编码→DPalette) | remaining #10 | M | - | 深色下无白块/硬编码色 | Pending |
-| P4-T6 | 导出统一走 ExportService(笔记/会议/周报) | remaining #11 | M | - | 导出路径单一 | Pending |
-| P4-T7 | 回收站增强(批量恢复/永久删除/搜索) | remaining #12 | M | - | 批量操作+搜索可用 | Pending |
-| P4-T8 | 编辑器撤销/重做 + 自动保存 + 字数统计 | remaining #19/20/21 | M | - | Ctrl+Z/Y, 自动保存, 字数显示 | Pending |
+| P4-T1 | 紧凑模式贴边自动隐藏 + 悬停重现 | remaining #5 | M | - | 拖到屏幕边缘自动隐藏 |In Progress|
+| P4-T2 | 多紧凑窗口(独立保存) | remaining #6 | L | P4-T1 | 多便签并存互不干扰 |In Progress|
+| P4-T3 | 全局快捷键自定义(设置页) | remaining #7 | M | - | 改键生效 |Done|
+| P4-T4 | 开机自启紧凑模式 | remaining #8 | S | P4-T1 | 启动直接出紧凑窗 |Done|
+| P4-T5 | 深色主题完整适配(硬编码→DPalette) | remaining #10 | M | - | 深色下无白块/硬编码色 |Done|
+| P4-T6 | 导出统一走 ExportService(笔记/会议/周报) | remaining #11 | M | - | 导出路径单一 |Done|
+| P4-T7 | 回收站增强(批量恢复/永久删除/搜索) | remaining #12 | M | - | 批量操作+搜索可用 |Done|
+| P4-T8 | 编辑器撤销/重做 + 自动保存 + 字数统计 | remaining #19/20/21 | M | - | Ctrl+Z/Y, 自动保存, 字数显示 |Done|
 | P4-T9 | 国际化(ts/qm, 英文界面) | remaining #25 | L | - | 英文界面可切换 | Pending |
 | P5-T1 | v1.1 回归(单测+GUI) + deb/玲珑打包 | IDE-109/112 延续 | M | P3, P4 | ctest 全绿, deb/玲珑可安装 | Pending |
 | P5-T2 | Release Notes v1.1.0 + tag + 商店/Release 发布 | IDE-93 延续 | S | P5-T1 | 发布材料齐, tag 存在 | Pending |
@@ -393,25 +393,25 @@ extra-cmake-modules              # KF6GlobalAccel (Wayland)
 
 | 任务 | Issue | 阶段 |
 |------|-------|------|
-| P0-T1 | IDE-182 | Phase 0 |
-| P0-T2 | IDE-183 | Phase 0 |
-| P0-T3 | IDE-184 | Phase 0 |
-| P1-T1 | IDE-185 | Phase 1 |
-| P1-T2 | IDE-186 | Phase 1 |
-| P1-T3 | IDE-187 | Phase 1 |
-| P2-T1 | IDE-188 | Phase 2 |
-| P2-T2 | IDE-189 | Phase 2 |
-| P2-T3 | IDE-190 | Phase 2 |
+| P0-T1 | IDE-182 |Done|
+| P0-T2 | IDE-183 |Done|
+| P0-T3 | IDE-184 |Done|
+| P1-T1 | IDE-185 |Done|
+| P1-T2 | IDE-186 |In Progress|
+| P1-T3 | IDE-187 |Done|
+| P2-T1 | IDE-188 |Done|
+| P2-T2 | IDE-189 |Done|
+| P2-T3 | IDE-190 |Done|
 | P3-T1 | IDE-191 | Phase 3 |
 | P3-T2 | IDE-192 | Phase 3 |
-| P4-T1 | IDE-193 | Phase 4 |
-| P4-T2 | IDE-194 | Phase 4 |
-| P4-T3 | IDE-195 | Phase 4 |
-| P4-T4 | IDE-196 | Phase 4 |
-| P4-T5 | IDE-197 | Phase 4 |
-| P4-T6 | IDE-198 | Phase 4 |
-| P4-T7 | IDE-199 | Phase 4 |
-| P4-T8 | IDE-200 | Phase 4 |
+| P4-T1 | IDE-193 |In Progress|
+| P4-T2 | IDE-194 |In Progress|
+| P4-T3 | IDE-195 |Done|
+| P4-T4 | IDE-196 |Done|
+| P4-T5 | IDE-197 |Done|
+| P4-T6 | IDE-198 |Done|
+| P4-T7 | IDE-199 |Done|
+| P4-T8 | IDE-200 |Done|
 | P4-T9 | IDE-201 | Phase 4 |
 | P5-T1 | IDE-202 | Phase 5 |
 | P5-T2 | IDE-203 | Phase 5 |
