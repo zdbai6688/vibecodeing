@@ -607,7 +607,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Escape) {
         bool dismissedAny = false;
-        for (QuickEntryDialog *entry : m_quickEntries) {
+        // 迭代拷贝：dismissWithDraft() 会通过 dismissed 信号从 m_quickEntries 移除窗口，
+        // 直接迭代原容器属于“边遍历边修改”，可能跳过窗口甚至崩溃
+        const QList<QuickEntryDialog *> entries = m_quickEntries;
+        for (QuickEntryDialog *entry : entries) {
             if (entry && entry->isVisible()) {
                 // 关闭紧凑窗口，未保存内容保留为草稿（下一个新窗口可恢复）
                 entry->dismissWithDraft();
