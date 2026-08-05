@@ -232,7 +232,7 @@ void SidebarWidget::initUI()
     sectionArchive->setFont(fa);
     archiveLayout->addWidget(sectionArchive);
 
-    // 已完成待办按钮（靠后位置）
+    // 已完成待办按钮（归档组第一个）
     m_btnCompleted = new QPushButton(this);
     m_btnCompleted->setObjectName("navBtn");
     m_btnCompleted->setCheckable(true);
@@ -250,6 +250,7 @@ void SidebarWidget::initUI()
     completedLayout->addWidget(completedIcon);
     completedLayout->addWidget(completedText, 1);
     archiveLayout->addWidget(m_btnCompleted);
+
 
     // 周报按钮
     m_btnWeekly = new QPushButton(this);
@@ -338,7 +339,6 @@ void SidebarWidget::initUI()
 void SidebarWidget::setActiveSection(int index)
 {
     m_activeSection = index;
-    m_tagActive = false;
     m_btnNotes->setChecked(index == 0);
     m_btnTodos->setChecked(index == 1);
     m_btnMeetings->setChecked(index == 2);
@@ -356,8 +356,6 @@ void SidebarWidget::setActiveSection(int index)
 
 void SidebarWidget::activateTag(const QString &tag)
 {
-    m_tagActive = true;
-
     // 标签视图下不选中任何导航按钮（与导航视图互斥）
     m_btnNotes->setChecked(false);
     m_btnTodos->setChecked(false);
