@@ -362,7 +362,7 @@ void XfyunAsrEngine::testConnection(std::function<void(bool success, const QStri
     proc->setProgram("node");
     proc->setArguments({scriptPath, QStringLiteral("--test"), m_appid, m_apiKey, m_apiSecret});
 
-    connect(proc, &QProcess::finished, this, [proc, callback](int exitCode) {
+    connect(proc, &QProcess::finished, this, [proc, callback]([[maybe_unused]] int exitCode) {
         proc->deleteLater();
         QByteArray output = proc->readAllStandardOutput();
         QByteArray errOutput = proc->readAllStandardError();
