@@ -7,6 +7,7 @@
 #include "core/todomanager.h"
 #include "services/aiservice.h"
 #include "services/asrservice.h"
+#include "services/exportservice.h"
 #include "audio/audioplayer.h"
 #include "audio/audiorecorder.h"
 
@@ -488,10 +489,16 @@ void MeetingWidget::showMeetingDetail(int meetingId)
                 QFileInfo(meeting.audioFilePath).fileName(),
                 tr("音频文件 (*.wav *.mp3 *.ogg)"));
             if (!savePath.isEmpty()) {
-                QFile::copy(meeting.audioFilePath, savePath);
+                bool ok = false;
+                if (auto *app = ShorthandApplication::instance()) {
+                    if (auto *es = app->exportService()) {
+                        ok = es->exportMeetingAudio(meeting.audioFilePath, savePath);
+                    }
+                }
                 DDialog d(this);
-                d.setTitle(tr("导出成功"));
-                d.setMessage(tr("录音已导出到：%1").arg(savePath));
+                d.setTitle(ok ? tr("导出成功") : tr("导出失败"));
+                d.setMessage(ok ? tr("录音已导出到：%1").arg(savePath)
+                                : tr("录音导出失败，请检查录音文件是否仍存在。"));
                 d.addButton(tr("确定"));
                 d.exec();
             }
