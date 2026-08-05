@@ -5,20 +5,20 @@
 ## Current Goal
 
 推进 **UOS速记 v1.1** 开发：Phase 3 周报日程联动（P3-T1/IDE-191）与待办日程化（P3-T2/IDE-192）已完成，
-Phase 4 体验增强仅剩 P4-T2 多紧凑窗口（IDE-194，实现完成待验收收口），完成后进入 Phase 5
-（v1.1 回归 + deb/玲珑打包 + Release Notes + 发布）。
+Phase 4 体验增强（P4-T1~T9）全部收口（P4-T2/IDE-194 已验收 done），剩余仅 P4-T9/IDE-201 i18n 在途，
+完成后进入 Phase 5（v1.1 回归 + deb/玲珑打包 + Release Notes + 发布）。
 
 - 看板父任务：IDE-181，子任务 IDE-182 ~ IDE-203（stage 1~6 = Phase 0~5）
-- 状态：**17 done / 3 in_progress / 2 todo**（2026-08-05）
-  - done：P0-T1~T3、P1-T1/T3、P2-T1~T3、P3-T1/T2、P4-T1、P4-T3~T8（IDE-182~193、195~200）
-  - in_progress：P1-T2（IDE-186 测试）、P4-T2（IDE-194）、P5-T1（IDE-202）
+- 状态：**18 done / 2 in_progress / 2 todo**（2026-08-05）
+  - done：P0-T1~T3、P1-T1/T3、P2-T1~T3、P3-T1/T2、P4-T1~T8（IDE-182~201 中除 186/201 外、202~200 均已 done）
+  - in_progress：P1-T2（IDE-186 测试）、P5-T1（IDE-202）
   - todo：P4-T9（IDE-201 i18n）、P5-T2（IDE-203）
 
 ## Active Branch
 
 - 分支：`feature/phase2-utility-tools`（upstream 已建立，push 直接用 `git push`）
 - 与 origin 同步：ahead **0** / behind **0**
-- HEAD：`d928bfb`（feat IDE-192 待办日程化——日历网格视图+拖拽改期+标签徽章）
+- HEAD：`0319cf9`（fix IDE-194 Esc 多窗口关闭迭代拷贝；IDE-192/194 均已收口 done）
 - Tag：`v1.0.0`（annotated，已推送 origin）
 - Remote：`git@github.com:zdbai6688/vibecodeing.git`（git 仓库根 = `/home/ut005200@uos`）
 
@@ -43,9 +43,9 @@ Phase 4 体验增强仅剩 P4-T2 多紧凑窗口（IDE-194，实现完成待验�
 
 **sdlc-build** — 按优先级推进：
 
-1. 收尾 **IDE-194**（P4-T2 多紧凑窗口，in_progress 待验收）：代码审查 + 构建验证后置 done，GUI 行为交测试
-2. P4-T9（IDE-201 i18n）——v1.1 唯一剩余功能项
-3. P1-T2（IDE-186 测试报告）、P5-T1（IDE-202 回归+打包）、P5-T2（IDE-203 Release Notes）
+1. **IDE-201**（P4-T9 i18n）——v1.1 最后一个功能项，完成后 Phase 4 全部收口
+2. **P1-T2**（IDE-186 测试报告）：对 IDE-191/192/193/194 的 GUI 用例逐项执行并出报告
+3. **P5-T1**（IDE-202 回归+打包）、P5-T2（IDE-203 Release Notes）
 
 ## Useful Commands
 
