@@ -363,7 +363,7 @@ extra-cmake-modules              # KF6GlobalAccel (Wayland)
 | P2-T2 | dev-plan.md 更新入库 + remaining-work.md 状态刷新 | 本计划 | S | P2-T1 | 文档与代码一致 |Done|
 | P2-T3 | 修复 AsrService unused-parameter 编译警告 | 梳理报告验证项 | S | P0-T2 | 构建 0 警告 |Done|
 | P3-T1 | 周报日程联动(Phase C): 周视图每日待办展示/点击详情/按标签统计/AI 周报标签维度 | IDE-163 C; spec §2.2 周报 | L | todo_tags 已就绪 | 周报页显示每日待办+标签完成率, AI 周报含标签维度; 新增单测 |Done|
-| P3-T2 | 待办 UI 对齐(Phase D): 日历网格/拖拽改期/标签徽章/简单卡片 | IDE-163 D; remaining #10 | L | P3-T1 | 待办按日期分布, 拖拽改期生效 | Pending |
+| P3-T2 | 待办 UI 对齐(Phase D): 日历网格/拖拽改期/标签徽章/简单卡片 | IDE-163 D; remaining #10 | L | P3-T1 | 待办按日期分布, 拖拽改期生效 |Done|
 | P4-T1 | 紧凑模式贴边自动隐藏 + 悬停重现 | remaining #5 | M | - | 拖到屏幕边缘自动隐藏 |In Progress|
 | P4-T2 | 多紧凑窗口(独立保存) | remaining #6 | L | P4-T1 | 多便签并存互不干扰 |In Progress|
 | P4-T3 | 全局快捷键自定义(设置页) | remaining #7 | M | - | 改键生效 |Done|
