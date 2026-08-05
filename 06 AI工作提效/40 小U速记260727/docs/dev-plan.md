@@ -372,7 +372,7 @@ extra-cmake-modules              # KF6GlobalAccel (Wayland)
 | P4-T6 | 导出统一走 ExportService(笔记/会议/周报) | remaining #11 | M | - | 导出路径单一 |Done|
 | P4-T7 | 回收站增强(批量恢复/永久删除/搜索) | remaining #12 | M | - | 批量操作+搜索可用 |Done|
 | P4-T8 | 编辑器撤销/重做 + 自动保存 + 字数统计 | remaining #19/20/21 | M | - | Ctrl+Z/Y, 自动保存, 字数显示 |Done|
-| P4-T9 | 国际化(ts/qm, 英文界面) | remaining #25 | L | - | 英文界面可切换 | Pending |
+| P4-T9 | 国际化(ts/qm, 英文界面) | remaining #25 | L | - | 英文界面可切换 | Done |
 | P5-T1 | v1.1 回归(单测+GUI) + deb/玲珑打包 | IDE-109/112 延续 | M | P3, P4 | ctest 全绿, deb/玲珑可安装 | Pending |
 | P5-T2 | Release Notes v1.1.0 + tag + 商店/Release 发布 | IDE-93 延续 | S | P5-T1 | 发布材料齐, tag 存在 | Pending |
 
@@ -402,16 +402,16 @@ extra-cmake-modules              # KF6GlobalAccel (Wayland)
 | P2-T1 | IDE-188 |Done|
 | P2-T2 | IDE-189 |Done|
 | P2-T3 | IDE-190 |Done|
-| P3-T1 | IDE-191 | Phase 3 |
-| P3-T2 | IDE-192 | Phase 3 |
-| P4-T1 | IDE-193 |In Progress|
-| P4-T2 | IDE-194 |In Progress|
+| P3-T1 | IDE-191 |Done|
+| P3-T2 | IDE-192 |Done|
+| P4-T1 | IDE-193 |Done|
+| P4-T2 | IDE-194 |Done|
 | P4-T3 | IDE-195 |Done|
 | P4-T4 | IDE-196 |Done|
 | P4-T5 | IDE-197 |Done|
 | P4-T6 | IDE-198 |Done|
 | P4-T7 | IDE-199 |Done|
 | P4-T8 | IDE-200 |Done|
-| P4-T9 | IDE-201 | Phase 4 |
-| P5-T1 | IDE-202 | Phase 5 |
+| P4-T9 | IDE-201 |Done|
+| P5-T1 | IDE-202 |In Progress|
 | P5-T2 | IDE-203 | Phase 5 |
