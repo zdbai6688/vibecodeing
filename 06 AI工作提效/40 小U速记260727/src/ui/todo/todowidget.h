@@ -39,12 +39,15 @@ public:
     void clearFilterTags();
     QStringList filterTags() const { return m_filterTags; }
     void focusNewTodoInput();
+    void setCalendarMode(bool on);
+    bool calendarMode() const { return m_calendarMode; }
 
 signals:
     void todoSelected(int todoId);
     void todoStatusChanged();
 
 private slots:
+    void onTodoDropped(int todoId, int dayIndex);
 
 private:
     void initUI();
@@ -61,10 +64,32 @@ private:
     void onBatchDelete();
     QList<int> getSelectedTodoIds() const;
 
+    // 日程网格视图（Phase D）
+    void initCalendarView();
+    void populateCalendarView(const QList<TodoData> &todos);
+    void updateCalendarWeekLabel();
+    void onCalendarPrevWeek();
+    void onCalendarNextWeek();
+    QWidget *createTodoCard(const TodoData &todo);
+
     QLineEdit *m_newTodoInput;
     QListWidget *m_pendingList;
     QListWidget *m_completedList;
+    QWidget *m_pendingHeader;
+    QWidget *m_completedHeader;
     QStringList m_filterTags;
+
+    // 日程网格视图控件
+    QPushButton *m_calendarToggleBtn;
+    QWidget *m_calendarView;
+    QLabel *m_calendarWeekLabel;
+    QPushButton *m_calendarPrevBtn;
+    QPushButton *m_calendarNextBtn;
+    QDate m_calendarMonday;
+    QList<QListWidget *> m_dayLists;   // 周一~周日 7 列
+    QList<QLabel *> m_calendarDateLabels; // 各列日期数字（今日高亮）
+    QListWidget *m_unscheduledList;    // 未安排（无截止日期 + 其他周）
+    bool m_calendarMode = false;
 
     // 批量操作控件
     bool m_multiSelectMode = false;

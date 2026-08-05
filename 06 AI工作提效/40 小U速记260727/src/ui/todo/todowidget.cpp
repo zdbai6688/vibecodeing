@@ -10,14 +10,164 @@
 #include <QRegularExpression>
 #include <QDateTime>
 #include <QMessageBox>
+#include <QApplication>
+#include <QDrag>
+#include <QMimeData>
+#include <QPixmap>
+#include <QMouseEvent>
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
+#include <QPalette>
 #include <DLabel>
 #include <DFontSizeManager>
+
+// ─── 日程视图本地控件 ────────────────────────────────
+// 简单待办卡片：完成勾选 + 标题 + 彩色标签徽章，支持拖拽改期
+class TodoCard : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit TodoCard(const TodoData &todo, QWidget *parent = nullptr)
+        : QWidget(parent), m_todoId(todo.id)
+    {
+        setStyleSheet("TodoCard { background: palette(light); border-radius: 6px; }");
+        QHBoxLayout *h = new QHBoxLayout(this);
+        h->setContentsMargins(8, 3, 8, 3);
+        h->setSpacing(6);
+
+        QCheckBox *cb = new QCheckBox(this);
+        cb->setObjectName("cardCheck");
+        cb->setChecked(todo.isCompleted);
+        cb->setFixedSize(16, 16);
+        cb->setFocusPolicy(Qt::NoFocus);
+        h->addWidget(cb);
+
+        DLabel *title = new DLabel(todo.title.isEmpty() ? tr("无标题") : todo.title, this);
+        title->setWordWrap(true);
+        title->setStyleSheet(todo.isCompleted
+            ? "font-size: 12px; color: palette(placeholderText); text-decoration: line-through;"
+            : "font-size: 12px; color: palette(windowText);");
+        h->addWidget(title, 1);
+
+        QStringList tagNames = todo.tags;
+        if (tagNames.isEmpty() && !todo.tag.isEmpty()) tagNames << todo.tag;
+        if (!tagNames.isEmpty()) {
+            auto *app = ShorthandApplication::instance();
+            QList<TagData> allTags = app->tagManager()->getAllTags();
+            for (const QString &tn : tagNames) {
+                QString color = "#2178E5";
+                for (const auto &t : allTags) {
+                    if (t.name == tn) { color = t.color; break; }
+                }
+                QLabel *badge = new QLabel(tn, this);
+                badge->setFixedHeight(16);
+                badge->setStyleSheet(QString(
+                    "QLabel { background: %1; color: white; font-size: 9px; font-weight: 600;"
+                    " border-radius: 8px; padding: 0 5px; }").arg(color));
+                h->addWidget(badge);
+            }
+        }
+
+        connect(cb, &QCheckBox::toggled, this, [this](bool checked) {
+            emit completedToggled(m_todoId, checked);
+        });
+    }
+
+    int todoId() const { return m_todoId; }
+
+signals:
+    void completedToggled(int todoId, bool checked);
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override
+    {
+        if (event->button() == Qt::LeftButton) m_startPos = event->pos();
+        QWidget::mousePressEvent(event);
+    }
+
+    void mouseMoveEvent(QMouseEvent *event) override
+    {
+        if (!(event->buttons() & Qt::LeftButton)
+            || (event->pos() - m_startPos).manhattanLength() < QApplication::startDragDistance()) {
+            QWidget::mouseMoveEvent(event);
+            return;
+        }
+        QDrag *drag = new QDrag(this);
+        QMimeData *mime = new QMimeData();
+        mime->setData(QStringLiteral("application/x-ustodo-card"), QByteArray::number(m_todoId));
+        drag->setMimeData(mime);
+        QPixmap pm = grab();
+        drag->setPixmap(pm);
+        drag->setHotSpot(QPoint(pm.width() / 2, 10));
+        drag->exec(Qt::MoveAction);
+    }
+
+private:
+    int m_todoId;
+    QPoint m_startPos;
+};
+
+// 可接收待办卡片的日期列（dayIndex: 0~6 = 周一~周日，-1 = 未安排列）
+class TodoDayList : public QListWidget
+{
+    Q_OBJECT
+public:
+    explicit TodoDayList(int dayIndex, QWidget *parent = nullptr)
+        : QListWidget(parent), m_dayIndex(dayIndex)
+    {
+        setAcceptDrops(true);
+        setDropIndicatorShown(true);
+        setDefaultDropAction(Qt::MoveAction);
+    }
+
+signals:
+    void dropTodo(int todoId, int dayIndex);
+
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override
+    {
+        if (event->mimeData()->hasFormat(QStringLiteral("application/x-ustodo-card")))
+            event->acceptProposedAction();
+        else
+            event->ignore();
+    }
+
+    void dragMoveEvent(QDragMoveEvent *event) override
+    {
+        if (event->mimeData()->hasFormat(QStringLiteral("application/x-ustodo-card")))
+            event->acceptProposedAction();
+        else
+            event->ignore();
+    }
+
+    void dropEvent(QDropEvent *event) override
+    {
+        if (!event->mimeData()->hasFormat(QStringLiteral("application/x-ustodo-card"))) {
+            event->ignore();
+            return;
+        }
+        bool ok = false;
+        int todoId = event->mimeData()->data(QStringLiteral("application/x-ustodo-card")).toInt(&ok);
+        if (ok && todoId > 0) {
+            emit dropTodo(todoId, m_dayIndex);
+            event->acceptProposedAction();
+        } else {
+            event->ignore();
+        }
+    }
+
+private:
+    int m_dayIndex;
+};
 
 // 待办列表：每条显示标题+创建时间+标签+复选框，未完成/已完成分区
 TodoWidget::TodoWidget(QWidget *parent)
     : QWidget(parent)
 {
     setStyleSheet("TodoWidget { background: palette(base); }");
+    QDate today = QDate::currentDate();
+    m_calendarMonday = today.addDays(-(int)today.dayOfWeek() + 1);
     initUI();
 }
 
@@ -62,6 +212,18 @@ void TodoWidget::initUI()
         "QPushButton:hover { background: palette(light); }"
         "QPushButton:checked { background: palette(highlight); color: white; border-color: palette(highlight); }");
     topRow->addWidget(m_selectModeBtn);
+
+    // 日程/列表视图切换按钮
+    m_calendarToggleBtn = new QPushButton(tr("🗓 日程视图"), this);
+    m_calendarToggleBtn->setCheckable(true);
+    m_calendarToggleBtn->setFixedHeight(36);
+    m_calendarToggleBtn->setFixedWidth(96);
+    m_calendarToggleBtn->setStyleSheet(
+        "QPushButton { border: 1px solid palette(mid); border-radius: 6px;"
+        " padding: 4px 8px; font-size: 12px; background: palette(base); }"
+        "QPushButton:hover { background: palette(light); }"
+        "QPushButton:checked { background: palette(highlight); color: white; border-color: palette(highlight); }");
+    topRow->addWidget(m_calendarToggleBtn);
 
     layout->addLayout(topRow);
 
@@ -147,7 +309,8 @@ void TodoWidget::initUI()
     });
 
     // 未完成列表（含分区标题）
-    layout->addWidget(createSectionHeader(tr("进行中"), "palette(highlight)"));
+    m_pendingHeader = createSectionHeader(tr("进行中"), "palette(highlight)");
+    layout->addWidget(m_pendingHeader);
     m_pendingList = new QListWidget(this);
     m_pendingList->setFrameShape(QFrame::NoFrame);
     m_pendingList->setSpacing(4);
@@ -160,7 +323,8 @@ void TodoWidget::initUI()
     layout->addWidget(m_pendingList);
 
     // 已完成列表（含分区标题）
-    layout->addWidget(createSectionHeader(tr("已完成"), "palette(placeholderText)"));
+    m_completedHeader = createSectionHeader(tr("已完成"), "palette(placeholderText)");
+    layout->addWidget(m_completedHeader);
     m_completedList = new QListWidget(this);
     m_completedList->setFrameShape(QFrame::NoFrame);
     m_completedList->setSpacing(4);
@@ -170,6 +334,9 @@ void TodoWidget::initUI()
         QListWidget::item:hover { background: palette(midlight); }
     )");
     layout->addWidget(m_completedList, 1);
+
+    // ─── 日程网格视图（默认隐藏，切换按钮开启） ──
+    layout->addWidget(m_calendarView, 1);
 
     // ─── 批量操作工具栏（底部，多选模式时显示） ──
     m_batchToolbar = new QWidget(this);
@@ -276,6 +443,13 @@ void TodoWidget::initUI()
 
     // 批量删除
     connect(m_batchDeleteBtn, &QPushButton::clicked, this, &TodoWidget::onBatchDelete);
+
+    // 日程/列表视图切换
+    connect(m_calendarToggleBtn, &QPushButton::toggled, this, [this](bool on) {
+        setCalendarMode(on);
+    });
+
+    initCalendarView();
 }
 
 void TodoWidget::enterMultiSelectMode()
@@ -367,6 +541,9 @@ void TodoWidget::showTodoContextMenu(QListWidget *list, const QPoint &pos)
         emit todoStatusChanged();
         refresh();
     });
+
+    QAction *dueAction = menu.addAction(tr("设置截止日期"));
+    connect(dueAction, &QAction::triggered, this, [this, todoId]() { setTodoDueDate(todoId); });
 
     menu.addSeparator();
 
@@ -546,7 +723,11 @@ void TodoWidget::refresh()
         }), all.end());
     }
 
-    populateList(all);
+    if (m_calendarMode) {
+        populateCalendarView(all);
+    } else {
+        populateList(all);
+    }
 }
 
 void TodoWidget::selectTodo(int todoId)
@@ -570,3 +751,220 @@ void TodoWidget::focusNewTodoInput()
     m_newTodoInput->setFocus();
     m_newTodoInput->selectAll();
 }
+
+// ─── 日程网格视图（Phase D） ──────────────────────────
+void TodoWidget::setCalendarMode(bool on)
+{
+    m_calendarMode = on;
+    if (m_calendarToggleBtn) {
+        m_calendarToggleBtn->setText(on ? tr("☰ 列表视图") : tr("🗓 日程视图"));
+    }
+    if (m_pendingHeader) m_pendingHeader->setVisible(!on);
+    if (m_pendingList) m_pendingList->setVisible(!on);
+    if (m_completedHeader) m_completedHeader->setVisible(!on);
+    if (m_completedList) m_completedList->setVisible(!on);
+    if (m_calendarView) m_calendarView->setVisible(on);
+    if (m_selectModeBtn) m_selectModeBtn->setVisible(!on);
+    if (m_batchToolbar) m_batchToolbar->setVisible(!on && m_multiSelectMode);
+    refresh();
+}
+
+void TodoWidget::initCalendarView()
+{
+    m_calendarView = new QWidget(this);
+    QVBoxLayout *calLayout = new QVBoxLayout(m_calendarView);
+    calLayout->setContentsMargins(0, 0, 0, 0);
+    calLayout->setSpacing(8);
+
+    // 周导航
+    QHBoxLayout *navRow = new QHBoxLayout();
+    navRow->setSpacing(8);
+    m_calendarPrevBtn = new QPushButton(tr("◀ 上一周"), m_calendarView);
+    m_calendarPrevBtn->setFixedHeight(30);
+    m_calendarPrevBtn->setStyleSheet(
+        "QPushButton { background: transparent; border: 1px solid palette(mid); border-radius: 6px;"
+        " padding: 2px 12px; font-size: 12px; color: palette(windowText); }"
+        "QPushButton:hover { border-color: palette(highlight); color: palette(highlight); }");
+    m_calendarNextBtn = new QPushButton(tr("下一周 ▶"), m_calendarView);
+    m_calendarNextBtn->setFixedHeight(30);
+    m_calendarNextBtn->setStyleSheet(m_calendarPrevBtn->styleSheet());
+    m_calendarWeekLabel = new QLabel(m_calendarView);
+    m_calendarWeekLabel->setAlignment(Qt::AlignCenter);
+    m_calendarWeekLabel->setStyleSheet("font-size: 13px; font-weight: 700; color: palette(windowText);");
+    navRow->addWidget(m_calendarPrevBtn);
+    navRow->addWidget(m_calendarWeekLabel, 1);
+    navRow->addWidget(m_calendarNextBtn);
+    calLayout->addLayout(navRow);
+
+    connect(m_calendarPrevBtn, &QPushButton::clicked, this, &TodoWidget::onCalendarPrevWeek);
+    connect(m_calendarNextBtn, &QPushButton::clicked, this, &TodoWidget::onCalendarNextWeek);
+
+    // 7 列网格：周一~周日
+    QStringList dayNames = {tr("周一"), tr("周二"), tr("周三"), tr("周四"), tr("周五"), tr("周六"), tr("周日")};
+    QHBoxLayout *gridLayout = new QHBoxLayout();
+    gridLayout->setSpacing(6);
+    for (int i = 0; i < 7; ++i) {
+        QWidget *col = new QWidget(m_calendarView);
+        QVBoxLayout *colLayout = new QVBoxLayout(col);
+        colLayout->setContentsMargins(0, 0, 0, 0);
+        colLayout->setSpacing(4);
+
+        DLabel *weekday = new DLabel(dayNames[i], col);
+        weekday->setAlignment(Qt::AlignCenter);
+        weekday->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
+        colLayout->addWidget(weekday);
+
+        QLabel *dateNum = new QLabel(col);
+        dateNum->setAlignment(Qt::AlignCenter);
+        dateNum->setFixedSize(26, 26);
+        dateNum->setStyleSheet("font-size: 11px; font-weight: 600; color: palette(windowText); border-radius: 13px;");
+        colLayout->addWidget(dateNum, 0, Qt::AlignHCenter);
+        m_calendarDateLabels.append(dateNum);
+
+        TodoDayList *list = new TodoDayList(i, col);
+        list->setFrameShape(QFrame::NoFrame);
+        list->setSpacing(2);
+        list->setStyleSheet(R"(
+            QListWidget { background: palette(alternateBase); border: 1px solid palette(mid); border-radius: 6px; padding: 2px; }
+            QListWidget::item { border-radius: 6px; background: transparent; margin: 1px 0; }
+            QListWidget::item:selected { background: palette(highlight); }
+        )");
+        connect(list, &TodoDayList::dropTodo, this, [this](int todoId, int dayIndex) {
+            onTodoDropped(todoId, dayIndex);
+        });
+        colLayout->addWidget(list, 1);
+        m_dayLists.append(list);
+        gridLayout->addWidget(col, 1);
+    }
+    calLayout->addLayout(gridLayout, 1);
+
+    // 未安排/其他周列表
+    DLabel *unschedTitle = new DLabel(tr("📌 未安排 / 其他周"), m_calendarView);
+    unschedTitle->setStyleSheet("font-size: 11px; font-weight: 600; color: palette(placeholderText);");
+    calLayout->addWidget(unschedTitle);
+
+    m_unscheduledList = new TodoDayList(-1, m_calendarView);
+    m_unscheduledList->setFrameShape(QFrame::NoFrame);
+    m_unscheduledList->setSpacing(2);
+    m_unscheduledList->setStyleSheet(
+        "QListWidget { background: palette(alternateBase); border: 1px dashed palette(mid); border-radius: 6px; padding: 2px; }"
+        "QListWidget::item { border-radius: 6px; background: transparent; margin: 1px 0; }"
+        "QListWidget::item:selected { background: palette(highlight); }");
+    m_unscheduledList->setFixedHeight(150);
+    connect(qobject_cast<TodoDayList *>(m_unscheduledList), &TodoDayList::dropTodo, this,
+            [this](int todoId, int dayIndex) {
+                onTodoDropped(todoId, dayIndex);
+            });
+    calLayout->addWidget(m_unscheduledList);
+
+    m_calendarView->hide();
+}
+
+void TodoWidget::updateCalendarWeekLabel()
+{
+    if (!m_calendarWeekLabel || !m_calendarNextBtn) return;
+    QDate sunday = m_calendarMonday.addDays(6);
+    m_calendarWeekLabel->setText(QString("%1 ~ %2").arg(
+        m_calendarMonday.toString("yyyy-MM-dd"), sunday.toString("yyyy-MM-dd")));
+    QDate thisMonday = QDate::currentDate().addDays(-(int)QDate::currentDate().dayOfWeek() + 1);
+    m_calendarNextBtn->setEnabled(m_calendarMonday < thisMonday);
+}
+
+void TodoWidget::populateCalendarView(const QList<TodoData> &todos)
+{
+    for (QListWidget *list : m_dayLists) list->clear();
+    m_unscheduledList->clear();
+
+    QDate today = QDate::currentDate();
+    for (int i = 0; i < 7; ++i) {
+        QLabel *label = m_calendarDateLabels.value(i);
+        if (!label) continue;
+        QDate d = m_calendarMonday.addDays(i);
+        label->setText(QString::number(d.day()));
+        const bool isToday = (d == today);
+        label->setStyleSheet(isToday
+            ? "font-size: 11px; font-weight: 700; color: white; background: palette(highlight); border-radius: 13px;"
+            : "font-size: 11px; font-weight: 600; color: palette(windowText); border-radius: 13px;");
+    }
+    updateCalendarWeekLabel();
+
+    const QDate weekEnd = m_calendarMonday.addDays(6);
+    for (const TodoData &t : todos) {
+        QListWidget *target = nullptr;
+        if (t.dueDatetime > 0) {
+            QDate due = QDateTime::fromSecsSinceEpoch(t.dueDatetime).date();
+            if (due >= m_calendarMonday && due <= weekEnd) {
+                target = m_dayLists.value(m_calendarMonday.daysTo(due));
+            }
+        }
+        if (!target) target = m_unscheduledList;
+
+        QWidget *card = createTodoCard(t);
+        QListWidgetItem *item = new QListWidgetItem(target);
+        item->setData(Qt::UserRole, t.id);
+        item->setSizeHint(QSize(0, 46));
+        target->setItemWidget(item, card);
+    }
+
+    // 空列提示
+    auto addEmptyHint = [this](QListWidget *list, const QString &text) {
+        if (list->count() == 0) {
+            QListWidgetItem *hint = new QListWidgetItem(text, list);
+            hint->setFlags(Qt::NoItemFlags);
+            hint->setForeground(palette().color(QPalette::PlaceholderText));
+            hint->setTextAlignment(Qt::AlignCenter);
+        }
+    };
+    for (QListWidget *list : m_dayLists) addEmptyHint(list, tr("—"));
+    addEmptyHint(m_unscheduledList, tr("拖到此处清除截止日期"));
+}
+
+void TodoWidget::onCalendarPrevWeek()
+{
+    m_calendarMonday = m_calendarMonday.addDays(-7);
+    refresh();
+}
+
+void TodoWidget::onCalendarNextWeek()
+{
+    QDate nextMonday = m_calendarMonday.addDays(7);
+    QDate thisMonday = QDate::currentDate().addDays(-(int)QDate::currentDate().dayOfWeek() + 1);
+    if (nextMonday <= thisMonday) {
+        m_calendarMonday = nextMonday;
+        refresh();
+    }
+}
+
+QWidget *TodoWidget::createTodoCard(const TodoData &todo)
+{
+    TodoCard *card = new TodoCard(todo, this);
+    connect(card, &TodoCard::completedToggled, this, [this](int todoId, bool checked) {
+        auto *app = ShorthandApplication::instance();
+        if (app && app->todoManager()) {
+            app->todoManager()->toggleComplete(todoId, checked);
+            emit todoStatusChanged();
+        }
+        refresh();
+    });
+    return card;
+}
+
+void TodoWidget::onTodoDropped(int todoId, int dayIndex)
+{
+    auto *app = ShorthandApplication::instance();
+    if (!app || !app->todoManager()) return;
+    TodoData todo = app->todoManager()->getTodo(todoId);
+    if (todo.id <= 0) return;
+
+    if (dayIndex >= 0 && dayIndex < 7) {
+        QDate targetDate = m_calendarMonday.addDays(dayIndex);
+        todo.dueDatetime = QDateTime(targetDate, QTime(23, 59, 59)).toSecsSinceEpoch();
+    } else {
+        todo.dueDatetime = 0; // 拖到未安排列：清除截止日期
+    }
+    todo.modificationDatetime = QDateTime::currentSecsSinceEpoch();
+    app->todoManager()->updateTodo(todo);
+    refresh();
+}
+
+#include "todowidget.moc"
