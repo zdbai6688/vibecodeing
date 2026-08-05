@@ -5,6 +5,7 @@
 #include "application/shorthandapplication.h"
 #include "core/notemanager.h"
 #include "core/tagmanager.h"
+#include "ui/edgeautohide.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -91,6 +92,7 @@ StickyNoteCard::StickyNoteCard(const NoteData &note, QWidget *parent)
     m_saveTimer->setInterval(800);
     connect(m_saveTimer, &QTimer::timeout, this, &StickyNoteCard::onTextChanged);
 
+    m_edgeHide = new EdgeAutoHide(this, this);
     initUI();
     setupMenu();
 }
@@ -230,6 +232,11 @@ void StickyNoteCard::updateStyleSheet()
     update();
 }
 
+bool StickyNoteCard::isEdgeDocked() const
+{
+    return m_edgeHide && m_edgeHide->isDocked();
+}
+
 void StickyNoteCard::fadeIn(int ms)
 {
     show();
@@ -316,6 +323,10 @@ void StickyNoteCard::mousePressEvent(QMouseEvent *event)
             m_isDragging = true;
             m_dragStartPos = localPos;
             m_dragStartGlobal = event->globalPosition().toPoint();
+            if (m_edgeHide) {
+                m_edgeHide->startDrag(event->globalPosition().toPoint());
+                grabMouse();
+            }
         }
     }
     QWidget::mousePressEvent(event);
@@ -329,19 +340,30 @@ void StickyNoteCard::mouseMoveEvent(QMouseEvent *event)
         newSize = newSize.expandedTo(minimumSize()).boundedTo(maximumSize());
         resize(newSize);
     } else if (m_isDragging) {
-        QPoint delta = event->globalPosition().toPoint() - m_dragStartGlobal;
-        move(pos() + delta);
-        m_dragStartGlobal = event->globalPosition().toPoint();
+        if (m_edgeHide) {
+            m_edgeHide->dragTo(event->globalPosition().toPoint());
+        } else {
+            QPoint delta = event->globalPosition().toPoint() - m_dragStartGlobal;
+            move(pos() + delta);
+            m_dragStartGlobal = event->globalPosition().toPoint();
+        }
     }
     QWidget::mouseMoveEvent(event);
 }
 
 void StickyNoteCard::mouseReleaseEvent(QMouseEvent *event)
 {
+    const bool hadDrag = m_isDragging;
     m_isDragging = false;
     m_isResizing = false;
-    // Emit geometry changed after drag/resize
+    if (hadDrag) {
+        releaseMouse();
+    }
+    // 先保存拖拽/缩放后的可见位置，再检测贴边隐藏
     emit geometryChanged(m_noteData.id);
+    if (m_edgeHide) {
+        m_edgeHide->endDrag();
+    }
     QWidget::mouseReleaseEvent(event);
 }
 

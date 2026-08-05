@@ -276,6 +276,10 @@ void DesktopModeManager::saveGeometry()
 
     for (auto it = m_stickyCards.begin(); it != m_stickyCards.end(); ++it) {
         StickyNoteCard *card = it.value();
+        // 贴边隐藏中的卡片位置在屏幕外，不持久化，避免下次启动恢复成"消失"状态
+        if (card->isEdgeDocked()) {
+            continue;
+        }
         QRect geo = card->geometry();
         QSqlQuery query(app->database()->connection());
         query.prepare(R"(

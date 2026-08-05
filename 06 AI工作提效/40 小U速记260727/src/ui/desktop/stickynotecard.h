@@ -12,6 +12,8 @@
 #include <QPoint>
 #include "storage/notestorage.h"
 
+class EdgeAutoHide;
+
 class StickyNoteCard : public QWidget
 {
     Q_OBJECT
@@ -24,6 +26,7 @@ public:
     void setCardColor(const QString &color);
     QString cardColor() const { return m_cardColor; }
     int noteId() const { return m_noteData.id; }
+    bool isEdgeDocked() const;
 
     // Animations
     void fadeIn(int ms = 200);
@@ -79,6 +82,9 @@ private:
 
     // Debounce timer for auto-save
     QTimer *m_saveTimer;
+
+    // 贴边自动隐藏助手（P4-T1）
+    EdgeAutoHide *m_edgeHide = nullptr;
 };
 
 #endif // STICKYNOTECARD_H

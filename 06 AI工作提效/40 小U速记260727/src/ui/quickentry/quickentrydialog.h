@@ -17,6 +17,9 @@
 #include <QFocusEvent>
 #include <QStackedWidget>
 #include <DSwitchButton>
+#include <QMouseEvent>
+
+class EdgeAutoHide;
 
 DWIDGET_USE_NAMESPACE
 
@@ -45,6 +48,9 @@ signals:
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
     void focusOutEvent(QFocusEvent *event) override;
     void showEvent(QShowEvent *event) override;
     void changeEvent(QEvent *event) override;
@@ -88,6 +94,9 @@ private:
     QPushButton *m_expandBtn;
     QPushButton *m_compactBtn;
     QPushButton *m_pinToDesktopBtn;
+    QWidget *m_dragBarCompact;
+    QWidget *m_dragBarFull;
+    EdgeAutoHide *m_edgeHide;
     DSwitchButton *m_continuousSwitch;
     QFrame *m_bottomBar;
     bool m_compactMode = true;

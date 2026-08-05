@@ -61,6 +61,8 @@ set(SOURCES
     src/ui/editor/markdownhighlighter.cpp
     # UI - 快速录入
     src/ui/quickentry/quickentrydialog.cpp
+    # UI - 贴边自动隐藏
+    src/ui/edgeautohide.cpp
     # UI - 桌面模式
     src/ui/desktop/stickynotecard.cpp
     src/ui/desktop/desktopmodemanager.cpp
@@ -109,6 +111,7 @@ set(HEADERS
     src/ui/editor/noteeditorwidget.h
     src/ui/editor/markdownhighlighter.h
     src/ui/quickentry/quickentrydialog.h
+    src/ui/edgeautohide.h
     src/ui/desktop/stickynotecard.h
     src/ui/desktop/desktopmodemanager.h
     src/ui/meeting/meetingwidget.h

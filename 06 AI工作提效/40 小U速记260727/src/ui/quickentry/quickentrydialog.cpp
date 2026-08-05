@@ -7,6 +7,7 @@
 #include "core/todomanager.h"
 #include "core/tagmanager.h"
 #include "ui/desktop/desktopmodemanager.h"
+#include "ui/edgeautohide.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -130,8 +131,12 @@ void QuickEntryDialog::initCompactUI()
     layout->setContentsMargins(12, 8, 12, 8);
     layout->setSpacing(6);
 
-    // Top row: expand + continuous switch + close
+    // Top row: drag handle + expand + continuous switch + close
     QHBoxLayout *topRow = new QHBoxLayout();
+    m_dragBarCompact = new DragHandle(m_edgeHide, this);
+    m_dragBarCompact->setObjectName("compactBtn");
+    topRow->addWidget(m_dragBarCompact);
+
     m_expandBtn = new QPushButton(tr("□"), this);
     m_expandBtn->setObjectName("compactBtn");
     m_expandBtn->setToolTip(tr("展开"));
@@ -237,6 +242,10 @@ void QuickEntryDialog::initFullUI()
     layout->setSpacing(6);
 
     QHBoxLayout *topRow = new QHBoxLayout();
+    m_dragBarFull = new DragHandle(m_edgeHide, this);
+    m_dragBarFull->setObjectName("compactBtn");
+    topRow->addWidget(m_dragBarFull);
+
     QPushButton *compactToggleBtn = new QPushButton(tr("−"), this);
     compactToggleBtn->setObjectName("compactBtn");
     compactToggleBtn->setToolTip(tr("收缩"));
@@ -356,6 +365,9 @@ void QuickEntryDialog::showFull() {}
 
 void QuickEntryDialog::centerOnScreen()
 {
+    if (m_edgeHide) {
+        m_edgeHide->cancelDock();
+    }
     QScreen *screen = QGuiApplication::primaryScreen();
     if (!screen) return;
     QRect screenGeo = screen->availableGeometry();
@@ -488,6 +500,39 @@ void QuickEntryDialog::changeEvent(QEvent *event)
         }
     }
     QWidget::changeEvent(event);
+}
+
+void QuickEntryDialog::mousePressEvent(QMouseEvent *event)
+{
+    // 点击窗口空白区域即可拖动窗口（按钮/输入框等子控件会先消费事件）
+    if (event->button() == Qt::LeftButton && !m_hidden && m_edgeHide) {
+        m_edgeHide->startDrag(event->globalPosition().toPoint());
+        grabMouse();
+        event->accept();
+        return;
+    }
+    QWidget::mousePressEvent(event);
+}
+
+void QuickEntryDialog::mouseMoveEvent(QMouseEvent *event)
+{
+    if (m_edgeHide) {
+        m_edgeHide->dragTo(event->globalPosition().toPoint());
+        event->accept();
+        return;
+    }
+    QWidget::mouseMoveEvent(event);
+}
+
+void QuickEntryDialog::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton && m_edgeHide) {
+        releaseMouse();
+        m_edgeHide->endDrag();
+        event->accept();
+        return;
+    }
+    QWidget::mouseReleaseEvent(event);
 }
 
 QString QuickEntryDialog::parseTags(const QString &text, QStringList &outTags)
