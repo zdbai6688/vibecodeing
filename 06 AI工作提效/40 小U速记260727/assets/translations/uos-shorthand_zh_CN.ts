@@ -1,0 +1,254 @@
+<!DOCTYPE TS>
+<TS version="2.1" language="zh_CN">
+<context>
+    <name>MainWindow</name>
+    <message>
+        <source>UOS速记</source>
+        <translation>UOS速记</translation>
+    </message>
+    <message>
+        <source>搜索笔记/待办...</source>
+        <translation>搜索笔记/待办...</translation>
+    </message>
+    <message>
+        <source>新建笔记 (Ctrl+N)</source>
+        <translation>新建笔记 (Ctrl+N)</translation>
+    </message>
+    <message>
+        <source>就绪</source>
+        <translation>就绪</translation>
+    </message>
+    <message>
+        <source>笔记已创建</source>
+        <translation>笔记已创建</translation>
+    </message>
+    <message>
+        <source>全部笔记</source>
+        <translation>全部笔记</translation>
+    </message>
+    <message>
+        <source>待办事项</source>
+        <translation>待办事项</translation>
+    </message>
+    <message>
+        <source>回收站</source>
+        <translation>回收站</translation>
+    </message>
+    <message>
+        <source>标签: %1</source>
+        <translation>标签: %1</translation>
+    </message>
+    <message>
+        <source>设置</source>
+        <translation>设置</translation>
+    </message>
+</context>
+<context>
+    <name>NoteEditorWidget</name>
+    <message>
+        <source>无标签</source>
+        <translation>无标签</translation>
+    </message>
+    <message>
+        <source>输入标题...</source>
+        <translation>输入标题...</translation>
+    </message>
+    <message>
+        <source>开始输入内容 ...</source>
+        <translation>开始输入内容 ...</translation>
+    </message>
+    <message>
+        <source>无标题笔记</source>
+        <translation>无标题笔记</translation>
+    </message>
+    <message>
+        <source>确认删除</source>
+        <translation>确认删除</translation>
+    </message>
+    <message>
+        <source>确定要删除这条笔记吗？可在回收站中恢复。</source>
+        <translation>确定要删除这条笔记吗？可在回收站中恢复。</translation>
+    </message>
+    <message>
+        <source>取消</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>删除</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <source>转为笔记</source>
+        <translation>转为笔记</translation>
+    </message>
+    <message>
+        <source>转为待办</source>
+        <translation>转为待办</translation>
+    </message>
+</context>
+<context>
+    <name>QuickEntryDialog</name>
+    <message>
+        <source>快速记录</source>
+        <translation>快速记录</translation>
+    </message>
+    <message>
+        <source>标题（可选）</source>
+        <translation>标题（可选）</translation>
+    </message>
+    <message>
+        <source>输入内容...</source>
+        <translation>输入内容...</translation>
+    </message>
+    <message>
+        <source>取消 (Esc)</source>
+        <translation>取消 (Esc)</translation>
+    </message>
+    <message>
+        <source>语音输入</source>
+        <translation>语音输入</translation>
+    </message>
+    <message>
+        <source>截图录入</source>
+        <translation>截图录入</translation>
+    </message>
+</context>
+<context>
+    <name>TrayManager</name>
+    <message>
+        <source>UOS速记</source>
+        <translation>UOS速记</translation>
+    </message>
+    <message>
+        <source>打开速记</source>
+        <translation>打开速记</translation>
+    </message>
+    <message>
+        <source>快速录入</source>
+        <translation>快速录入</translation>
+    </message>
+    <message>
+        <source>退出</source>
+        <translation>退出</translation>
+    </message>
+    <message>
+        <source>待办提醒</source>
+        <translation>待办提醒</translation>
+    </message>
+</context>
+<context>
+    <name>SidebarWidget</name>
+    <message>
+        <source>导航</source>
+        <translation>导航</translation>
+    </message>
+    <message>
+        <source>全部笔记</source>
+        <translation>全部笔记</translation>
+    </message>
+    <message>
+        <source>待办事项</source>
+        <translation>待办事项</translation>
+    </message>
+    <message>
+        <source>回收站</source>
+        <translation>回收站</translation>
+    </message>
+    <message>
+        <source>设置</source>
+        <translation>设置</translation>
+    </message>
+    <message>
+        <source>标签</source>
+        <translation>标签</translation>
+    </message>
+</context>
+<context>
+    <name>NoteListWidget</name>
+    <message>
+        <source>暂无内容</source>
+        <translation>暂无内容</translation>
+    </message>
+    <message>
+        <source>无标题</source>
+        <translation>无标题</translation>
+    </message>
+</context>
+<context>
+    <name>TodoWidget</name>
+    <message>
+        <source>今日待办</source>
+        <translation>今日待办</translation>
+    </message>
+    <message>
+        <source>逾期待办</source>
+        <translation>逾期待办</translation>
+    </message>
+    <message>
+        <source>本周待办</source>
+        <translation>本周待办</translation>
+    </message>
+    <message>
+        <source>已完成</source>
+        <translation>已完成</translation>
+    </message>
+    <message>
+        <source>今天没有待办</source>
+        <translation>今天没有待办</translation>
+    </message>
+    <message>
+        <source>没有逾期待办</source>
+        <translation>没有逾期待办</translation>
+    </message>
+    <message>
+        <source>本周没有其他待办</source>
+        <translation>本周没有其他待办</translation>
+    </message>
+    <message>
+        <source>没有已完成待办</source>
+        <translation>没有已完成待办</translation>
+    </message>
+    <message>
+        <source>无标题</source>
+        <translation>无标题</translation>
+    </message>
+</context>
+<context>
+    <name>SettingsWidget</name>
+    <message>
+        <source>设置</source>
+        <translation>设置</translation>
+    </message>
+    <message>
+        <source>通用</source>
+        <translation>通用</translation>
+    </message>
+    <message>
+        <source>开机自启</source>
+        <translation>开机自启</translation>
+    </message>
+    <message>
+        <source>启用系统托盘通知</source>
+        <translation>启用系统托盘通知</translation>
+    </message>
+    <message>
+        <source>待办提醒</source>
+        <translation>待办提醒</translation>
+    </message>
+    <message>
+        <source>检查间隔（分钟）</source>
+        <translation>检查间隔（分钟）</translation>
+    </message>
+    <message>
+        <source> 分钟</source>
+        <translation> 分钟</translation>
+    </message>
+</context>
+<context>
+    <name>ShorthandApplication</name>
+    <message>
+        <source>UOS速记</source>
+        <translation>UOS速记</translation>
+    </message>
+</context>
+</TS>

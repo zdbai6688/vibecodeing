@@ -1,0 +1,24 @@
+# ===== 构建产物（可重新生成，不入库）=====
+build/
+build-check/
+build-regression/
+build-tests/
+build2/
+build3/
+build4/
+
+# ===== 备份/临时文件 =====
+*.bak*
+
+# ===== whisper 运行时库/模型（体积大；仅跟踪 CMakeLists.txt 直接链接的 4 个 .so）=====
+whisper/ggml-tiny.bin
+whisper/libggml-base.so.0*
+whisper/libggml-cpu.so.0*
+whisper/libggml.so.0*
+whisper/libwhisper.so.1*
+
+# ===== 归档文件 =====
+麒麟速记.tar.gz
+
+# ===== 测试产物/截图 =====
+test-artifacts/

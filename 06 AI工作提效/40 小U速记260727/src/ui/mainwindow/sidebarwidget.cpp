@@ -232,43 +232,6 @@ void SidebarWidget::initUI()
     sectionArchive->setFont(fa);
     archiveLayout->addWidget(sectionArchive);
 
-    m_btnTrash = new QPushButton(this);
-    m_btnTrash->setObjectName("navBtn");
-    m_btnTrash->setCheckable(true);
-    m_btnTrash->setCursor(Qt::PointingHandCursor);
-    m_btnTrash->setFixedHeight(34);
-    QHBoxLayout *trashLayout = new QHBoxLayout(m_btnTrash);
-    trashLayout->setContentsMargins(10, 0, 10, 0);
-    trashLayout->setSpacing(6);
-    QLabel *trashIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x97\x91"), m_btnTrash);
-    trashIcon->setObjectName("navIcon");
-    trashIcon->setFixedSize(20, 20);
-    trashIcon->setAlignment(Qt::AlignCenter);
-    QLabel *trashText = new QLabel(tr("最近删除"), m_btnTrash);
-    trashText->setObjectName("navText");
-    trashLayout->addWidget(trashIcon);
-    trashLayout->addWidget(trashText, 1);
-    archiveLayout->addWidget(m_btnTrash);
-
-    // 周报按钮（靠后位置，与已完成待办一起放在归档组）
-    m_btnWeekly = new QPushButton(this);
-    m_btnWeekly->setObjectName("navBtn");
-    m_btnWeekly->setCheckable(true);
-    m_btnWeekly->setCursor(Qt::PointingHandCursor);
-    m_btnWeekly->setFixedHeight(34);
-    QHBoxLayout *weeklyLayout = new QHBoxLayout(m_btnWeekly);
-    weeklyLayout->setContentsMargins(10, 0, 10, 0);
-    weeklyLayout->setSpacing(6);
-    QLabel *weeklyIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x93\x8A"), m_btnWeekly);
-    weeklyIcon->setObjectName("navIcon");
-    weeklyIcon->setFixedSize(20, 20);
-    weeklyIcon->setAlignment(Qt::AlignCenter);
-    QLabel *weeklyText = new QLabel(tr("周报"), m_btnWeekly);
-    weeklyText->setObjectName("navText");
-    weeklyLayout->addWidget(weeklyIcon);
-    weeklyLayout->addWidget(weeklyText, 1);
-    archiveLayout->addWidget(m_btnWeekly);
-
     // 已完成待办按钮（靠后位置）
     m_btnCompleted = new QPushButton(this);
     m_btnCompleted->setObjectName("navBtn");
@@ -287,6 +250,43 @@ void SidebarWidget::initUI()
     completedLayout->addWidget(completedIcon);
     completedLayout->addWidget(completedText, 1);
     archiveLayout->addWidget(m_btnCompleted);
+
+    // 周报按钮
+    m_btnWeekly = new QPushButton(this);
+    m_btnWeekly->setObjectName("navBtn");
+    m_btnWeekly->setCheckable(true);
+    m_btnWeekly->setCursor(Qt::PointingHandCursor);
+    m_btnWeekly->setFixedHeight(34);
+    QHBoxLayout *weeklyLayout = new QHBoxLayout(m_btnWeekly);
+    weeklyLayout->setContentsMargins(10, 0, 10, 0);
+    weeklyLayout->setSpacing(6);
+    QLabel *weeklyIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x93\x8A"), m_btnWeekly);
+    weeklyIcon->setObjectName("navIcon");
+    weeklyIcon->setFixedSize(20, 20);
+    weeklyIcon->setAlignment(Qt::AlignCenter);
+    QLabel *weeklyText = new QLabel(tr("周报"), m_btnWeekly);
+    weeklyText->setObjectName("navText");
+    weeklyLayout->addWidget(weeklyIcon);
+    weeklyLayout->addWidget(weeklyText, 1);
+    archiveLayout->addWidget(m_btnWeekly);
+
+    m_btnTrash = new QPushButton(this);
+    m_btnTrash->setObjectName("navBtn");
+    m_btnTrash->setCheckable(true);
+    m_btnTrash->setCursor(Qt::PointingHandCursor);
+    m_btnTrash->setFixedHeight(34);
+    QHBoxLayout *trashLayout = new QHBoxLayout(m_btnTrash);
+    trashLayout->setContentsMargins(10, 0, 10, 0);
+    trashLayout->setSpacing(6);
+    QLabel *trashIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x97\x91"), m_btnTrash);
+    trashIcon->setObjectName("navIcon");
+    trashIcon->setFixedSize(20, 20);
+    trashIcon->setAlignment(Qt::AlignCenter);
+    QLabel *trashText = new QLabel(tr("最近删除"), m_btnTrash);
+    trashText->setObjectName("navText");
+    trashLayout->addWidget(trashIcon);
+    trashLayout->addWidget(trashText, 1);
+    archiveLayout->addWidget(m_btnTrash);
 
     scrollLayout->addWidget(m_archiveGroup);
 

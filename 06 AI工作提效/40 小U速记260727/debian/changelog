@@ -1,0 +1,12 @@
+uos-shorthand (1.0.0-1) unstable; urgency=medium
+
+  * Initial release v1.0.0 "速记·启程"
+  * 笔记管理：富文本/Markdown双模编辑，标签分类，搜索
+  * 待办管理：截止日期、优先级、完成状态，看板视图
+  * 全局快捷键：Alt+Space快速录入
+  * 系统托盘：常驻托盘，快捷菜单
+  * 语音录音：GStreamer引擎，支持MP3/WAV
+  * 会议管理：录音+转写+AI摘要
+  * AI助手：润色、扩写、翻译、摘要、待办提取
+
+ -- UnionTech Software Technology Co., Ltd. <packaging@uniontech.com>  Mon, 27 Jul 2026 00:00:00 +0800

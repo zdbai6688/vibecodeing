@@ -204,8 +204,13 @@ void TodoWidget::initUI()
     layout->addWidget(m_batchToolbar);
 
     // ─── 信号连接 ───────────────────────────────
+    m_pendingList->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_completedList->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_pendingList, &QListWidget::customContextMenuRequested, this, [this](const QPoint &pos) {
         showTodoContextMenu(m_pendingList, pos);
+    });
+    connect(m_completedList, &QListWidget::customContextMenuRequested, this, [this](const QPoint &pos) {
+        showTodoContextMenu(m_completedList, pos);
     });
     connect(m_pendingList, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
         int todoId = item->data(Qt::UserRole).toInt();
