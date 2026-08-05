@@ -2,9 +2,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <QGuiApplication>
-#include <cstdio>
-#include <QApplication>
-#include <QWindow>
 #include <QCommandLineParser>
 #include <QSettings>
 #include <QTimer>
@@ -52,16 +49,6 @@ int main(int argc, char *argv[])
         QTimer::singleShot(300, window, [window]() {
             window->onShowQuickEntry();
         });
-        // TEMP-VERIFY
-        QTimer::singleShot(1200, []() {
-            for (QWidget *w : QApplication::topLevelWidgets()) {
-                fprintf(stderr, "[TEMP-VERIFY] widget %s visible=%d size=%dx%d\n",
-                        w->metaObject()->className(), (int)w->isVisible(),
-                        w->width(), w->height());
-            }
-            qApp->quit();
-        });
-        // END TEMP-VERIFY
     } else {
         window->show();
         Dtk::Widget::moveToCenter(window);
