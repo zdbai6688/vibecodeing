@@ -9,9 +9,9 @@
 P3-T2 待办 UI 对齐（IDE-192，todo），完成后进入 Phase 5（v1.1 回归 + deb/玲珑打包 + Release Notes + 发布）。
 
 - 看板父任务：IDE-181，子任务 IDE-182 ~ IDE-203（stage 1~6 = Phase 0~5）
-- 状态：**16 done / 4 in_progress / 2 todo**（2026-08-05）
+- 状态：**17 done / 3 in_progress / 2 todo**（2026-08-05）
   - done：P0-T1~T3、P1-T1/T3、P2-T1~T3、P3-T1、P4-T1、P4-T3~T8（IDE-182~191、193、195~200）
-  - in_progress：P1-T2（IDE-186 测试）、P4-T2（IDE-194）、P5-T1（IDE-202）、P3-T1（IDE-191 待更新后转 done）
+  - in_progress：P1-T2（IDE-186 测试）、P4-T2（IDE-194）、P5-T1（IDE-202）
   - todo：P3-T2（IDE-192）、P4-T9（IDE-201 i18n）、P5-T2（IDE-203）
 
 ## Active Branch
