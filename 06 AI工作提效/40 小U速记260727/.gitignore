@@ -1,6 +1,8 @@
 # ===== 构建产物（可重新生成，不入库）=====
 build/
 build-check/
+build-dbg/
+build-deb/
 build-regression/
 build-tests/
 build2/
