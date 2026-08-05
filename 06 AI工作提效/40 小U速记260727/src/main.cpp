@@ -5,6 +5,7 @@
 #include <QCommandLineParser>
 #include <QSettings>
 #include <QTimer>
+#include <QTranslator>
 #include <DWidgetUtil>
 #include "application/shorthandapplication.h"
 #include "ui/mainwindow/mainwindow.h"
@@ -23,6 +24,18 @@ int main(int argc, char *argv[])
     app.setApplicationVersion(APP_VERSION);
     app.setProductName(QObject::tr("UOS速记"));
     app.setApplicationDescription(QObject::tr("轻量级办公信息中枢 — 笔记、待办、会议速记"));
+
+    // 国际化（IDE-201 P4-T9）：按设置加载界面语言，需在主窗口创建前生效
+    QTranslator appTranslator;
+    {
+        QSettings settings;
+        const QString language = settings.value("appearance/language", QStringLiteral("zh_CN")).toString();
+        if (language == QLatin1String("en_US")
+            && appTranslator.load(QStringLiteral(":/translations/uos-shorthand_en_US.qm"))) {
+            app.installTranslator(&appTranslator);
+            qInfo() << "[main] 已加载英文界面翻译 (en_US)";
+        }
+    }
 
     QCommandLineParser parser;
     parser.setApplicationDescription(QObject::tr("UOS Shorthand - Note, Todo & Meeting Assistant"));

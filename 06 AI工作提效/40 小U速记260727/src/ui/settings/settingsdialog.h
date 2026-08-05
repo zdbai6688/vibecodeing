@@ -48,6 +48,7 @@ private:
     QLineEdit *m_recordingDirEdit;
 
     QComboBox *m_themeCombo;
+    QComboBox *m_languageCombo;
     QComboBox *m_aiEngineCombo;
     QLineEdit *m_deepseekKeyEdit;
     QLineEdit *m_tongyiKeyEdit;

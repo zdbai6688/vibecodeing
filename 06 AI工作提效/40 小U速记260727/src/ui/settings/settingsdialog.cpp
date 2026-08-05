@@ -74,6 +74,17 @@ QWidget *SettingsDialog::createGeneralPage()
     themeRow->addWidget(m_themeCombo);
     layout->addLayout(themeRow);
 
+    // 语言切换（IDE-201 P4-T9）：保存语言代码，重启后生效
+    QHBoxLayout *languageRow = new QHBoxLayout();
+    languageRow->addWidget(new DLabel(tr("语言"), this));
+    languageRow->addStretch();
+    m_languageCombo = new QComboBox(this);
+    m_languageCombo->addItem(tr("中文"), QStringLiteral("zh_CN"));
+    m_languageCombo->addItem(QStringLiteral("English"), QStringLiteral("en_US"));
+    m_languageCombo->setFixedWidth(200);
+    languageRow->addWidget(m_languageCombo);
+    layout->addLayout(languageRow);
+
     QHBoxLayout *notifyRow = new QHBoxLayout();
     m_trayNotifyCheck = new QCheckBox(tr("启用系统托盘通知"), this);
     notifyRow->addWidget(m_trayNotifyCheck);
@@ -441,6 +452,11 @@ void SettingsDialog::loadSettings()
 
     int themeType = settings.value("appearance/theme", 0).toInt();
     m_themeCombo->setCurrentIndex(themeType);
+
+    QString language = settings.value("appearance/language", QStringLiteral("zh_CN")).toString();
+    int langIdx = m_languageCombo->findData(language);
+    if (langIdx >= 0) m_languageCombo->setCurrentIndex(langIdx);
+
     m_recordingDirEdit->setText(settings.value("recording/storage_dir").toString());
 
     m_lastShortcut = settings.value("shortcut/quick_entry", SHORTCUT_QUICK_ENTRY).toString();
@@ -484,6 +500,18 @@ void SettingsDialog::saveSettings()
 
     // General
     settings.setValue("appearance/theme", m_themeCombo->currentIndex());
+
+    // 语言（IDE-201 P4-T9）：语言切换需重启后生效
+    const QString newLanguage = m_languageCombo->currentData().toString();
+    const QString oldLanguage = settings.value("appearance/language", QStringLiteral("zh_CN")).toString();
+    settings.setValue("appearance/language", newLanguage);
+    if (newLanguage != oldLanguage) {
+        DDialog d(this);
+        d.setTitle(tr("语言已更改"));
+        d.setMessage(tr("界面语言已切换，重启应用后生效。"));
+        d.addButton(tr("确定"));
+        d.exec();
+    }
     // 快捷键：只保存有效的组合，无效/空值回退为默认 Alt+Space
     const QString shortcut = normalizedShortcut(m_shortcutEdit->text());
     m_lastShortcut = shortcut.isEmpty() ? QString(SHORTCUT_QUICK_ENTRY) : shortcut;

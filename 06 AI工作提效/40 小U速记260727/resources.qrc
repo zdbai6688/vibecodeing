@@ -2,5 +2,6 @@
 <RCC version="1.0">
     <qresource prefix="/">
         <file alias="icons/uos-shorthand-tray.svg">assets/icons/uos-shorthand-tray.svg</file>
+        <file alias="translations/uos-shorthand_en_US.qm">translations/uos-shorthand_en_US.qm</file>
     </qresource>
 </RCC>
