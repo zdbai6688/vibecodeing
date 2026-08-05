@@ -61,6 +61,7 @@ public:
     NoteData getNote(int id) const;
     QList<NoteData> getAllNotes(bool includeDeleted = false, const NoteSortParam &sort = NoteSortParam()) const;
     QList<NoteData> getDeletedNotes() const;
+    QList<NoteData> searchDeletedNotes(const QString &keyword, const NoteSortParam &sort = NoteSortParam()) const; // 回收站内搜索
     QList<NoteData> searchNotes(const QString &keyword, const NoteSortParam &sort = NoteSortParam()) const;
     QList<NoteData> getNotesByTag(const QString &tag, const NoteSortParam &sort = NoteSortParam()) const;
     QList<NoteData> getNotesByFolder(int folderId, const NoteSortParam &sort = NoteSortParam()) const;

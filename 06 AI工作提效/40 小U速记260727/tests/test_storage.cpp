@@ -249,6 +249,62 @@ private slots:
         QCOMPARE(query.value("title").toString(), QString("AI技术方案"));
     }
 
+    // 回收站搜索：只匹配已删除笔记，且不包含未删除笔记
+    void testSearchDeletedNotes()
+    {
+        QSqlQuery query(m_db);
+        qint64 now = QDateTime::currentSecsSinceEpoch();
+
+        // 已删除笔记（标题含关键词）
+        query.prepare("INSERT INTO notes_todos (title, content, is_todo, is_deleted, deletion_datetime, "
+                       "creation_datetime, modification_datetime) "
+                       "VALUES (:t, :c, 0, 1, :d, :cr, :mo)");
+        query.bindValue(":t", QString("待恢复的旧方案"));
+        query.bindValue(":c", QString("废弃的深度学习草案"));
+        query.bindValue(":d", now);
+        query.bindValue(":cr", now);
+        query.bindValue(":mo", now);
+        QVERIFY(query.exec());
+
+        // 已删除笔记（内容含关键词，标题不含）
+        query.prepare("INSERT INTO notes_todos (title, content, is_todo, is_deleted, deletion_datetime, "
+                       "creation_datetime, modification_datetime) "
+                       "VALUES (:t, :c, 0, 1, :d, :cr, :mo)");
+        query.bindValue(":t", QString("草稿"));
+        query.bindValue(":c", QString("这里包含关键词 旧方案 的正文"));
+        query.bindValue(":d", now);
+        query.bindValue(":cr", now);
+        query.bindValue(":mo", now);
+        QVERIFY(query.exec());
+
+        // 未删除笔记（标题含关键词，不应被回收站搜索命中）
+        query.prepare("INSERT INTO notes_todos (title, content, is_todo, is_deleted, "
+                       "creation_datetime, modification_datetime) "
+                       "VALUES (:t, :c, 0, 0, :cr, :mo)");
+        query.bindValue(":t", QString("旧方案-正常笔记"));
+        query.bindValue(":c", QString(""));
+        query.bindValue(":cr", now);
+        query.bindValue(":mo", now);
+        QVERIFY(query.exec());
+
+        // 回收站内按关键词搜索（与 NoteStorage::searchDeletedNotes 相同的 SQL）
+        query.prepare("SELECT * FROM notes_todos WHERE is_deleted = 1 AND (title LIKE :kw OR content LIKE :kw2) "
+                       "ORDER BY modification_datetime DESC");
+        query.bindValue(":kw", QString("%旧方案%"));
+        query.bindValue(":kw2", QString("%旧方案%"));
+        QVERIFY(query.exec());
+
+        QStringList titles;
+        while (query.next()) {
+            titles << query.value("title").toString();
+        }
+        // 应命中 2 条已删除笔记，且不包含未删除的「旧方案-正常笔记」
+        QCOMPARE(titles.size(), 2);
+        QVERIFY(titles.contains(QString("待恢复的旧方案")));
+        QVERIFY(titles.contains(QString("草稿")));
+        QVERIFY(!titles.contains(QString("旧方案-正常笔记")));
+    }
+
     void testOverdueTodo()
     {
         QSqlQuery query(m_db);

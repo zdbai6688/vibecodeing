@@ -257,6 +257,34 @@ QList<NoteData> NoteStorage::getDeletedNotes() const
     return result;
 }
 
+QList<NoteData> NoteStorage::searchDeletedNotes(const QString &keyword, const NoteSortParam &sort) const
+{
+    QList<NoteData> result;
+    if (keyword.trimmed().isEmpty()) {
+        return getDeletedNotes();
+    }
+    QSqlQuery query(m_db->connection());
+    query.prepare(R"(
+        SELECT * FROM notes_todos
+        WHERE is_deleted = 1
+        AND (title LIKE :kw OR content LIKE :kw2)
+    )" + buildNoteOrderClause(sort));
+    QString like = "%" + keyword + "%";
+    query.bindValue(":kw", like);
+    query.bindValue(":kw2", like);
+
+    if (query.exec()) {
+        while (query.next()) {
+            QVariantMap row;
+            for (int i = 0; i < query.record().count(); ++i) {
+                row[query.record().fieldName(i)] = query.value(i);
+            }
+            result.append(rowToNote(row));
+        }
+    }
+    return result;
+}
+
 QList<NoteData> NoteStorage::searchNotes(const QString &keyword, const NoteSortParam &sort) const
 {
     QList<NoteData> result;

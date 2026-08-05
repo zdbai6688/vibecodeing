@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <QGuiApplication>
+#include <cstdio>
+#include <QApplication>
+#include <QWindow>
 #include <QCommandLineParser>
 #include <QSettings>
 #include <QTimer>
@@ -44,10 +47,21 @@ int main(int argc, char *argv[])
     QSettings settings;
     bool compactStart = settings.value("startup/compact_mode", false).toBool();
     if (compactStart) {
-        window->showMinimized();
-        QTimer::singleShot(500, window, [window]() {
+        // 启动即显示紧凑窗口而非主窗口：主窗口保持隐藏，不抢占任务栏/焦点，
+        // 直接弹出快速录入窗口；关闭后应用仍驻留系统托盘，可从托盘呼出主窗口。
+        QTimer::singleShot(300, window, [window]() {
             window->onShowQuickEntry();
         });
+        // TEMP-VERIFY
+        QTimer::singleShot(1200, []() {
+            for (QWidget *w : QApplication::topLevelWidgets()) {
+                fprintf(stderr, "[TEMP-VERIFY] widget %s visible=%d size=%dx%d\n",
+                        w->metaObject()->className(), (int)w->isVisible(),
+                        w->width(), w->height());
+            }
+            qApp->quit();
+        });
+        // END TEMP-VERIFY
     } else {
         window->show();
         Dtk::Widget::moveToCenter(window);

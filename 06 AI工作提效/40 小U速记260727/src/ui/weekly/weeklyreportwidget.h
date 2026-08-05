@@ -36,6 +36,7 @@ private:
     QString formatWeekDate(const QDate &date);
     void onDayCellDoubleClicked(int dayIndex);
     void updateCalendarCells();
+    void applyDaySelection(int dayIndex); // -1 表示清除选中高亮
     void updateDayTodoList(const QDate &date);
 
     QDate m_currentMonday;

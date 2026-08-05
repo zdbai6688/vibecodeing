@@ -5,6 +5,7 @@
 #define SETTINGSDIALOG_H
 
 #include <DDialog>
+#include <QString>
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QLineEdit>
@@ -28,8 +29,13 @@ public:
     void loadSettings();
     void saveSettings();
 
+protected:
+    // 捕获快捷键输入：点击输入框后直接按下新的快捷键组合
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
 private:
     void initUI();
+    QString normalizedShortcut(const QString &text) const;
     QWidget *createGeneralPage();
     QWidget *createAiPage();
     QWidget *createAsrPage();
@@ -58,6 +64,7 @@ private:
     DPushButton *m_asrTestBtn;
 
     QLineEdit *m_shortcutEdit;
+    QString m_lastShortcut;   // 最近一次有效的快捷键（用于失焦恢复）
     DSwitchButton *m_compactStartSwitch;
 
     // Desktop mode settings

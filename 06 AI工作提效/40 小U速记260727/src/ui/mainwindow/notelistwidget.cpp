@@ -17,6 +17,7 @@
 #include <QSettings>
 #include <QDebug>
 #include <QCheckBox>
+#include <QLineEdit>
 #include <QMenu>
 #include <QAction>
 #include <QInputDialog>
@@ -74,6 +75,16 @@ void NoteListWidget::initUI()
     sortLayout->setContentsMargins(0, 0, 0, 4);
     sortLayout->setSpacing(6);
 
+    m_searchEdit = new QLineEdit(this);
+    m_searchEdit->setPlaceholderText(tr("搜索笔记..."));
+    m_searchEdit->setClearButtonEnabled(true);
+    m_searchEdit->setFixedHeight(26);
+    m_searchEdit->setStyleSheet(
+        "QLineEdit { border: 1px solid palette(mid); border-radius: 6px;"
+        " padding: 2px 10px; font-size: 12px; background: palette(window); }"
+        "QLineEdit:focus { border-color: palette(highlight); }");
+    sortLayout->addWidget(m_searchEdit, 1);
+
     DLabel *sortLabel = new DLabel(tr("排序:"), this);
     sortLabel->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
     sortLayout->addWidget(sortLabel);
@@ -110,8 +121,6 @@ void NoteListWidget::initUI()
         "QPushButton:checked { background: palette(highlight); color: white; border-color: palette(highlight); }");
     sortLayout->addWidget(m_selectModeBtn);
 
-    sortLayout->addStretch();
-
     layout->addWidget(m_sortBar);
 
     // ─── 批量操作工具栏（底部，多选模式时显示） ──
@@ -143,6 +152,15 @@ void NoteListWidget::initUI()
         " padding: 2px 10px; font-size: 11px; background: palette(base); }"
         "QPushButton:hover { background: palette(highlight); color: white; }");
     batchLayout->addWidget(m_batchExportBtn);
+
+    m_batchRestoreBtn = new QPushButton(tr("♻️ 恢复"), this);
+    m_batchRestoreBtn->setFixedHeight(28);
+    m_batchRestoreBtn->setStyleSheet(
+        "QPushButton { border: 1px solid palette(mid); border-radius: 4px;"
+        " padding: 2px 10px; font-size: 11px; background: palette(base); }"
+        "QPushButton:hover { background: #1890FF; color: white; }");
+    batchLayout->addWidget(m_batchRestoreBtn);
+    m_batchRestoreBtn->hide(); // 仅回收站模式显示
 
     m_batchDeleteBtn = new QPushButton(tr("🗑 删除"), this);
     m_batchDeleteBtn->setFixedHeight(28);
@@ -224,8 +242,15 @@ void NoteListWidget::initUI()
         updateSelectionState();
     });
 
+    connect(m_batchRestoreBtn, &QPushButton::clicked, this, &NoteListWidget::onBatchRestore);
     connect(m_batchDeleteBtn, &QPushButton::clicked, this, &NoteListWidget::onBatchDelete);
     connect(m_batchExportBtn, &QPushButton::clicked, this, &NoteListWidget::onBatchExport);
+
+    // ─── 搜索框信号 ─────────────────────────────
+    connect(m_searchEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
+        m_searchText = text.trimmed();
+        refresh();
+    });
 }
 
 void NoteListWidget::enterMultiSelectMode()
@@ -248,6 +273,7 @@ void NoteListWidget::updateSelectionState()
     QList<int> selected = getSelectedNoteIds();
     int count = selected.size();
     m_selectionCountLabel->setText(tr("已选择 %1 项").arg(count));
+    m_batchRestoreBtn->setEnabled(count > 0);
     m_batchDeleteBtn->setEnabled(count > 0);
     m_batchExportBtn->setEnabled(count > 0);
 }
@@ -293,6 +319,25 @@ void NoteListWidget::onBatchDelete()
         if (reply != QMessageBox::Yes) return;
         app->noteManager()->batchDeleteNotes(ids);
     }
+
+    m_selectModeBtn->setChecked(false); // 退出多选模式
+    refresh();
+}
+
+void NoteListWidget::onBatchRestore()
+{
+    QList<int> ids = getSelectedNoteIds();
+    if (ids.isEmpty()) return;
+
+    ShorthandApplication *app = ShorthandApplication::instance();
+    if (!app || !app->noteManager()) return;
+
+    auto reply = QMessageBox::question(this, tr("恢复笔记"),
+                                       tr("确定要恢复选中的 %1 条笔记吗？").arg(ids.size()),
+                                       QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (reply != QMessageBox::Yes) return;
+
+    app->noteManager()->batchRestoreNotes(ids);
 
     m_selectModeBtn->setChecked(false); // 退出多选模式
     refresh();
@@ -384,9 +429,27 @@ void NoteListWidget::saveSortPreference()
 
 void NoteListWidget::setMode(Mode mode)
 {
+    Mode prevMode = m_mode;
     m_mode = mode;
     // 回收站模式也显示多选按钮（支持批量永久删除/恢复）
     m_selectModeBtn->setVisible(true);
+
+    if (mode == Trash) {
+        // 回收站模式：显示批量恢复按钮，删除按钮文案为「永久删除」
+        m_batchRestoreBtn->setVisible(true);
+        m_batchDeleteBtn->setText(tr("🗑 永久删除"));
+        if (m_searchEdit) m_searchEdit->setPlaceholderText(tr("搜索回收站..."));
+    } else {
+        m_batchRestoreBtn->setVisible(false);
+        m_batchDeleteBtn->setText(tr("🗑 删除"));
+        if (m_searchEdit) m_searchEdit->setPlaceholderText(tr("搜索笔记..."));
+    }
+
+    // 切换视图时清空搜索词，避免残留关键词影响新视图
+    if (prevMode != mode && m_searchEdit && !m_searchEdit->text().isEmpty()) {
+        m_searchEdit->clear();
+    }
+
     if (mode == Trash && m_multiSelectMode) {
         m_selectModeBtn->setChecked(false);
         exitMultiSelectMode();
@@ -420,16 +483,34 @@ void NoteListWidget::refresh()
     QList<NoteData> notes;
     switch (m_mode) {
     case Trash:
-        notes = app->noteManager()->getDeletedNotes();
+        // 回收站支持搜索：有关键词时在回收站内过滤
+        if (m_searchText.isEmpty())
+            notes = app->noteManager()->getDeletedNotes();
+        else
+            notes = app->noteManager()->searchDeletedNotes(m_searchText, m_sortParam);
         break;
     case TagFilter:
         notes = app->noteManager()->getNotesByTag(m_filterTag, m_sortParam);
+        if (!m_searchText.isEmpty()) {
+            // 标签结果内进一步按关键词过滤
+            QList<NoteData> filtered;
+            for (const NoteData &note : notes) {
+                if (note.title.contains(m_searchText, Qt::CaseInsensitive)
+                    || note.content.contains(m_searchText, Qt::CaseInsensitive)) {
+                    filtered.append(note);
+                }
+            }
+            notes = filtered;
+        }
         break;
     case Search:
         notes = app->noteManager()->searchNotes(m_searchKeyword, m_sortParam);
         break;
     default:
-        notes = app->noteManager()->getAllNotes(m_sortParam);
+        if (m_searchText.isEmpty())
+            notes = app->noteManager()->getAllNotes(m_sortParam);
+        else
+            notes = app->noteManager()->searchNotes(m_searchText, m_sortParam);
     }
 
     populateList(notes);
@@ -571,7 +652,8 @@ QString NoteListWidget::getEmptyTitle(Mode mode) const
     switch (mode) {
     case AllNotes: return tr("还没有笔记");
     case TagFilter: return tr("该标签下暂无内容");
-    case Trash: return tr("回收站为空");
+    case Trash:
+        return m_searchText.isEmpty() ? tr("回收站为空") : tr("没有找到与「%1」相关的内容").arg(m_searchText);
     case Search: return tr("没有找到与「%1」相关的内容").arg(m_searchKeyword);
     default: return tr("暂无内容");
     }
@@ -581,7 +663,8 @@ QString NoteListWidget::getEmptyHint(Mode mode) const
 {
     switch (mode) {
     case AllNotes: return tr("点击「+ 新建笔记」或按 Ctrl+N 开始记录");
-    case Trash: return tr("删除的笔记会在这里保留，可随时恢复");
+    case Trash:
+        return m_searchText.isEmpty() ? tr("删除的笔记会在这里保留，可随时恢复") : tr("尝试更换搜索关键词");
     case Search: return tr("尝试更换搜索关键词");
     default: return QString();
     }

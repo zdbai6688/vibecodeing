@@ -34,8 +34,8 @@ static const char *CARD_STYLE = R"(
         color: palette(windowText);
     }
     QTextEdit#cardContent:focus {
-        border: 1px solid #409EFF;
-        background: rgba(64, 158, 255, 0.06);
+        border: 1px solid palette(highlight);
+        background: palette(midlight);
     }
     QLabel#cardTime {
         font-size: 11px;

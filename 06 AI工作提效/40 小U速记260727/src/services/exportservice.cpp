@@ -1,6 +1,7 @@
 #include "exportservice.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QTextStream>
 #include <QDir>
 #include <QDateTime>
@@ -140,6 +141,52 @@ bool ExportService::exportMeeting(const MeetingData &meeting, const QString &dir
     file.close();
     return true;
 }
+
+bool ExportService::exportMeetingAudio(const QString &sourceFilePath, const QString &destPath)
+{
+    if (sourceFilePath.isEmpty() || !QFile::exists(sourceFilePath)) {
+        qWarning() << "录音文件不存在:" << sourceFilePath;
+        return false;
+    }
+    if (destPath.isEmpty()) {
+        qWarning() << "导出目标路径为空";
+        return false;
+    }
+
+    QDir().mkpath(QFileInfo(destPath).absolutePath());
+    if (QFile::exists(destPath)) {
+        QFile::remove(destPath);
+    }
+    if (!QFile::copy(sourceFilePath, destPath)) {
+        qWarning() << "录音导出失败:" << sourceFilePath << "->" << destPath;
+        return false;
+    }
+    return true;
+}
+
+bool ExportService::exportWeeklyReport(const QString &content, const QString &filePath)
+{
+    if (filePath.isEmpty()) {
+        qWarning() << "导出路径为空";
+        return false;
+    }
+
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        qWarning() << "无法写入文件:" << filePath;
+        return false;
+    }
+
+    QTextStream out(&file);
+    out.setEncoding(QStringConverter::Utf8);
+    out << content;
+    if (!content.endsWith("\n")) {
+        out << "\n";
+    }
+    file.close();
+    return true;
+}
+
 bool ExportService::exportNoteToPdf(const NoteData &note, const QString &filePath)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)

@@ -34,6 +34,7 @@
 #include <QFrame>
 #include <QSettings>
 #include <QAction>
+#include <QDialog>
 
 // 快捷键 ID 枚举
 enum ShortcutId {
@@ -268,28 +269,14 @@ void MainWindow::initConnections()
 
 void MainWindow::setupGlobalShortcut()
 {
-    // 全局快捷键 Alt+Space 快速录入（PRD §4.3）
-    QString shortcutKey = QString(SHORTCUT_QUICK_ENTRY);
     m_globalShortcut = ShorthandApplication::instance()->globalShortcut();
 
-    // 注册全局快捷键 - 使用信号/槽机制
-    bool registered = m_globalShortcut->registerShortcut(
-        QKeySequence(shortcutKey), ShortcutQuickEntry);
+    // 注册全局快捷键（设置页可自定义，读取已保存的快捷键）
+    applyGlobalShortcut();
 
-    if (registered) {
-        connect(m_globalShortcut, &GlobalShortcutManager::shortcutActivated,
-                this, [this](quint32 id) {
-            if (id == ShortcutQuickEntry) {
-                onShowQuickEntry();
-            }
-        });
-        qInfo() << "[MainWindow] 全局快捷键注册成功:" << shortcutKey;
-    } else {
-        qWarning() << "[MainWindow] 全局快捷键注册失败，使用应用内快捷键回退:" << shortcutKey;
-        QShortcut *fallback = new QShortcut(QKeySequence(shortcutKey), this);
-        connect(fallback, &QShortcut::activated, this, &MainWindow::onShowQuickEntry);
-        qInfo() << "[MainWindow] 使用应用内快捷键(回退):" << shortcutKey;
-    }
+    // 设置页保存后立即重新注册，保证改键即时生效
+    connect(m_settingsDialog, &SettingsDialog::accepted,
+            this, &MainWindow::applyGlobalShortcut);
 
     // Ctrl+N 新建笔记（PRD §4.1）
     QShortcut *newNoteShortcut = new QShortcut(QKeySequence(SHORTCUT_NEW_NOTE), this);
@@ -310,6 +297,49 @@ void MainWindow::setupGlobalShortcut()
     connect(saveShortcut, &QShortcut::activated, this, [this]() {
         m_editor->onSave();
     });
+}
+
+void MainWindow::applyGlobalShortcut()
+{
+    // 从设置读取用户自定义快捷键（P4-T3），默认 Alt+Space（PRD §4.3）
+    QSettings settings;
+    QString shortcutKey = settings.value("shortcut/quick_entry",
+                                         QString(SHORTCUT_QUICK_ENTRY)).toString();
+    QKeySequence seq(shortcutKey);
+
+    if (!m_globalShortcut) {
+        m_globalShortcut = ShorthandApplication::instance()->globalShortcut();
+    }
+
+    // 清理旧的信号连接，避免重复注册造成多次触发
+    disconnect(m_globalShortcut, nullptr, this, nullptr);
+
+    // 先注销旧快捷键（设置变更后重新注册）
+    m_globalShortcut->unregisterShortcut(ShortcutQuickEntry);
+
+    // 删除旧的回退快捷键
+    if (m_fallbackShortcut) {
+        delete m_fallbackShortcut;
+        m_fallbackShortcut = nullptr;
+    }
+
+    bool registered = m_globalShortcut->registerShortcut(seq, ShortcutQuickEntry);
+    if (registered) {
+        connect(m_globalShortcut, &GlobalShortcutManager::shortcutActivated,
+                this, [this](quint32 id) {
+            if (id == ShortcutQuickEntry) {
+                onShowQuickEntry();
+            }
+        });
+        qInfo() << "[MainWindow] 全局快捷键注册成功:" << shortcutKey;
+    } else {
+        // Wayland / 注册失败时退化为应用内快捷键
+        qWarning() << "[MainWindow] 全局快捷键注册失败，使用应用内快捷键回退:" << shortcutKey;
+        m_fallbackShortcut = new QShortcut(seq, this);
+        connect(m_fallbackShortcut, &QShortcut::activated,
+                this, &MainWindow::onShowQuickEntry);
+        qInfo() << "[MainWindow] 使用应用内快捷键(回退):" << shortcutKey;
+    }
 }
 
 void MainWindow::onSidebarCollapseChanged(bool collapsed)
@@ -482,9 +512,12 @@ void MainWindow::focusNote(int noteId)
 
 void MainWindow::onShowSettings()
 {
-    if (m_settingsDialog) {
-        m_settingsDialog->loadSettings();
-        m_settingsDialog->exec();
+    if (!m_settingsDialog) return;
+
+    m_settingsDialog->loadSettings();
+    int code = m_settingsDialog->exec();
+    if (code == QDialog::Accepted) {
+        // 设置仅在用户点击确定后保存（取消不落盘）
         m_settingsDialog->saveSettings();
     }
 }

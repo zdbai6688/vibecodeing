@@ -89,9 +89,7 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
     QToolButton *colorBtn = makeBtn("●", tr("主题色"));
     colorBtn->setStyleSheet("QToolButton { background:transparent; border:none; border-radius:6px; font-size:16px; color:palette(highlight); } QToolButton:hover { background:palette(light); }");
     connect(colorBtn, &QToolButton::clicked, this, [this]() {
-        auto *helper = DGuiApplicationHelper::instance();
-        QColor defaultColor = helper && helper->themeType() == DGuiApplicationHelper::DarkType
-            ? QColor("#78A9FF") : QColor("#2178E5");
+        QColor defaultColor = palette().color(QPalette::Highlight);
         QColor c = QColorDialog::getColor(defaultColor, this, tr("选择主题色"));
         if (c.isValid()) {
             m_contentEdit->setStyleSheet(m_contentEdit->styleSheet() + QString("QTextEdit { color: %1; }").arg(c.name()));

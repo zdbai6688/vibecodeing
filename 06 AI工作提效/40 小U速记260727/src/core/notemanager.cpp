@@ -100,6 +100,7 @@ bool NoteManager::batchPermanentDelete(const QList<int> &ids)
 NoteData NoteManager::getNote(int id) const { return m_storage->getNote(id); }
 QList<NoteData> NoteManager::getAllNotes(const NoteSortParam &sort) const { return m_storage->getAllNotes(false, sort); }
 QList<NoteData> NoteManager::getDeletedNotes() const { return m_storage->getDeletedNotes(); }
+QList<NoteData> NoteManager::searchDeletedNotes(const QString &keyword, const NoteSortParam &sort) const { return m_storage->searchDeletedNotes(keyword, sort); }
 QList<NoteData> NoteManager::searchNotes(const QString &keyword, const NoteSortParam &sort) const { return m_storage->searchNotes(keyword, sort); }
 QList<NoteData> NoteManager::getNotesByTag(const QString &tag, const NoteSortParam &sort) const { return m_storage->getNotesByTag(tag, sort); }
 QList<NoteData> NoteManager::getNotesByFolder(int folderId, const NoteSortParam &sort) const { return m_storage->getNotesByFolder(folderId, sort); }

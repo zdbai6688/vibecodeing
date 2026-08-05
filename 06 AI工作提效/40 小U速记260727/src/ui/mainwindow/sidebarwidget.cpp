@@ -482,13 +482,13 @@ void SidebarWidget::refreshStyleSheet()
     DPalette pal = helper->applicationPalette();
     QColor accent = pal.color(DPalette::Highlight);
 
-    // 扁平背景 — 视觉规范 §1.4 bg-sidebar
-    QColor bgSidebar = dark ? QColor("#232527") : QColor("#F2F5FA");
-    QColor textPrimary = dark ? QColor("#E0E0E0") : QColor("#222222");
-    QColor textSecondary = dark ? QColor("#AAAAAA") : QColor("#666666");
-    QColor borderColor = dark ? QColor("#38393B") : QColor("#E5E6EB");
+    // 扁平背景 — 视觉规范 §1.4 bg-sidebar（全部取自 DPalette，自动适配深色主题）
+    QColor bgSidebar = pal.color(QPalette::AlternateBase);
+    QColor textPrimary = pal.color(QPalette::WindowText);
+    QColor textSecondary = pal.color(DPalette::TextTips);
+    QColor borderColor = pal.color(DPalette::FrameBorder);
     QColor badgeBg = accent;
-    QColor badgeText = dark ? QColor("#1E1E1E") : QColor("#FFFFFF");
+    QColor badgeText = pal.color(QPalette::HighlightedText);
 
     QString accentStr = accent.name();
     QString accentSoftStr = QString("rgba(%1,%2,%3,%4)")

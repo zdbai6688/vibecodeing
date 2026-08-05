@@ -46,9 +46,9 @@ void TodoWidget::initUI()
     m_newTodoInput->setPlaceholderText(tr("新建待办，输入内容按 Enter 创建"));
     m_newTodoInput->setFixedHeight(36);
     m_newTodoInput->setStyleSheet(
-        "QLineEdit { border: 1px solid #EAECEF; border-radius: 6px;"
+        "QLineEdit { border: 1px solid palette(mid); border-radius: 6px;"
         " padding: 8px 12px; font-size: 13px; background: palette(base); }"
-        "QLineEdit:focus { border-color: #2178E5; }");
+        "QLineEdit:focus { border-color: palette(highlight); }");
     topRow->addWidget(m_newTodoInput, 1);
 
     // 多选模式切换按钮
@@ -147,7 +147,7 @@ void TodoWidget::initUI()
     });
 
     // 未完成列表（含分区标题）
-    layout->addWidget(createSectionHeader(tr("进行中"), "#2178E5"));
+    layout->addWidget(createSectionHeader(tr("进行中"), "palette(highlight)"));
     m_pendingList = new QListWidget(this);
     m_pendingList->setFrameShape(QFrame::NoFrame);
     m_pendingList->setSpacing(4);
@@ -160,7 +160,7 @@ void TodoWidget::initUI()
     layout->addWidget(m_pendingList);
 
     // 已完成列表（含分区标题）
-    layout->addWidget(createSectionHeader(tr("已完成"), "#999999"));
+    layout->addWidget(createSectionHeader(tr("已完成"), "palette(placeholderText)"));
     m_completedList = new QListWidget(this);
     m_completedList->setFrameShape(QFrame::NoFrame);
     m_completedList->setSpacing(4);
@@ -432,8 +432,8 @@ QWidget *TodoWidget::createTodoRow(const TodoData &todo)
     QString title = todo.title.isEmpty() ? tr("无标题") : todo.title;
     DLabel *titleLabel = new DLabel(title, card);
     titleLabel->setStyleSheet(todo.isCompleted
-        ? "font-size: 13px; color: #BBBBBB; text-decoration: line-through;"
-        : "font-size: 13px; color: #222222;");
+        ? "font-size: 13px; color: palette(placeholderText); text-decoration: line-through;"
+        : "font-size: 13px; color: palette(windowText);");
     tl->addWidget(titleLabel);
 
     // 创建时间 + 截止日期
@@ -442,7 +442,7 @@ QWidget *TodoWidget::createTodoRow(const TodoData &todo)
         timeStr += tr("  截止 ") + QDateTime::fromSecsSinceEpoch(todo.dueDatetime).toString("MM-dd");
     }
     DLabel *timeLabel = new DLabel(timeStr, card);
-    timeLabel->setStyleSheet("font-size: 10px; color: #999999;");
+    timeLabel->setStyleSheet("font-size: 10px; color: palette(placeholderText);");
     tl->addWidget(timeLabel);
 
     hLayout->addWidget(textWidget, 1);
@@ -519,7 +519,7 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
     if (pending.isEmpty()) {
         QListWidgetItem *hint = new QListWidgetItem(tr("没有待办事项，点击「+ 新建待办」，或从会议纪要中提取"));
         hint->setFlags(Qt::NoItemFlags);
-        hint->setForeground(QColor("#BBBBBB"));
+        hint->setForeground(palette().color(QPalette::PlaceholderText));
         hint->setTextAlignment(Qt::AlignCenter);
         m_pendingList->addItem(hint);
     } else {

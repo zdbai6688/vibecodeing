@@ -28,6 +28,8 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QUrl>
+#include <QKeyEvent>
+#include <QEvent>
 
 SettingsDialog::SettingsDialog(QWidget *parent)
     : DDialog(parent)
@@ -43,7 +45,8 @@ SettingsDialog::SettingsDialog(QWidget *parent)
     tabs->addTab(createShortcutPage(), tr("快捷键"));
     addContent(tabs);
 
-    connect(this, &DDialog::accepted, this, &SettingsDialog::saveSettings);
+    // 保存统一由 MainWindow::onShowSettings 在 exec 返回 Accepted 后调用，
+    // 避免此处自动保存导致“取消”也写入配置。
 }
 
 QWidget *SettingsDialog::createGeneralPage()
@@ -412,9 +415,11 @@ QWidget *SettingsDialog::createShortcutPage()
     entryRow->addWidget(m_shortcutEdit);
     layout->addLayout(entryRow);
 
-    QLabel *tip = new QLabel(tr("点击输入框后按下新的快捷键组合"), this);
+    QLabel *tip = new QLabel(tr("点击输入框后直接按下新的快捷键组合（如 Ctrl+Shift+N），Esc 清除"), this);
     tip->setStyleSheet("color:palette(placeholderText); font-size:11px;");
     layout->addWidget(tip);
+    // 点击输入框后捕获按键组合
+    m_shortcutEdit->installEventFilter(this);
 
     QHBoxLayout *compactRow = new QHBoxLayout();
     compactRow->addWidget(new DLabel(tr("启动时显示紧凑窗口"), this));
@@ -438,7 +443,8 @@ void SettingsDialog::loadSettings()
     m_themeCombo->setCurrentIndex(themeType);
     m_recordingDirEdit->setText(settings.value("recording/storage_dir").toString());
 
-    m_shortcutEdit->setText(settings.value("shortcut/quick_entry", SHORTCUT_QUICK_ENTRY).toString());
+    m_lastShortcut = settings.value("shortcut/quick_entry", SHORTCUT_QUICK_ENTRY).toString();
+    m_shortcutEdit->setText(m_lastShortcut);
     m_compactStartSwitch->setChecked(settings.value("startup/compact_mode", false).toBool());
 
     // Desktop mode settings
@@ -478,7 +484,11 @@ void SettingsDialog::saveSettings()
 
     // General
     settings.setValue("appearance/theme", m_themeCombo->currentIndex());
-    settings.setValue("shortcut/quick_entry", m_shortcutEdit->text());
+    // 快捷键：只保存有效的组合，无效/空值回退为默认 Alt+Space
+    const QString shortcut = normalizedShortcut(m_shortcutEdit->text());
+    m_lastShortcut = shortcut.isEmpty() ? QString(SHORTCUT_QUICK_ENTRY) : shortcut;
+    settings.setValue("shortcut/quick_entry", m_lastShortcut);
+    m_shortcutEdit->setText(m_lastShortcut);
     settings.setValue("startup/compact_mode", m_compactStartSwitch->isChecked());
 
     // Desktop mode settings
@@ -547,4 +557,55 @@ void SettingsDialog::saveSettings()
     } else {
         QFile::remove(desktopFile);
     }
+}
+
+bool SettingsDialog::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_shortcutEdit) {
+        if (event->type() == QEvent::KeyPress) {
+            auto *keyEvent = static_cast<QKeyEvent *>(event);
+            // 仅在无修饰键时 Esc 才作为“清除”处理；带修饰键的组合继续捕获
+            if (keyEvent->key() == Qt::Key_Escape
+                    && !(keyEvent->modifiers() & (Qt::ControlModifier | Qt::AltModifier
+                                                  | Qt::ShiftModifier | Qt::MetaModifier))) {
+                m_shortcutEdit->clear();
+                return true;
+            }
+            if (keyEvent->key() == Qt::Key_unknown || keyEvent->text().isEmpty()) {
+                // 纯修饰键按下：先清空，等待最终按键
+                m_shortcutEdit->clear();
+                return true;
+            }
+            // 组装按键组合并显示
+            int modifiers = keyEvent->modifiers()
+                    & (Qt::ControlModifier | Qt::AltModifier
+                       | Qt::ShiftModifier | Qt::MetaModifier);
+            m_shortcutEdit->setText(QKeySequence(modifiers | keyEvent->key())
+                                    .toString(QKeySequence::PortableText));
+            return true;
+        }
+        if (event->type() == QEvent::FocusOut) {
+            // 失焦时若未录入有效组合，恢复为上一个有效快捷键
+            if (m_shortcutEdit->text().trimmed().isEmpty() && !m_lastShortcut.isEmpty()) {
+                m_shortcutEdit->setText(m_lastShortcut);
+            }
+            return false;
+        }
+    }
+    return SettingsDialog::eventFilter(watched, event);
+}
+
+QString SettingsDialog::normalizedShortcut(const QString &text) const
+{
+    const QString t = text.trimmed();
+    if (t.isEmpty()) return QString();
+    const QKeySequence seq(t);
+    if (seq.isEmpty()) return QString();
+    // 至少需要一个非修饰键（纯 Ctrl/Alt/Shift/Meta 组合无效）
+    const int key = seq[0].key();
+    if (key == Qt::Key_Shift || key == Qt::Key_Control || key == Qt::Key_Alt
+            || key == Qt::Key_Meta) {
+        return QString();
+    }
+    return seq.toString(QKeySequence::PortableText);
 }

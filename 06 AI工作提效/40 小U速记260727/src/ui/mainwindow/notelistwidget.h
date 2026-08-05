@@ -14,6 +14,8 @@
 
 DWIDGET_USE_NAMESPACE
 
+class QLineEdit;
+
 class NoteListWidget : public QWidget
 {
     Q_OBJECT
@@ -47,6 +49,7 @@ private:
     void exitMultiSelectMode();
     void updateSelectionState();
     void onBatchDelete();
+    void onBatchRestore();
     void onBatchExport();
     QList<int> getSelectedNoteIds() const;
 
@@ -56,6 +59,10 @@ private:
     Mode m_mode = AllNotes;
     QString m_filterTag;
     QString m_searchKeyword;
+
+    // 搜索
+    QLineEdit *m_searchEdit;
+    QString m_searchText;
 
     // 排序
     void loadSortPreference();
@@ -69,6 +76,7 @@ private:
     QWidget *m_batchToolbar;
     QPushButton *m_selectModeBtn;
     QPushButton *m_selectAllBtn;
+    QPushButton *m_batchRestoreBtn;
     QPushButton *m_batchDeleteBtn;
     QPushButton *m_batchExportBtn;
     DLabel *m_selectionCountLabel;

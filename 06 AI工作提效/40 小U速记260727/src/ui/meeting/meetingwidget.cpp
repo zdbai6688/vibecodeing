@@ -97,14 +97,14 @@ void MeetingWidget::initUI()
     QPushButton *startBtn = new QPushButton(tr("🎤 开始会议"), m_emptyPage);
     startBtn->setFixedHeight(38);
     startBtn->setCursor(Qt::PointingHandCursor);
-    startBtn->setStyleSheet("QPushButton { background: #2178E5; color: white; border: none; border-radius: 6px; padding: 4px 32px; font-size: 14px; font-weight: 600; } QPushButton:hover { background: #1A6AD4; }");
+    startBtn->setStyleSheet("QPushButton { background: palette(highlight); color: palette(highlightedText); border: none; border-radius: 6px; padding: 4px 32px; font-size: 14px; font-weight: 600; } QPushButton:hover { background: palette(dark); }");
     emptyLayout->addWidget(startBtn, 0, Qt::AlignCenter);
     connect(startBtn, &QPushButton::clicked, this, &MeetingWidget::onStartRecording);
 
     QPushButton *manualBtn = new QPushButton(tr("📝 新建会议"), m_emptyPage);
     manualBtn->setFixedHeight(38);
     manualBtn->setCursor(Qt::PointingHandCursor);
-    manualBtn->setStyleSheet("QPushButton { background: transparent; color: #2178E5; border: 1px solid #2178E5; border-radius: 6px; padding: 4px 32px; font-size: 14px; } QPushButton:hover { background: palette(light); }");
+    manualBtn->setStyleSheet("QPushButton { background: transparent; color: palette(highlight); border: 1px solid palette(highlight); border-radius: 6px; padding: 4px 32px; font-size: 14px; } QPushButton:hover { background: palette(midlight); }");
     emptyLayout->addWidget(manualBtn, 0, Qt::AlignCenter);
     connect(manualBtn, &QPushButton::clicked, this, &MeetingWidget::onNewMeeting);
 
@@ -222,7 +222,7 @@ void MeetingWidget::initUI()
     fileRow->addWidget(m_fileLabel, 1);
     m_exportBtn = new QPushButton(tr("📤 导出录音"), this);
     m_exportBtn->setFixedHeight(26);
-    m_exportBtn->setStyleSheet("QPushButton { background:transparent; color:#2178E5; border:1px solid #2178E5; border-radius:4px; padding:2px 10px; font-size:11px; } QPushButton:hover { background:palette(light); }");
+    m_exportBtn->setStyleSheet("QPushButton { background:transparent; color:palette(highlight); border:1px solid palette(highlight); border-radius:4px; padding:2px 10px; font-size:11px; } QPushButton:hover { background:palette(midlight); }");
     m_exportBtn->setVisible(false);
     fileRow->addWidget(m_exportBtn);
     detailLayout->addLayout(fileRow);
@@ -235,10 +235,10 @@ void MeetingWidget::initUI()
     m_recordingBtn->setStyleSheet("QPushButton { background:#E64545; color:white; border:none; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#CF3A3A; }");
     m_transcribeBtn = new QPushButton(tr("🎤 语音转写"), this);
     m_transcribeBtn->setFixedHeight(32);
-    m_transcribeBtn->setStyleSheet("QPushButton { background:#2178E5; color:white; border:none; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#1A6AD4; } QPushButton:disabled { background:palette(mid); color:palette(windowText); }");
+    m_transcribeBtn->setStyleSheet("QPushButton { background:palette(highlight); color:palette(highlightedText); border:none; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:palette(dark); } QPushButton:disabled { background:palette(mid); color:palette(windowText); }");
     m_aiSummaryBtn = new QPushButton(tr("🤖 AI 纪要"), this);
     m_aiSummaryBtn->setFixedHeight(32);
-    m_aiSummaryBtn->setStyleSheet("QPushButton { background:transparent; color:#2178E5; border:1px solid #2178E5; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:palette(light); }");
+    m_aiSummaryBtn->setStyleSheet("QPushButton { background:transparent; color:palette(highlight); border:1px solid palette(highlight); border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:palette(midlight); }");
 
     QPushButton *genTodoBtn = new QPushButton(tr("📋 生成待办"), this);
     genTodoBtn->setFixedHeight(32);
@@ -810,8 +810,8 @@ QString MeetingWidget::buildTranscriptHtml(int highlightIndex) const
         // 说话人标签
         QString speakerTag;
         if (!t.speaker.isEmpty()) {
-            speakerTag = QStringLiteral("<span style='color:#666; font-size:11px; font-weight:600;'>%1 </span>")
-                             .arg(t.speaker.toHtmlEscaped());
+            speakerTag = QStringLiteral("<span style='color:%1; font-size:11px; font-weight:600;'>%2 </span>")
+                             .arg(palette().color(QPalette::PlaceholderText).name(), t.speaker.toHtmlEscaped());
         }
 
         QString bgStyle;

@@ -87,7 +87,7 @@ void MeetingView::initUI()
     // 内容区：转写 + 摘要
     // 添加说明文字，明确左右栏目功能
     DLabel *contentDesc = new DLabel(tr("左侧「🎤 转写内容」为实时录音转写文字；右侧「🤖 AI 会议纪要」为 AI 自动生成的会议总结"), this);
-    contentDesc->setStyleSheet("font-size: 12px; color: #666; padding: 4px 0;");
+    contentDesc->setStyleSheet("font-size: 12px; color: palette(placeholderText); padding: 4px 0;");
     contentDesc->setWordWrap(true);
     mainLayout->addWidget(contentDesc);
 
