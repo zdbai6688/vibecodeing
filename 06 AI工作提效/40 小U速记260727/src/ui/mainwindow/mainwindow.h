@@ -7,6 +7,7 @@
 #include <DMainWindow>
 #include <QStackedWidget>
 #include <QWidget>
+#include <QList>
 #include <QHBoxLayout>
 #include <QSplitter>
 #include <QFrame>
@@ -22,6 +23,7 @@ class WeeklyReportWidget;
 class QuickEntryDialog;
 class SettingsDialog;
 class GlobalShortcutManager;
+class QShortcut;
 
 DWIDGET_USE_NAMESPACE
 
@@ -66,6 +68,7 @@ private:
     void initUI();
     void initConnections();
     void setupGlobalShortcut();
+    void applyGlobalShortcut();
     void showMiddleWidget(QWidget *w);
     void updateCreateButtonTooltip();
 
@@ -77,9 +80,10 @@ private:
     TodoWidget *m_todoWidget;
     MeetingWidget *m_meetingWidget;
     WeeklyReportWidget *m_weeklyWidget;
-    QuickEntryDialog *m_quickEntry;
+    QList<QuickEntryDialog *> m_quickEntries;
     SettingsDialog *m_settingsDialog;
     GlobalShortcutManager *m_globalShortcut;
+    QShortcut *m_fallbackShortcut;
     QWidget *m_blankEditor;
     QHBoxLayout *m_mainLayout;
     QFrame *m_sep1;

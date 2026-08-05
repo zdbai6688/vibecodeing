@@ -22,6 +22,11 @@
 #include <DLabel>
 #include <DGuiApplicationHelper>
 
+// 每个紧凑窗口实例的独立编号（草稿按实例隔离，多窗口互不干扰）
+static int s_nextInstanceId = 1;
+// 上一个已关闭窗口遗留的草稿路径，新窗口创建时恢复（未保存内容找回）
+static QString s_pendingDraftPath;
+
 static const char *COMPACT_STYLE = R"(
     QWidget#compactContainer {
         background: palette(window);
@@ -85,8 +90,13 @@ QuickEntryDialog::QuickEntryDialog(QWidget *parent)
     QSettings settings;
     m_continuousAdd = settings.value("desktop/continuous_add", false).toBool();
 
+    m_instanceId = s_nextInstanceId++;
+
     initUI();
     initConnections();
+
+    // 恢复上一个已关闭窗口遗留的草稿（未保存内容找回）
+    restorePendingDraft();
 }
 
 void QuickEntryDialog::initUI()
@@ -194,19 +204,8 @@ void QuickEntryDialog::initCompactUI()
         centerOnScreen();
     });
     connect(m_compactBtn, &QPushButton::clicked, this, [this]() {
-        if (!m_compactEdit->toPlainText().trimmed().isEmpty()) {
-            // Draft: save to draft file only
-            QString draftDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/drafts";
-            QDir().mkpath(draftDir);
-            QFile draftFile(draftDir + "/draft.txt");
-            if (draftFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                draftFile.write(m_compactEdit->toPlainText().toUtf8());
-                draftFile.close();
-            }
-        }
-        m_compactEdit->clear();
-        hide();
-        m_hidden = true;
+        // 关闭：未保存内容以本窗口草稿保留，供下一个新窗口恢复
+        dismissWithDraft();
     });
     connect(m_compactEdit, &QTextEdit::textChanged, this, [this]() {
         if (m_compactEdit->toPlainText().contains('\n')) {
@@ -301,19 +300,8 @@ void QuickEntryDialog::initFullUI()
         m_compactEdit->setFocus();
     });
     connect(cancelBtn, &QPushButton::clicked, this, [this]() {
-        if (!m_contentEdit->toPlainText().trimmed().isEmpty()) {
-            // Draft save
-            QString draftDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/drafts";
-            QDir().mkpath(draftDir);
-            QFile draftFile(draftDir + "/draft.txt");
-            if (draftFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                draftFile.write(m_contentEdit->toPlainText().toUtf8());
-                draftFile.close();
-            }
-        }
-        m_contentEdit->clear();
-        hide();
-        m_hidden = true;
+        // 关闭：未保存内容以本窗口草稿保留，供下一个新窗口恢复
+        dismissWithDraft();
     });
     connect(fullSaveBtn, &QPushButton::clicked, this, &QuickEntryDialog::onSave);
 
@@ -335,8 +323,8 @@ void QuickEntryDialog::setPasteToDesktopMode(bool on)
 
 void QuickEntryDialog::showCompact()
 {
-    // Check for saved draft
-    QString draftPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/drafts/draft.txt";
+    // Check for saved draft（本窗口独立草稿）
+    QString draftPath = this->draftPath();
     QFile draftFile(draftPath);
     if (draftFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QString draft = QString::fromUtf8(draftFile.readAll()).trimmed();
@@ -371,7 +359,10 @@ void QuickEntryDialog::centerOnScreen()
     QScreen *screen = QGuiApplication::primaryScreen();
     if (!screen) return;
     QRect screenGeo = screen->availableGeometry();
-    move(screenGeo.center() - rect().center());
+    QPoint pos = screenGeo.center() - rect().center();
+    // 多窗口级联偏移，避免同时打开时完全重叠
+    pos += QPoint((m_cascadeIndex % 5) * 32, (m_cascadeIndex / 5) * 32);
+    move(pos);
 }
 
 void QuickEntryDialog::setFocus()
@@ -422,9 +413,10 @@ void QuickEntryDialog::enterGhostState()
     else content = m_contentEdit->toPlainText();
 
     if (!content.trimmed().isEmpty()) {
+        // 本窗口独立草稿，避免多窗口互相覆盖
         QString draftDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/drafts";
         QDir().mkpath(draftDir);
-        QFile draftFile(draftDir + "/draft.txt");
+        QFile draftFile(draftPath());
         if (draftFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
             draftFile.write(content.toUtf8());
             draftFile.close();
@@ -574,6 +566,7 @@ void QuickEntryDialog::onSave()
     if (content.isEmpty()) {
         hide();
         m_hidden = true;
+        emit dismissed();
         return;
     }
 
@@ -628,6 +621,7 @@ void QuickEntryDialog::onSave()
         else m_contentEdit->clear();
         hide();
         m_hidden = true;
+        emit dismissed();
     }
 }
 
@@ -648,11 +642,63 @@ void QuickEntryDialog::onDiscard()
 {
     m_compactEdit->clear();
     m_contentEdit->clear();
-    // Clear draft
-    QString draftPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/drafts/draft.txt";
-    QFile::remove(draftPath);
+    // Clear draft（仅清除本窗口草稿）
+    QFile::remove(draftPath());
     hide();
     m_hidden = true;
     m_ghostState = false;
     setWindowOpacity(1.0);
+    emit dismissed();
+}
+
+void QuickEntryDialog::setCascadeIndex(int index)
+{
+    m_cascadeIndex = index;
+}
+
+QString QuickEntryDialog::draftPath() const
+{
+    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)
+           + QString("/drafts/draft_%1.txt").arg(m_instanceId);
+}
+
+void QuickEntryDialog::dismissWithDraft()
+{
+    QString content;
+    if (m_compactMode) content = m_compactEdit->toPlainText();
+    else content = m_contentEdit->toPlainText();
+
+    // 未保存内容以本窗口草稿保留，供下一个新窗口恢复
+    if (!content.trimmed().isEmpty()) {
+        QString draftDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/drafts";
+        QDir().mkpath(draftDir);
+        QFile draftFile(draftPath());
+        if (draftFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            draftFile.write(content.toUtf8());
+            draftFile.close();
+            s_pendingDraftPath = draftPath();
+        }
+    }
+
+    m_compactEdit->clear();
+    m_contentEdit->clear();
+    hide();
+    m_hidden = true;
+    emit dismissed();
+}
+
+void QuickEntryDialog::restorePendingDraft()
+{
+    if (s_pendingDraftPath.isEmpty()) return;
+
+    QFile draftFile(s_pendingDraftPath);
+    if (draftFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QString draft = QString::fromUtf8(draftFile.readAll()).trimmed();
+        draftFile.close();
+        if (!draft.isEmpty()) {
+            m_compactEdit->setPlainText(draft);
+        }
+    }
+    QFile::remove(s_pendingDraftPath);
+    s_pendingDraftPath.clear();
 }

@@ -201,10 +201,8 @@ void MainWindow::initUI()
     m_blankEditor->show();
     m_editor->hide();
 
-    // 初始化设置对话框和快速录入
+    // 初始化设置对话框（快速录入窗口按需创建，支持多窗口并存）
     m_settingsDialog = new SettingsDialog(this);
-    m_quickEntry = new QuickEntryDialog(this);
-    m_quickEntry->hide();
 
     setCentralWidget(centralWidget);
 }
@@ -420,9 +418,31 @@ void MainWindow::onTodoSelected(int todoId)
 
 void MainWindow::onShowQuickEntry()
 {
-    if (m_quickEntry) {
-        m_quickEntry->setFocus();
+    // 清理已销毁的窗口，避免悬挂指针
+    for (auto it = m_quickEntries.begin(); it != m_quickEntries.end();) {
+        if (!*it) {
+            it = m_quickEntries.erase(it);
+        } else {
+            ++it;
+        }
     }
+
+    // 同时打开的紧凑窗口上限（与桌面便签默认上限一致）
+    const int maxQuickEntries = 6;
+    if (m_quickEntries.size() >= maxQuickEntries) {
+        m_quickEntries.last()->setFocus();
+        return;
+    }
+
+    // 每次触发都新开一个紧凑窗口，级联摆放，内容互不干扰、独立保存
+    QuickEntryDialog *entry = new QuickEntryDialog(this);
+    entry->setCascadeIndex(m_quickEntries.size());
+    connect(entry, &QuickEntryDialog::dismissed, this, [this, entry]() {
+        m_quickEntries.removeAll(entry);
+        entry->deleteLater();
+    });
+    m_quickEntries.append(entry);
+    entry->setFocus();
 }
 
 void MainWindow::loadInitialNotes()
@@ -551,10 +571,19 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Escape && m_quickEntry && m_quickEntry->isVisible()) {
-        m_quickEntry->hide();
-        event->accept();
-        return;
+    if (event->key() == Qt::Key_Escape) {
+        bool dismissedAny = false;
+        for (QuickEntryDialog *entry : m_quickEntries) {
+            if (entry && entry->isVisible()) {
+                // 关闭紧凑窗口，未保存内容保留为草稿（下一个新窗口可恢复）
+                entry->dismissWithDraft();
+                dismissedAny = true;
+            }
+        }
+        if (dismissedAny) {
+            event->accept();
+            return;
+        }
     }
     DMainWindow::keyPressEvent(event);
 }

@@ -33,9 +33,15 @@ public:
     bool isCompact() const { return m_compactMode; }
     bool isVisible() const { return !m_hidden; }
     void setPasteToDesktopMode(bool on);
+    void setCascadeIndex(int index);
+
+    // 关闭窗口并保留未保存内容为草稿（供下一个新窗口恢复）
+    void dismissWithDraft();
 
 signals:
     void pinToDesktopRequested(int noteId);
+    // 窗口已关闭（保存/丢弃/关闭按钮），由 MainWindow 负责清理
+    void dismissed();
 
 protected:
     void keyPressEvent(QKeyEvent *event) override;
@@ -65,6 +71,8 @@ private:
     void applyFullLayout();
     void enterGhostState();
     void leaveGhostState();
+    QString draftPath() const;
+    void restorePendingDraft();
 
     QStackedWidget *m_modeStack;
     QWidget *m_compactPage;
@@ -88,6 +96,8 @@ private:
     bool m_continuousAdd = false;
     bool m_waitingForPin = false;
     int m_lastSavedNoteId = -1;
+    int m_instanceId = 0;
+    int m_cascadeIndex = 0;
 };
 
 #endif // QUICKENTRYDIALOG_H
