@@ -5,6 +5,8 @@
 #include <QDebug>
 #include <QDir>
 #include <QStandardPaths>
+#include "storage/database.h"
+#include "storage/todostorage.h"
 
 // 最小化数据库初始化和表创建
 static bool createTestTables(QSqlDatabase &db)
@@ -40,8 +42,31 @@ static bool createTestTables(QSqlDatabase &db)
             created_at  INTEGER NOT NULL
         )
     )";
-    return query.exec(tagsSql);
+    if (!query.exec(tagsSql)) return false;
+
+    const QString todoTagsSql = R"(
+        CREATE TABLE IF NOT EXISTS todo_tags (
+            todo_id INTEGER NOT NULL,
+            tag_id  INTEGER NOT NULL,
+            PRIMARY KEY (todo_id, tag_id),
+            FOREIGN KEY (todo_id) REFERENCES notes_todos(id),
+            FOREIGN KEY (tag_id) REFERENCES tags(id)
+        )
+    )";
+    return query.exec(todoTagsSql);
 }
+
+// 测试用 Database 子类：注入内存连接，使 TodoStorage 可被直接单测
+class TestDatabase : public Database
+{
+public:
+    explicit TestDatabase(QSqlDatabase &conn)
+        : Database(nullptr), m_conn(conn) {}
+    QSqlDatabase &connection() override { return m_conn; }
+
+private:
+    QSqlDatabase &m_conn;
+};
 
 class TestStorage : public QObject
 {
@@ -387,6 +412,75 @@ private slots:
         QVERIFY(query.exec("SELECT COUNT(*) FROM notes_todos WHERE is_todo=1 AND is_completed=0 AND is_deleted=0"));
         QVERIFY(query.next());
         QVERIFY(query.value(0).toInt() >= 1);
+    }
+
+    // 周报标签统计（IDE-191）：多标签/单标签/无标签/范围外
+    void testTagStats()
+    {
+        TestDatabase testDb(m_db);
+        TodoStorage storage(&testDb);
+
+        const qint64 dayStart = QDateTime(QDate(2026, 7, 1), QTime(0, 0)).toSecsSinceEpoch();
+        const qint64 dayEnd = QDateTime(QDate(2026, 7, 7), QTime(23, 59, 59)).toSecsSinceEpoch();
+
+        // 单标签、未完成
+        TodoData a;
+        a.title = "写周报";
+        a.dueDatetime = QDateTime(QDate(2026, 7, 2), QTime(12, 0)).toSecsSinceEpoch();
+        a.creationDatetime = a.dueDatetime - 86400;
+        a.modificationDatetime = a.creationDatetime;
+        a.tags = {"工作"};
+        QVERIFY(storage.createTodo(a) > 0);
+
+        // 多标签（生活+工作）、已完成
+        TodoData b;
+        b.title = "买菜";
+        b.dueDatetime = QDateTime(QDate(2026, 7, 3), QTime(12, 0)).toSecsSinceEpoch();
+        b.creationDatetime = b.dueDatetime - 86400;
+        b.modificationDatetime = b.creationDatetime;
+        b.tags = {"生活", "工作"};
+        b.isCompleted = true;
+        QVERIFY(storage.createTodo(b) > 0);
+
+        // 范围外（7月20日）不计入
+        TodoData c;
+        c.title = "远期任务";
+        c.dueDatetime = QDateTime(QDate(2026, 7, 20), QTime(12, 0)).toSecsSinceEpoch();
+        c.creationDatetime = c.dueDatetime - 86400;
+        c.modificationDatetime = c.creationDatetime;
+        c.tags = {"工作"};
+        QVERIFY(storage.createTodo(c) > 0);
+
+        // 无标签 → 归入"未分类"
+        TodoData d;
+        d.title = "无标签事项";
+        d.dueDatetime = QDateTime(QDate(2026, 7, 4), QTime(12, 0)).toSecsSinceEpoch();
+        d.creationDatetime = d.dueDatetime - 86400;
+        d.modificationDatetime = d.creationDatetime;
+        QVERIFY(storage.createTodo(d) > 0);
+
+        QList<TagStat> stats = storage.getTagStats(dayStart, dayEnd);
+        QCOMPARE(stats.size(), 3);
+
+        QMap<QString, TagStat> byTag;
+        for (const auto &st : stats) {
+            byTag[st.tag] = st;
+        }
+
+        QVERIFY(byTag.contains("工作"));
+        QCOMPARE(byTag["工作"].total, 2);
+        QCOMPARE(byTag["工作"].completed, 1);
+        QVERIFY(qFuzzyCompare(byTag["工作"].rate(), 50.0));
+
+        QVERIFY(byTag.contains("生活"));
+        QCOMPARE(byTag["生活"].total, 1);
+        QCOMPARE(byTag["生活"].completed, 1);
+        QVERIFY(qFuzzyCompare(byTag["生活"].rate(), 100.0));
+
+        QVERIFY(byTag.contains("未分类"));
+        QCOMPARE(byTag["未分类"].total, 1);
+        QCOMPARE(byTag["未分类"].completed, 0);
+        QVERIFY(qFuzzyCompare(byTag["未分类"].rate(), 0.0));
     }
 };
 

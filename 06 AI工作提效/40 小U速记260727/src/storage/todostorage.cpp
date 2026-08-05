@@ -454,6 +454,39 @@ QList<TodoData> TodoStorage::searchTodos(const QString &keyword) const
     return list;
 }
 
+QList<TagStat> TodoStorage::getTagStats(qint64 startSecs, qint64 endSecs) const
+{
+    QList<TagStat> result;
+    QSqlQuery query(m_db->connection());
+    // 生效日期 = due_datetime（无截止则用 creation_datetime），与周视图每日待办口径一致
+    query.prepare(R"(
+        SELECT COALESCE(t.name, NULLIF(n.tag, ''), :untagged) AS tag_name,
+               COUNT(DISTINCT n.id) AS total,
+               COALESCE(SUM(CASE WHEN n.is_completed = 1 THEN 1 ELSE 0 END), 0) AS completed
+        FROM notes_todos n
+        LEFT JOIN todo_tags tt ON tt.todo_id = n.id
+        LEFT JOIN tags t ON tt.tag_id = t.id
+        WHERE n.is_todo = 1 AND n.is_deleted = 0
+          AND (CASE WHEN n.due_datetime > 0 THEN n.due_datetime ELSE n.creation_datetime END)
+              BETWEEN :start AND :end
+        GROUP BY tag_name
+        ORDER BY total DESC, tag_name ASC
+    )");
+    query.bindValue(":start", startSecs);
+    query.bindValue(":end", endSecs);
+    query.bindValue(":untagged", QStringLiteral("未分类"));
+    if (query.exec()) {
+        while (query.next()) {
+            TagStat stat;
+            stat.tag = query.value("tag_name").toString();
+            stat.total = query.value("total").toInt();
+            stat.completed = query.value("completed").toInt();
+            result.append(stat);
+        }
+    }
+    return result;
+}
+
 int TodoStorage::pendingCount() const
 {
     QSqlQuery query(m_db->connection());

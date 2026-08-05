@@ -340,6 +340,9 @@ void WeeklyReportWidget::updateDayTodoList(const QDate &date)
         if (match == 0) match = t.creationDatetime;
         if (match >= dayStart && match <= dayEnd) {
             QString text = (t.isCompleted ? "☑ " : "☐ ") + t.title;
+            if (!t.tags.isEmpty()) {
+                text += "  " + QString("#") + t.tags.join(" #");
+            }
             QListWidgetItem *item = new QListWidgetItem(text);
             if (t.isCompleted) item->setForeground(palette().color(QPalette::PlaceholderText));
             m_dayTodoList->addItem(item);
@@ -467,6 +470,40 @@ void WeeklyReportWidget::refresh()
     int total = 0, completed = 0, pending = 0, overdue = 0;
     QStringList completedItems, pendingItems;
     QList<TodoData> allTodos = todoMgr->getAllTodos();
+
+    // 周报日程联动：每个日期格显示当日待办数量与首个未完成标题，悬停查看全部
+    for (int i = 0; i < 7; i++) {
+        const QDate d = m_currentMonday.addDays(i);
+        qint64 dayStart = QDateTime(d, QTime(0, 0)).toSecsSinceEpoch();
+        qint64 dayEnd = QDateTime(d, QTime(23, 59, 59)).toSecsSinceEpoch();
+        int dayCount = 0;
+        QString firstPendingTitle;
+        QStringList dayTitles;
+        for (const auto &t : allTodos) {
+            qint64 match = t.dueDatetime;
+            if (match == 0) match = t.creationDatetime;
+            if (match >= dayStart && match <= dayEnd) {
+                dayCount++;
+                dayTitles << (t.isCompleted ? tr("[完成]") + t.title : t.title);
+                if (firstPendingTitle.isEmpty() && !t.isCompleted) {
+                    firstPendingTitle = t.title;
+                }
+            }
+        }
+        if (dayCount > 0) {
+            QString label = tr("%1 项").arg(dayCount);
+            if (!firstPendingTitle.isEmpty()) {
+                QString preview = firstPendingTitle;
+                if (preview.length() > 8) preview = preview.left(8) + "…";
+                label += " · " + preview;
+            }
+            m_dayTodoLabels[i]->setText(label);
+            m_dayTodoLabels[i]->setToolTip(dayTitles.join("；"));
+        } else {
+            m_dayTodoLabels[i]->setText(tr("无待办"));
+            m_dayTodoLabels[i]->setToolTip(tr("当日无待办"));
+        }
+    }
     QList<TodoData> completedTodos = todoMgr->getCompletedTodos();
 
     for (const auto &todo : allTodos) {
@@ -514,6 +551,20 @@ void WeeklyReportWidget::refresh()
         m_pendingList->addItem(item);
     } else {
         for (const auto &item : pendingItems) m_pendingList->addItem(item);
+    }
+
+    // 标签统计：按标签分组展示待办数/完成数/完成率
+    QList<TagStat> tagStats = todoMgr->getTagStats(weekStart, weekEnd);
+    if (tagStats.isEmpty()) {
+        m_tagStatsLabel->setText(tr("🏷 本周暂无标签统计"));
+    } else {
+        QStringList parts;
+        for (const auto &st : tagStats) {
+            parts << QString("%1 %2/%3 %4%")
+                         .arg(st.tag, QString::number(st.completed), QString::number(st.total),
+                              QString::number(st.rate(), 'f', 0));
+        }
+        m_tagStatsLabel->setText(tr("🏷 标签统计：") + parts.join("　·　"));
     }
 }
 
@@ -584,6 +635,20 @@ QString WeeklyReportWidget::buildReportContent()
         }
         report += QString("### %1 %2\n\n").arg(d.toString("MM-dd"), dayNames[i]);
         report += (dayLines.isEmpty() ? "无\n\n" : dayLines.join("\n") + "\n\n");
+    }
+
+    // 标签维度统计（本周各标签待办数/完成数/完成率）
+    QList<TagStat> tagStats = todoMgr->getTagStats(weekStart, weekEnd);
+    report += "## 标签统计\n\n";
+    if (tagStats.isEmpty()) {
+        report += "无\n\n";
+    } else {
+        for (const auto &st : tagStats) {
+            report += QString("- %1：本周 %2 项，完成 %3 项（完成率 %4%）\n")
+                          .arg(st.tag, QString::number(st.total), QString::number(st.completed),
+                               QString::number(st.rate(), 'f', 0));
+        }
+        report += "\n";
     }
 
     report += QString("笔记总数：%1\n\n").arg(app->noteManager()->noteCount());

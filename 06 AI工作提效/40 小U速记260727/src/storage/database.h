@@ -18,7 +18,7 @@ public:
     ~Database() override;
 
     bool initialize();
-    QSqlDatabase &connection();
+    virtual QSqlDatabase &connection(); // virtual 以便测试子类注入内存连接
 
     // 数据路径
     QString dataPath() const { return m_dataPath; }

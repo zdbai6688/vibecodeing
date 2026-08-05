@@ -40,6 +40,7 @@ public:
     QList<TodoData> getWeekTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getTodosByTag(const QString &tag) const;
     QList<TodoData> getTodosByTags(const QStringList &tags) const;
+    QList<TagStat> getTagStats(qint64 startSecs, qint64 endSecs) const; // 周报标签统计
     QList<TodoData> searchTodos(const QString &keyword) const;
 
     int pendingCount() const;

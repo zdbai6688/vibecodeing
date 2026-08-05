@@ -125,6 +125,7 @@ QList<TodoData> TodoManager::getOverdueTodos(const TodoSortParam &sort) const { 
 QList<TodoData> TodoManager::getWeekTodos(const TodoSortParam &sort) const { return m_storage->getWeekTodos(sort); }
 QList<TodoData> TodoManager::getTodosByTag(const QString &tag) const { return m_storage->getTodosByTag(tag); }
 QList<TodoData> TodoManager::getTodosByTags(const QStringList &tags) const { return m_storage->getTodosByTags(tags); }
+QList<TagStat> TodoManager::getTagStats(qint64 startSecs, qint64 endSecs) const { return m_storage->getTagStats(startSecs, endSecs); }
 QList<TodoData> TodoManager::searchTodos(const QString &keyword) const { return m_storage->searchTodos(keyword); }
 int TodoManager::pendingCount() const { return m_storage->pendingCount(); }
 int TodoManager::completedCount() const { return m_storage->completedCount(); }

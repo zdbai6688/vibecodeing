@@ -33,6 +33,14 @@ struct TodoData {
     bool isDueThisWeek() const;
 };
 
+// 标签统计（周报标签维度）
+struct TagStat {
+    QString tag;       // 标签名（空串/未分类用 "未分类" 占位）
+    int total = 0;     // 该标签在时间范围内的待办总数
+    int completed = 0; // 已完成数
+    double rate() const { return total > 0 ? completed * 100.0 / total : 0.0; }
+};
+
 // 待办排序参数
 struct TodoSortParam {
     enum Field { DueDate = 0, CreatedAt };
@@ -71,6 +79,8 @@ public:
     QList<TodoData> getWeekTodos(const TodoSortParam &sort = TodoSortParam()) const;
     QList<TodoData> getTodosByTag(const QString &tag) const;
     QList<TodoData> getTodosByTags(const QStringList &tags) const; // 多标签筛选
+    QList<TagStat> getTagStats(qint64 startSecs, qint64 endSecs) const; // 按生效日期范围统计各标签完成情况
+
     QList<TodoData> searchTodos(const QString &keyword) const;
 
     int pendingCount() const;
