@@ -24,6 +24,15 @@
 #include <QFontDatabase>
 #include <QColorDialog>
 #include <DGuiApplicationHelper>
+#include <QStandardPaths>
+#include <QDir>
+#include <QRandomGenerator>
+#include <QApplication>
+#include <QClipboard>
+#include <QMimeData>
+#include <QKeyEvent>
+#include <QUrl>
+#include <QRegularExpression>
 
 NoteEditorWidget::NoteEditorWidget(QWidget *parent)
     : QWidget(parent)
@@ -86,15 +95,9 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
     toolbar->addWidget(m_sizeCombo);
     toolbar->addSpacing(8);
 
-    QToolButton *colorBtn = makeBtn("●", tr("主题色"));
+    QToolButton *colorBtn = makeBtn("●", tr("文字颜色"));
     colorBtn->setStyleSheet("QToolButton { background:transparent; border:none; border-radius:6px; font-size:16px; color:palette(highlight); } QToolButton:hover { background:palette(light); }");
-    connect(colorBtn, &QToolButton::clicked, this, [this]() {
-        QColor defaultColor = palette().color(QPalette::Highlight);
-        QColor c = QColorDialog::getColor(defaultColor, this, tr("选择主题色"));
-        if (c.isValid()) {
-            m_contentEdit->setStyleSheet(m_contentEdit->styleSheet() + QString("QTextEdit { color: %1; }").arg(c.name()));
-        }
-    });
+    colorBtn->setToolTip(tr("文字颜色（作用于选中文字）"));
 
     m_boldBtn = makeBtn("B", tr("加粗"));
     m_boldBtn->setCheckable(true);
@@ -111,44 +114,87 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
     m_olBtn = makeBtn("1.", tr("有序列表"));
     m_ulBtn = makeBtn("•", tr("无序列表"));
     m_imageBtn = makeBtn("🖼", tr("插入图片"));
+    QToolButton *ssBtn = makeBtn("📷", tr("截图插入"));
     toolbar->addStretch();
 
-    connect(m_boldBtn, &QToolButton::clicked, this, [this]() {
+    // ─── 富文本格式：作用于选中文字（不再插入 * 号等 Markdown 标记） ───
+    auto applyCharFormat = [this](const std::function<void(QTextCharFormat &)> &mutator) {
         QTextCursor cursor = m_contentEdit->textCursor();
-        QString selected = cursor.selectedText();
-        if (selected.isEmpty()) {
-            cursor.insertText("****");
-            cursor.setPosition(cursor.position() - 2);
+        if (cursor.hasSelection()) {
+            QTextCharFormat fmt = cursor.charFormat();
+            mutator(fmt);
+            cursor.mergeCharFormat(fmt);
         } else {
-            cursor.insertText("**" + selected + "**");
+            QTextCharFormat fmt = m_contentEdit->currentCharFormat();
+            mutator(fmt);
+            m_contentEdit->setCurrentCharFormat(fmt);
         }
         m_contentEdit->setFocus();
         m_modified = true;
+    };
+
+    // 字体族：全部中文字体，供选择
+    m_fontCombo->clear();
+    m_fontCombo->addItem(tr("默认字体"), QString());
+    const QStringList families = QFontDatabase().families(QFontDatabase::SimplifiedChinese);
+    for (const QString &family : families) {
+        if (family == tr("默认字体")) continue;
+        m_fontCombo->addItem(family, family);
+    }
+    connect(m_fontCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, applyCharFormat](int index) {
+        const QString family = m_fontCombo->itemData(index).toString();
+        applyCharFormat([family](QTextCharFormat &fmt) {
+            if (family.isEmpty()) {
+                fmt.clearProperty(QTextFormat::FontFamilies);
+            } else {
+                fmt.setFontFamilies({family});
+            }
+        });
     });
-    connect(m_italicBtn, &QToolButton::clicked, this, [this]() {
-        QTextCursor cursor = m_contentEdit->textCursor();
-        QString selected = cursor.selectedText();
-        if (selected.isEmpty()) {
-            cursor.insertText("**");
-            cursor.setPosition(cursor.position() - 1);
-        } else {
-            cursor.insertText("*" + selected + "*");
-        }
-        m_contentEdit->setFocus();
-        m_modified = true;
+
+    // 字号：作用于选中文字
+    connect(m_sizeCombo, &QComboBox::currentTextChanged, this, [this, applyCharFormat](const QString &sizeText) {
+        bool ok = false;
+        double pt = sizeText.toDouble(&ok);
+        if (!ok || pt <= 0) return;
+        applyCharFormat([pt](QTextCharFormat &fmt) { fmt.setFontPointSize(pt); });
     });
-    connect(m_underlineBtn, &QToolButton::clicked, this, [this]() {
-        QTextCursor cursor = m_contentEdit->textCursor();
-        QString selected = cursor.selectedText();
-        if (selected.isEmpty()) {
-            // 下划线在Markdown中用HTML标记
-            cursor.insertText("<u></u>");
-            cursor.setPosition(cursor.position() - 4);
-        } else {
-            cursor.insertText("<u>" + selected + "</u>");
+
+    // 颜色：作用于选中文字（不再全文生效）
+    connect(colorBtn, &QToolButton::clicked, this, [this, applyCharFormat]() {
+        QColor defaultColor = m_contentEdit->textColor().isValid()
+                ? m_contentEdit->textColor() : palette().color(QPalette::WindowText);
+        QColor c = QColorDialog::getColor(defaultColor, this, tr("选择文字颜色"));
+        if (c.isValid()) {
+            applyCharFormat([c](QTextCharFormat &fmt) { fmt.setForeground(c); });
         }
-        m_contentEdit->setFocus();
-        m_modified = true;
+    });
+
+    connect(m_boldBtn, &QToolButton::clicked, this, [this, applyCharFormat]() {
+        QTextCharFormat cur = m_contentEdit->textCursor().hasSelection()
+                ? m_contentEdit->textCursor().charFormat()
+                : m_contentEdit->currentCharFormat();
+        const bool makeBold = cur.fontWeight() != QFont::Bold;
+        applyCharFormat([makeBold](QTextCharFormat &fmt) {
+            fmt.setFontWeight(makeBold ? QFont::Bold : QFont::Normal);
+        });
+        m_boldBtn->setChecked(makeBold);
+    });
+    connect(m_italicBtn, &QToolButton::clicked, this, [this, applyCharFormat]() {
+        QTextCharFormat cur = m_contentEdit->textCursor().hasSelection()
+                ? m_contentEdit->textCursor().charFormat()
+                : m_contentEdit->currentCharFormat();
+        const bool makeItalic = !cur.fontItalic();
+        applyCharFormat([makeItalic](QTextCharFormat &fmt) { fmt.setFontItalic(makeItalic); });
+        m_italicBtn->setChecked(makeItalic);
+    });
+    connect(m_underlineBtn, &QToolButton::clicked, this, [this, applyCharFormat]() {
+        QTextCharFormat cur = m_contentEdit->textCursor().hasSelection()
+                ? m_contentEdit->textCursor().charFormat()
+                : m_contentEdit->currentCharFormat();
+        const bool makeUnderline = !cur.fontUnderline();
+        applyCharFormat([makeUnderline](QTextCharFormat &fmt) { fmt.setFontUnderline(makeUnderline); });
+        m_underlineBtn->setChecked(makeUnderline);
     });
     connect(m_olBtn, &QToolButton::clicked, this, [this]() {
         m_contentEdit->textCursor().insertText("1. ");
@@ -159,6 +205,16 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
         m_contentEdit->setFocus(); m_modified = true;
     });
     connect(m_imageBtn, &QToolButton::clicked, this, &NoteEditorWidget::onInsertImage);
+    connect(ssBtn, &QToolButton::clicked, this, &NoteEditorWidget::onInsertScreenshot);
+
+    // ─── 预览切换按钮（此前只声明未创建，导致预览功能完全不可用） ───
+    toolbar->addSpacing(8);
+    m_previewBtn = new QPushButton(tr("预览"), this);
+    m_previewBtn->setCheckable(true);
+    m_previewBtn->setFixedHeight(26);
+    m_previewBtn->setStyleSheet("QPushButton { border:1px solid palette(mid); border-radius:6px; padding:2px 12px; font-size:12px; color:palette(windowText); background:transparent; } QPushButton:hover { border-color:palette(highlight); color:palette(highlight); } QPushButton:checked { background:palette(highlight); color:palette(highlightedText); border-color:palette(highlight); }");
+    toolbar->addWidget(m_previewBtn);
+    connect(m_previewBtn, &QPushButton::clicked, this, &NoteEditorWidget::togglePreview);
 
     mainLayout->addWidget(toolbarWidget);
 }
@@ -167,9 +223,60 @@ void NoteEditorWidget::onInsertImage()
 {
     QString filePath = QFileDialog::getOpenFileName(this, tr("选择图片"), QString(), tr("图片 (*.png *.jpg *.jpeg *.gif *.bmp)"));
     if (!filePath.isEmpty()) {
-        m_contentEdit->textCursor().insertText(QString("![](%1)").arg(filePath));
+        QString stored = saveImageToAppData(filePath);
+        m_contentEdit->textCursor().insertText(QString("![](%1)").arg(stored));
         m_modified = true;
     }
+}
+
+void NoteEditorWidget::onInsertScreenshot()
+{
+    // 调用系统截图工具，截图完成后插入笔记（ScreenshotManager 信号在 initConnections 中连接）
+    m_screenshotMgr->captureRegion();
+}
+
+bool NoteEditorWidget::onPasteImageFromClipboard()
+{
+    const QClipboard *clipboard = QApplication::clipboard();
+    if (!clipboard || !clipboard->mimeData()->hasImage()) return false;
+    QPixmap pix = clipboard->pixmap();
+    if (pix.isNull()) return false;
+
+    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/images";
+    QDir().mkpath(dir);
+    const QString path = dir + "/img_" + QString::number(QDateTime::currentSecsSinceEpoch())
+                         + "_" + QString::number(QRandomGenerator::global()->bounded(100000)) + ".png";
+    if (pix.save(path, "PNG")) {
+        m_contentEdit->textCursor().insertText(QString("![](%1)").arg(path));
+        m_modified = true;
+        return true;
+    }
+    return false;
+}
+
+// 把图片复制进应用数据目录，避免外部文件被移动/删除后笔记图片失效
+QString NoteEditorWidget::saveImageToAppData(const QString &srcPath) const
+{
+    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/images";
+    QDir().mkpath(dir);
+    QString suffix = QFileInfo(srcPath).suffix();
+    if (suffix.isEmpty()) suffix = "png";
+    const QString dest = dir + "/img_" + QString::number(QDateTime::currentSecsSinceEpoch())
+                         + "_" + QString::number(QRandomGenerator::global()->bounded(100000)) + "." + suffix;
+    if (QFile::exists(srcPath) && QFile::copy(srcPath, dest)) return dest;
+    return srcPath; // 复制失败时退回原路径
+}
+
+bool NoteEditorWidget::eventFilter(QObject *watched, QEvent *event)
+{
+    // Ctrl+V：剪贴板含图片时保存并插入笔记（含截图工具“复制到剪贴板”场景）
+    if (watched == m_contentEdit && event->type() == QEvent::KeyPress) {
+        auto *ke = static_cast<QKeyEvent *>(event);
+        if (ke->key() == Qt::Key_V && (ke->modifiers() & Qt::ControlModifier)) {
+            if (onPasteImageFromClipboard()) return true;
+        }
+    }
+    return QWidget::eventFilter(watched, event);
 }
 
 void NoteEditorWidget::onUndo() { m_contentEdit->undo(); }
@@ -346,8 +453,33 @@ void NoteEditorWidget::initConnections()
     connect(m_titleEdit, &QLineEdit::textChanged, this, [this]() { m_modified = true; m_autoSaveTimer->start(); });
     connect(m_contentEdit, &QTextEdit::textChanged, this, [this]() { m_modified = true; });
     connect(m_contentEdit, &QTextEdit::textChanged, this, &NoteEditorWidget::updateWordCount);
+    // 光标移动时同步工具栏按钮状态（m_contentEdit 在 initUI 中已创建）
+    connect(m_contentEdit, &QTextEdit::cursorPositionChanged, this, [this]() {
+        if (!m_contentEdit) return;
+        const QTextCharFormat fmt = m_contentEdit->currentCharFormat();
+        if (m_boldBtn) m_boldBtn->setChecked(fmt.fontWeight() == QFont::Bold);
+        if (m_italicBtn) m_italicBtn->setChecked(fmt.fontItalic());
+        if (m_underlineBtn) m_underlineBtn->setChecked(fmt.fontUnderline());
+    });
     connect(m_undoBtn, &QToolButton::clicked, this, &NoteEditorWidget::onUndo);
     connect(m_redoBtn, &QToolButton::clicked, this, &NoteEditorWidget::onRedo);
+
+    // 截图插入：截图成功后复制到应用目录并插入（此前 ScreenshotManager 从未连接，截图功能无效）
+    connect(m_screenshotMgr, &ScreenshotManager::screenshotTaken, this, [this](const QString &filePath) {
+        QString stored = saveImageToAppData(filePath);
+        m_contentEdit->textCursor().insertText(QString("![](%1)").arg(stored));
+        m_modified = true;
+    });
+    connect(m_screenshotMgr, &ScreenshotManager::screenshotFailed, this, [this](const QString &errorMessage) {
+        DDialog d(this);
+        d.setTitle(tr("截图失败"));
+        d.setMessage(errorMessage);
+        d.addButton(tr("确定"));
+        d.exec();
+    });
+
+    // Ctrl+V 粘贴图片支持
+    m_contentEdit->installEventFilter(this);
 }
 
 void NoteEditorWidget::loadNote(int noteId)
@@ -414,27 +546,50 @@ void NoteEditorWidget::onTagChanged() { m_modified = true; }
 
 void NoteEditorWidget::togglePreview()
 {
+    // 预览按钮为真实控件（此前只声明未创建，预览功能完全不可用）
     m_previewMode = m_previewBtn->isChecked();
     if (m_previewMode) {
-        QString md = m_contentEdit->toPlainText();
-        QString html = md;
-        html.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
-        html.replace(QRegularExpression("^# (.+)$", QRegularExpression::MultilineOption), "<h1>\\1</h1>");
-        html.replace(QRegularExpression("^## (.+)$", QRegularExpression::MultilineOption), "<h2>\\1</h2>");
-        html.replace(QRegularExpression("^### (.+)$", QRegularExpression::MultilineOption), "<h3>\\1</h3>");
-        html.replace(QRegularExpression("\\*\\*(.+?)\\*\\*"), "<b>\\1</b>");
-        html.replace(QRegularExpression("\\*(.+?)\\*"), "<i>\\1</i>");
-        html.replace(QRegularExpression("`(.+?)`"), "<code>\\1</code>");
-        html.replace(QRegularExpression("\\[(.+?)\\]\\((.+?)\\)"), "<a href='\\2'>\\1</a>");
-        html.replace(QRegularExpression("^- (.+)$", QRegularExpression::MultilineOption), "<li>\\1</li>");
-        html.replace("\n", "<br>");
-        m_previewBrowser->setHtml(html);
+        m_previewBrowser->setHtml(renderPreviewHtml());
         m_contentStack->setCurrentWidget(m_previewBrowser);
         m_previewBtn->setText(tr("编辑"));
     } else {
         m_contentStack->setCurrentWidget(m_contentEdit);
         m_previewBtn->setText(tr("预览"));
     }
+}
+
+QString NoteEditorWidget::renderPreviewHtml() const
+{
+    // 以富文本文档为基础，保留工具栏设置的粗体/颜色/字号；再补充手动输入的 Markdown 语法转换
+    QString html = m_contentEdit->document()->toHtml();
+
+    // 行级：标题 / 列表（在 QTextDocument 的 <p> 块上做替换）
+    html.replace(QRegularExpression("^(<p[^>]*>)\\s*### (.+?)(</p>)", QRegularExpression::MultilineOption),
+                 "\\1<h3>\\2</h3>\\3");
+    html.replace(QRegularExpression("^(<p[^>]*>)\\s*## (.+?)(</p>)", QRegularExpression::MultilineOption),
+                 "\\1<h2>\\2</h2>\\3");
+    html.replace(QRegularExpression("^(<p[^>]*>)\\s*# (.+?)(</p>)", QRegularExpression::MultilineOption),
+                 "\\1<h1>\\2</h1>\\3");
+    html.replace(QRegularExpression("^(<p[^>]*>)\\s*- (.+?)(</p>)", QRegularExpression::MultilineOption),
+                 "\\1<ul><li>\\2</li></ul>\\3");
+    html.replace(QRegularExpression("^(<p[^>]*>)\\s*\\d+\\. (.+?)(</p>)", QRegularExpression::MultilineOption),
+                 "\\1<ol><li>\\2</li></ol>\\3");
+    html.replace(QRegularExpression("^(<p[^>]*>)\\s*> (.+?)(</p>)", QRegularExpression::MultilineOption),
+                 "\\1<blockquote>\\2</blockquote>\\3");
+
+    // 行内：图片 / 链接 / 加粗 / 斜体 / 行内代码
+    html.replace(QRegularExpression("!\\[([^\\]]*)\\]\\(([^\\)]+)\\)"),
+                 "<img src='file://\\2' alt='\\1' style='max-width:100%;' />");
+    html.replace(QRegularExpression("\\[([^\\]]+)\\]\\(([^\\)]+)\\)"),
+                 "<a href='file://\\2'>\\1</a>");
+    html.replace(QRegularExpression("\\*\\*([^*]+)\\*\\*"), "<b>\\1</b>");
+    html.replace(QRegularExpression("\\*([^*]+)\\*"), "<i>\\1</i>");
+    html.replace(QRegularExpression("`([^`]+)`"), "<code>\\1</code>");
+
+    // 代码块
+    html.replace(QRegularExpression("```\n?([^`]*)```"), "<pre>\\1</pre>");
+
+    return html;
 }
 
 void NoteEditorWidget::onScreenshot() { /* handled by signal connection */ }

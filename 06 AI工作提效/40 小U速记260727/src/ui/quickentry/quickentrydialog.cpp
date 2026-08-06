@@ -91,6 +91,10 @@ QuickEntryDialog::QuickEntryDialog(QWidget *parent)
     QSettings settings;
     m_continuousAdd = settings.value("desktop/continuous_add", false).toBool();
 
+    // 贴边自动隐藏助手：必须在构造时创建，否则 m_edgeHide 为野指针，
+    // centerOnScreen()/鼠标事件里访问会段错误（打开快速录入窗即崩溃）
+    m_edgeHide = new EdgeAutoHide(this, this);
+
     m_instanceId = s_nextInstanceId++;
 
     initUI();

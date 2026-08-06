@@ -231,6 +231,10 @@ void MeetingWidget::initUI()
     // 操作按钮行
     QHBoxLayout *actionRow = new QHBoxLayout();
     actionRow->setSpacing(6);
+    m_playBtn = new QPushButton(tr("▶ 播放录音"), this);
+    m_playBtn->setFixedHeight(32);
+    m_playBtn->setVisible(false);
+    m_playBtn->setStyleSheet("QPushButton { background:transparent; color:palette(highlight); border:1px solid palette(highlight); border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:palette(midlight); }");
     m_recordingBtn = new QPushButton(tr("🎙 开始录音"), this);
     m_recordingBtn->setFixedHeight(32);
     m_recordingBtn->setStyleSheet("QPushButton { background:#E64545; color:white; border:none; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:#CF3A3A; }");
@@ -245,6 +249,7 @@ void MeetingWidget::initUI()
     genTodoBtn->setFixedHeight(32);
     genTodoBtn->setStyleSheet("QPushButton { background:transparent; color:#52C41A; border:1px solid #52C41A; border-radius:6px; padding:4px 12px; font-size:12px; } QPushButton:hover { background:palette(light); }");
 
+    actionRow->addWidget(m_playBtn);
     actionRow->addWidget(m_recordingBtn);
     actionRow->addWidget(m_transcribeBtn);
     actionRow->addWidget(m_aiSummaryBtn);
@@ -358,6 +363,13 @@ void MeetingWidget::initConnections()
     connect(m_deleteBtn, &QPushButton::clicked, this, &MeetingWidget::onDeleteMeeting);
     connect(m_transcribeBtn, &QPushButton::clicked, this, &MeetingWidget::onTranscribe);
     connect(m_aiSummaryBtn, &QPushButton::clicked, this, &MeetingWidget::onAiSummary);
+    connect(m_playBtn, &QPushButton::clicked, this, &MeetingWidget::onTogglePlayback);
+    connect(m_player, &AudioPlayer::playbackFinished, this, [this]() {
+        m_playBtn->setText(tr("▶ 播放录音"));
+    });
+    connect(m_player, &AudioPlayer::playbackStopped, this, [this]() {
+        m_playBtn->setText(tr("▶ 播放录音"));
+    });
     connect(m_recordingBtn, &QPushButton::clicked, this, &MeetingWidget::onStartRecording);
     connect(m_recorder, &AudioRecorder::recordingFinished, this, &MeetingWidget::onStopRecording);
     
@@ -482,6 +494,8 @@ void MeetingWidget::showMeetingDetail(int meetingId)
         m_fileLabel->setText(tr("录音文件: %1").arg(fi.fileName()));
         m_fileLabel->setVisible(true);
         m_exportBtn->setVisible(true);
+        m_playBtn->setVisible(true);
+        m_playBtn->setText(m_player->isPlaying() ? tr("⏹ 停止播放") : tr("▶ 播放录音"));
         // 断开旧连接避免重复
         disconnect(m_exportBtn, &QPushButton::clicked, nullptr, nullptr);
         connect(m_exportBtn, &QPushButton::clicked, this, [this, meeting]() {
@@ -506,6 +520,8 @@ void MeetingWidget::showMeetingDetail(int meetingId)
     } else {
         m_fileLabel->setVisible(false);
         m_exportBtn->setVisible(false);
+        m_playBtn->setVisible(false);
+        m_playBtn->setText(tr("▶ 播放录音"));
     }
 
     // 加载转写文本（带可点击时间戳）
@@ -714,6 +730,29 @@ void MeetingWidget::onAiSummary()
             d.exec();
         }
     });
+}
+
+void MeetingWidget::onTogglePlayback()
+{
+    if (m_currentAudioFilePath.isEmpty() || !QFile::exists(m_currentAudioFilePath)) {
+        DDialog d(this);
+        d.setTitle(tr("提示"));
+        d.setMessage(tr("暂无录音文件，请先录音"));
+        d.addButton(tr("确定"));
+        d.exec();
+        return;
+    }
+
+    if (m_player->isPlaying()) {
+        m_player->stop();
+        m_playBtn->setText(tr("▶ 播放录音"));
+    } else {
+        if (!m_player->isLoaded() || m_player->currentFile() != m_currentAudioFilePath) {
+            m_player->load(m_currentAudioFilePath);
+        }
+        m_player->play();
+        m_playBtn->setText(tr("⏹ 停止播放"));
+    }
 }
 
 void MeetingWidget::onTranscribe()

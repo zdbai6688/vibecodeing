@@ -101,6 +101,20 @@ void SidebarWidget::initUI()
     coreLayout->setContentsMargins(0, 0, 0, 0);
     coreLayout->setSpacing(1);
 
+    // 主操作按钮：+ 新建笔记（参考主流产品，将新建入口前置到侧栏，避免藏在右上角下拉菜单里）
+    m_btnNewNote = new QPushButton(this);
+    m_btnNewNote->setObjectName("newNoteBtn");
+    m_btnNewNote->setCursor(Qt::PointingHandCursor);
+    m_btnNewNote->setFixedHeight(36);
+    m_btnNewNote->setText(tr("＋ 新建笔记"));
+    m_btnNewNote->setToolTip(tr("新建笔记 (Ctrl+N)"));
+    m_btnNewNote->setStyleSheet(
+        "QPushButton#newNoteBtn { background: palette(highlight); color: palette(highlightedText);"
+        " border: none; border-radius: 8px; font-size: 13px; font-weight: 600; padding: 0 8px; }"
+        "QPushButton#newNoteBtn:hover { background: palette(dark); }");
+    connect(m_btnNewNote, &QPushButton::clicked, this, &SidebarWidget::newNoteClicked);
+    coreLayout->addWidget(m_btnNewNote);
+
     // 核心功能区段标题
     DLabel *sectionCore = new DLabel(tr("核心功能"), this);
     sectionCore->setObjectName("sectionCore");

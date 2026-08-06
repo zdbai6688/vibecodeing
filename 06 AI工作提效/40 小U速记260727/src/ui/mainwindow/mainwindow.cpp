@@ -115,7 +115,7 @@ void MainWindow::initUI()
     m_moreBtn->setToolTip(tr("更多"));
     m_moreBtn->setFixedSize(32, 32);
     DMenu *moreMenu = new DMenu(this);
-    QAction *actQuickEntry = moreMenu->addAction(tr("快速录入 (Alt+Space)"));
+    QAction *actQuickEntry = moreMenu->addAction(tr("快速录入 (%1)").arg(QString(SHORTCUT_QUICK_ENTRY)));
     connect(actQuickEntry, &QAction::triggered, this, &MainWindow::onShowQuickEntry);
     moreMenu->addSeparator();
     QAction *actSettings = moreMenu->addAction(QIcon::fromTheme("settings-configure"),
@@ -191,8 +191,8 @@ void MainWindow::initUI()
     blankHint->setStyleSheet("font-size: 14px; color: palette(windowText);");
     blankHint->setAlignment(Qt::AlignCenter);
     blankLayout->addWidget(blankHint);
-    QLabel *blankSubHint = new QLabel(tr("Ctrl+N 新建笔记  ·  Ctrl+Shift+N 新建待办  ·  Alt+Space 快速录入"),
-                                       m_blankEditor);
+    QLabel *blankSubHint = new QLabel(tr("Ctrl+N 新建笔记  ·  Ctrl+Shift+N 新建待办  ·  %1 快速录入")
+                                       .arg(QString(SHORTCUT_QUICK_ENTRY)), m_blankEditor);
     blankSubHint->setStyleSheet("font-size: 12px; color: palette(buttonText);");
     blankSubHint->setAlignment(Qt::AlignCenter);
     blankLayout->addWidget(blankSubHint);
@@ -301,10 +301,15 @@ void MainWindow::setupGlobalShortcut()
 
 void MainWindow::applyGlobalShortcut()
 {
-    // 从设置读取用户自定义快捷键（P4-T3），默认 Alt+Space（PRD §4.3）
+    // 从设置读取用户自定义快捷键（P4-T3），默认 SHORTCUT_QUICK_ENTRY
     QSettings settings;
     QString shortcutKey = settings.value("shortcut/quick_entry",
                                          QString(SHORTCUT_QUICK_ENTRY)).toString();
+    // 旧版本默认 Alt+Space 与 DDE 窗口管理器冲突，自动迁移到新默认值
+    if (shortcutKey == "Alt+Space" || shortcutKey.isEmpty()) {
+        shortcutKey = QString(SHORTCUT_QUICK_ENTRY);
+        settings.setValue("shortcut/quick_entry", shortcutKey);
+    }
     QKeySequence seq(shortcutKey);
 
     if (!m_globalShortcut) {
@@ -528,6 +533,10 @@ void MainWindow::onSwitchToNotes()
     showMiddleWidget(m_noteList);
     m_noteList->setMode(NoteListWidget::AllNotes);
     m_noteList->refresh();
+    // 恢复右侧笔记编辑器（笔记/待办视图可用）
+    if (m_editor->isHidden() && m_blankEditor->isHidden()) {
+        m_blankEditor->show();
+    }
 }
 
 void MainWindow::onSwitchToTodos()
@@ -545,6 +554,9 @@ void MainWindow::onSwitchToMeetings()
     m_sidebar->setActiveSection(2);
     showMiddleWidget(m_meetingWidget);
     m_meetingWidget->refresh();
+    // 会议页独立全宽显示，隐藏右侧笔记编辑器
+    m_editor->hide();
+    m_blankEditor->hide();
 }
 
 void MainWindow::onSwitchToWeekly()
@@ -552,6 +564,9 @@ void MainWindow::onSwitchToWeekly()
     m_sidebar->setActiveSection(5);
     showMiddleWidget(m_weeklyWidget);
     m_weeklyWidget->refresh();
+    // 周报页独立全宽显示，隐藏右侧笔记编辑器
+    m_editor->hide();
+    m_blankEditor->hide();
 }
 
 void MainWindow::onSwitchToTrash()

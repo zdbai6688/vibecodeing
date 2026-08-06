@@ -37,6 +37,7 @@ private slots:
     void onDeleteMeeting();
     void onAiSummary();
     void onTranscribe();
+    void onTogglePlayback();
     void onSearch(const QString &keyword);
 
 private:
@@ -81,6 +82,7 @@ private:
     QPushButton *m_transcribeBtn;
     QLabel *m_fileLabel;
     QPushButton *m_exportBtn;
+    QPushButton *m_playBtn;
     AudioPlayer *m_player;
     AudioRecorder *m_recorder;
     QPushButton *m_recordingBtn;

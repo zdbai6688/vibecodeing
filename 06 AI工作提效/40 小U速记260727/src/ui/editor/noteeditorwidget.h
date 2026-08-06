@@ -45,6 +45,11 @@ private slots:
     void onRedo();
     void updateWordCount();
     void onInsertImage();
+    void onInsertScreenshot();
+    bool onPasteImageFromClipboard();
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
     void initUI();
@@ -52,6 +57,8 @@ private:
     void setupToolbar(QVBoxLayout *mainLayout);
     void doAiComplete(const QString &systemPrompt, const QString &userText,
                       std::function<void(const QString &)> onResult);
+    QString renderPreviewHtml() const;
+    QString saveImageToAppData(const QString &srcPath) const;
 
     int m_currentNoteId = -1;
     bool m_modified = false;

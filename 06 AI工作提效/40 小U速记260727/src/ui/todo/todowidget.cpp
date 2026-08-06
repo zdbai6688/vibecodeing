@@ -309,7 +309,7 @@ void TodoWidget::initUI()
     });
 
     // 未完成列表（含分区标题）
-    m_pendingHeader = createSectionHeader(tr("进行中"), "palette(highlight)");
+    m_pendingHeader = createSectionHeader(tr("待办"), "palette(highlight)");
     layout->addWidget(m_pendingHeader);
     m_pendingList = new QListWidget(this);
     m_pendingList->setFrameShape(QFrame::NoFrame);
@@ -607,6 +607,7 @@ QWidget *TodoWidget::createTodoRow(const TodoData &todo)
     tl->setSpacing(2);
 
     QString title = todo.title.isEmpty() ? tr("无标题") : todo.title;
+    if (todo.isCompleted) title = tr("✓ ") + title; // 已完成项加 ✓ 前缀，与待办明显区分
     DLabel *titleLabel = new DLabel(title, card);
     titleLabel->setStyleSheet(todo.isCompleted
         ? "font-size: 13px; color: palette(placeholderText); text-decoration: line-through;"
@@ -676,10 +677,18 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
     m_pendingList->clear();
     m_completedList->clear();
 
-    QList<TodoData> pending, completed;
+    // 分组：已逾期 / 今日到期 / 本周到期 / 未安排（含无截止日期与其他周）/ 已完成
+    QList<TodoData> overdue, today, thisWeek, other, completed;
+    const QDate todayDate = QDate::currentDate();
+    const QDate thisMonday = todayDate.addDays(-(int)todayDate.dayOfWeek() + 1);
+    const qint64 weekEnd = QDateTime(thisMonday.addDays(6), QTime(23, 59, 59)).toSecsSinceEpoch();
+
     for (const auto &t : todos) {
-        if (t.isCompleted) completed.append(t);
-        else pending.append(t);
+        if (t.isCompleted) { completed.append(t); continue; }
+        if (t.isOverdue()) overdue.append(t);
+        else if (t.isDueToday()) today.append(t);
+        else if (t.dueDatetime > 0 && t.dueDatetime <= weekEnd) thisWeek.append(t);
+        else other.append(t);
     }
 
     auto fill = [this](QListWidget *list, const QList<TodoData> &items) {
@@ -693,14 +702,39 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
         }
     };
 
-    if (pending.isEmpty()) {
+    auto addSection = [this](QListWidget *list, const QString &title, const QString &color) {
+        QWidget *hdr = createSectionHeader(title, color);
+        QListWidgetItem *item = new QListWidgetItem(list);
+        item->setFlags(Qt::NoItemFlags);
+        item->setSizeHint(QSize(0, 26));
+        list->addItem(item);
+        list->setItemWidget(item, hdr);
+    };
+
+    const bool hasPending = !(overdue.isEmpty() && today.isEmpty() && thisWeek.isEmpty() && other.isEmpty());
+    if (!hasPending) {
         QListWidgetItem *hint = new QListWidgetItem(tr("没有待办事项，点击「+ 新建待办」，或从会议纪要中提取"));
         hint->setFlags(Qt::NoItemFlags);
         hint->setForeground(palette().color(QPalette::PlaceholderText));
         hint->setTextAlignment(Qt::AlignCenter);
         m_pendingList->addItem(hint);
     } else {
-        fill(m_pendingList, pending);
+        if (!overdue.isEmpty()) {
+            addSection(m_pendingList, tr("🔴 已逾期（%1）").arg(overdue.size()), "#E64545");
+            fill(m_pendingList, overdue);
+        }
+        if (!today.isEmpty()) {
+            addSection(m_pendingList, tr("🟠 今日到期（%1）").arg(today.size()), "#FAAD14");
+            fill(m_pendingList, today);
+        }
+        if (!thisWeek.isEmpty()) {
+            addSection(m_pendingList, tr("🔵 本周到期（%1）").arg(thisWeek.size()), "#2178E5");
+            fill(m_pendingList, thisWeek);
+        }
+        if (!other.isEmpty()) {
+            addSection(m_pendingList, tr("⚪ 未安排（%1）").arg(other.size()), "palette(placeholderText)");
+            fill(m_pendingList, other);
+        }
     }
 
     if (!completed.isEmpty()) {

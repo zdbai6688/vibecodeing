@@ -96,7 +96,7 @@ private:
     QPushButton *m_pinToDesktopBtn;
     QWidget *m_dragBarCompact;
     QWidget *m_dragBarFull;
-    EdgeAutoHide *m_edgeHide;
+    EdgeAutoHide *m_edgeHide = nullptr;
     DSwitchButton *m_continuousSwitch;
     QFrame *m_bottomBar;
     bool m_compactMode = true;

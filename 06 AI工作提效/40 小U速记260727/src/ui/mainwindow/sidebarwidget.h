@@ -93,6 +93,7 @@ private:
     QPushButton *m_btnCompleted;
     QPushButton *m_btnTrash;
     QPushButton *m_btnSettings;
+    QPushButton *m_btnNewNote;
 
     // Badges
     QLabel *m_badgeNotes;

@@ -491,16 +491,11 @@ void WeeklyReportWidget::refresh()
             }
         }
         if (dayCount > 0) {
-            QString label = tr("%1 项").arg(dayCount);
-            if (!firstPendingTitle.isEmpty()) {
-                QString preview = firstPendingTitle;
-                if (preview.length() > 8) preview = preview.left(8) + "…";
-                label += " · " + preview;
-            }
-            m_dayTodoLabels[i]->setText(label);
+            // 纯日历样式：单元格只显示数量，全部明细放 tooltip（避免格子显得杂乱）
+            m_dayTodoLabels[i]->setText(tr("%1 项").arg(dayCount));
             m_dayTodoLabels[i]->setToolTip(dayTitles.join("；"));
         } else {
-            m_dayTodoLabels[i]->setText(tr("无待办"));
+            m_dayTodoLabels[i]->setText(QString());
             m_dayTodoLabels[i]->setToolTip(tr("当日无待办"));
         }
     }

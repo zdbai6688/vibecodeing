@@ -78,6 +78,20 @@ static unsigned int qtModsToX11Mods(int qtMods)
 }
 #endif
 
+// ─── XGrabKey 失败检测 ─────────────────────────────────────────────
+// XGrabKey 的错误是异步返回的（BadAccess = 与其他客户端/WM 抢键冲突）。
+// 这里用临时 error handler + XSync 同步捕获，注册失败时返回 false，
+// 让上层走应用内快捷键回退，而不是“假装注册成功”。
+#if defined(Q_OS_LINUX)
+static int s_grabErrorCode = 0;
+static int grabKeyErrorHandler(Display *, XErrorEvent *e)
+{
+    s_grabErrorCode = e->error_code;
+    return 0;
+}
+#endif
+
+
 // ─── 构造 / 析构 ─────────────────────────────────────────────────────
 GlobalShortcutManager::GlobalShortcutManager(QObject *parent)
     : QObject(parent)
@@ -155,12 +169,25 @@ bool GlobalShortcutManager::registerShortcut(const QKeySequence &key, quint32 sh
         NumLockMask ? NumLockMask : 0,
     };
 
+    s_grabErrorCode = 0;
+    XErrorHandler oldHandler = XSetErrorHandler(grabKeyErrorHandler);
     for (unsigned int ignore : ignoreMods) {
         XGrabKey(display, keycode, modifiers | ignore, root, True,
                  GrabModeAsync, GrabModeAsync);
     }
-
     XSync(display, False);
+    XSetErrorHandler(oldHandler);
+
+    if (s_grabErrorCode != 0) {
+        qWarning() << "GlobalShortcutManager: 全局热键注册被拒绝(错误码" << s_grabErrorCode
+                   << "，可能与其他应用/WM 冲突):" << key.toString();
+        // 回滚可能已部分成功的 grab
+        for (unsigned int ignore : ignoreMods) {
+            XUngrabKey(display, keycode, modifiers | ignore, root);
+        }
+        XSync(display, False);
+        return false;
+    }
 
     m_registered.insert(shortcutId, key);
     qInfo() << "GlobalShortcutManager: 已注册全局热键" << key.toString()
