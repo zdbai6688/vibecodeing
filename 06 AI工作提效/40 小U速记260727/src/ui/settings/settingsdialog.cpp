@@ -619,6 +619,10 @@ bool SettingsDialog::eventFilter(QObject *watched, QEvent *event)
             }
             return false;
         }
+        // 其它事件（Hide/Show/Paint 等）直接放行：
+        // 构造期 QTabWidget 插入页面会向子控件发 Hide 事件，若转发给 DTK 基类
+        // DDialog::eventFilter 会触发死循环（IDE-192 启动挂起），故在此拦截。
+        return false;
     }
     return SettingsDialog::eventFilter(watched, event);
 }

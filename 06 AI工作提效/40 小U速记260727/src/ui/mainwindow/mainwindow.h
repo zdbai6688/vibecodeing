@@ -72,27 +72,27 @@ private:
     void showMiddleWidget(QWidget *w);
     void updateCreateButtonTooltip();
 
-    SidebarWidget *m_sidebar;
-    QWidget *m_middlePanel;
-    QStackedWidget *m_middleStack;
-    NoteListWidget *m_noteList;
-    NoteEditorWidget *m_editor;
-    TodoWidget *m_todoWidget;
-    MeetingWidget *m_meetingWidget;
-    WeeklyReportWidget *m_weeklyWidget;
+    SidebarWidget *m_sidebar = nullptr;
+    QWidget *m_middlePanel = nullptr;
+    QStackedWidget *m_middleStack = nullptr;
+    NoteListWidget *m_noteList = nullptr;
+    NoteEditorWidget *m_editor = nullptr;
+    TodoWidget *m_todoWidget = nullptr;
+    MeetingWidget *m_meetingWidget = nullptr;
+    WeeklyReportWidget *m_weeklyWidget = nullptr;
     QList<QuickEntryDialog *> m_quickEntries;
-    SettingsDialog *m_settingsDialog;
-    GlobalShortcutManager *m_globalShortcut;
-    QShortcut *m_fallbackShortcut;
-    QWidget *m_blankEditor;
-    QHBoxLayout *m_mainLayout;
-    QFrame *m_sep1;
+    SettingsDialog *m_settingsDialog = nullptr;
+    GlobalShortcutManager *m_globalShortcut = nullptr;
+    QShortcut *m_fallbackShortcut = nullptr;
+    QWidget *m_blankEditor = nullptr;
+    QHBoxLayout *m_mainLayout = nullptr;
+    QFrame *m_sep1 = nullptr;
 
     // 标题栏按钮
-    DToolButton *m_createBtn;
-    DToolButton *m_moreBtn;
-    DToolButton *m_exportBtn;
-    DMenu *m_createMenu;
+    DToolButton *m_createBtn = nullptr;
+    DToolButton *m_moreBtn = nullptr;
+    DToolButton *m_exportBtn = nullptr;
+    DMenu *m_createMenu = nullptr;
 };
 
 #endif // MAINWINDOW_H
