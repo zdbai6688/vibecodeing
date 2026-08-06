@@ -415,3 +415,21 @@ extra-cmake-modules              # KF6GlobalAccel (Wayland)
 | P4-T9 | IDE-201 |Done|
 | P5-T1 | IDE-202 |Done|
 | P5-T2 | IDE-203 |Done|
+
+---
+
+## 8. v1.2 规划（v1.1 收口后候选，Phase 6）
+
+> 更新日期：2026-08-06
+> 来源：docs/remaining-work.md 待开发 5 项（#15/#18/#22/#23/#24）
+> 看板：父任务 IDE-209，子任务 IDE-210~214（stage 7）
+
+| 任务 | Issue | 功能 | 需求关联 | 优先级 | 复杂度 | 状态 |
+|------|-------|------|----------|--------|--------|------|
+| V2-T1 | IDE-210 | 说话人识别（转写区分发言人，会议纪要按发言人组织） | remaining #15 | medium | L |Todo|
+| V2-T2 | IDE-211 | 启动速度优化（懒加载非必要模块） | remaining #18 | low | M |Todo|
+| V2-T3 | IDE-212 | 标签颜色自定义（设置页 UI，数据模型已支持颜色字段） | remaining #22 | low | M |Todo|
+| V2-T4 | IDE-213 | 周报模板自定义（Markdown 模板 + 占位符） | remaining #23 | low | M |Todo|
+| V2-T5 | IDE-214 | 数据备份/恢复（一键 SQLite + 校验） | remaining #24 | high | M |Todo|
+
+**验收总入口**：5 个子任务全部 done + v1.2 Release Notes/tag 就绪（沿用 v1.1 收口流程）。
