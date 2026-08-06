@@ -18,7 +18,7 @@
 | deb 内容完整性 | ✅ 完整 | `dpkg-deb -c`：`usr/bin/uos-shorthand`、`run.sh`、`.desktop`、图标、whisper 运行时库、xfyun_asr.js 均在包内 |
 | 玲珑打包 | ✅ 成功 | `packaging/org.deepin.uos-shorthand_1.1.0.1_x86_64_binary.layer`（77MB）+ `uos-shorthand_1.1.0.1_x86_64.uab`（320MB） |
 | 玲珑 layer 可解包 | ✅ 成功 | `ll-builder extract` 成功，`files/bin/run.sh`、`files/lib`（whisper .so）、`entries/share/applications/org.deepin.uos-shorthand.desktop` 结构正确 |
-| GUI 冒烟启动 | ✅ 通过（修复后） | 定位并修复启动段错误（commit `8a32d73`）：`TodoWidget::initUI()` 在 `m_calendarView` 创建前 `addWidget` 野指针。修复后 offscreen 平台冒烟 12s 存活无崩溃（此前秒崩 exit=139） |
+| GUI 冒烟启动 | ✅ 通过（真实桌面 X11 :0） | 累计修复 3 个根因：① `TodoWidget` 未初始化 `m_calendarView` 段错误（commit `8a32d73`）；② `SettingsDialog::eventFilter` 构造期把 Hide 事件转发给 DTK 基类造成死循环（CPU 空转、界面卡在初始化）；③ `m_fallbackShortcut` 未初始化野指针 delete 段错误（commit `fbec5a1`，mainwindow.h 成员统一 `= nullptr`）。修复后 `DISPLAY=:0` 实测：应用 12s 存活（此前秒崩/挂起），`xwininfo` 确认 **“UOS速记” 1500x950 主窗口**已创建，全局热键 Alt+Space 注册成功 |
 
 ## 2. 功能用例矩阵（36 项，承接 docs/test-report-v1.0.0.md）
 
@@ -27,7 +27,7 @@
 ### 1. 基础功能 (P0)
 | 编号 | 测试项 | 状态 | 说明 |
 |------|--------|------|------|
-| TC01 | 启动 | ✅ | 启动段错误已修复（commit `8a32d73`，未初始化 m_calendarView），offscreen 冒烟 12s 存活；请真实桌面复核 |
+| TC01 | 启动 | ✅ | 启动挂起/段错误已修复（commit `8a32d73` + `fbec5a1`：m_calendarView、m_fallbackShortcut 野指针 + SettingsDialog eventFilter 死循环）；真实桌面 X11 实测主窗口 1500x950 正常创建 |
 | TC02 | 新建笔记 | ✅ | P5-T1 冒烟：Ctrl+N 新建成功并写入数据库 |
 | TC03 | Markdown 编辑 | ⚠️ | 需交互式 GUI，留人工复核 |
 | TC04 | 预览模式 | ⚠️ | 需交互式 GUI，留人工复核 |
@@ -40,7 +40,7 @@
 | 编号 | 测试项 | 状态 | 说明 |
 |------|--------|------|------|
 | TC09 | 笔记转待办 | ✅ | testConvertNoteToTodo 覆盖 |
-| TC10 | 待办看板 | ⚠️→待人工复核 | 待办页启动崩溃已修复（commit `8a32d73`）；分组逻辑已实现（今日/本周/逾期/已完成），UI 留真实桌面复核 |
+| TC10 | 待办看板 | ⚠️→待人工复核 | 待办页启动崩溃已修复（commit `8a32d73`）；分组逻辑已实现（今日/本周/逾期/已完成），启动链路真实桌面已通，看板交互留人工复核 |
 | TC11 | 勾选完成 | ✅ | testToggleComplete 覆盖 |
 | TC12 | 逾期待办 | ✅ | testOverdueTodo 覆盖；托盘提醒留人工复核 |
 
@@ -96,6 +96,6 @@
 
 - **构建/测试/打包全链路通过**：Release 构建 0 错误、ctest 全绿、无 QWARN、deb（v1.1.0）与玲珑（1.1.0.1 layer/uab）包均构建成功且结构有效。
 - **功能验证**：storage 层 13 项单测覆盖笔记/待办/标签/回收站核心逻辑；P3/P4 新功能均有对应提交与实现。
-- **遗留**：需真实桌面 + 交互/API 的用例（约 20 项）在本 agent 运行环境无法自动化执行（锁屏/多实例并发导致启动段错误），已在 §2 逐项标注，建议解锁桌面后按矩阵人工复核；AI 类用例需配置 API Key。
+- **遗留**：启动类缺陷已全部修复并在真实桌面 X11 验证（主窗口正常创建、全局热键注册成功）；其余需交互/API 的用例（约 20 项）仍留人工复核（建议按 `docs/gui-acceptance-checklist.md` 回填），AI 类用例需配置 API Key。
 
 *执行：Multica Helper（2026-08-06）*
