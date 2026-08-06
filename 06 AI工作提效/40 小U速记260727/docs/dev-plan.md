@@ -426,10 +426,12 @@ extra-cmake-modules              # KF6GlobalAccel (Wayland)
 
 | 任务 | Issue | 功能 | 需求关联 | 优先级 | 复杂度 | 状态 |
 |------|-------|------|----------|--------|--------|------|
-| V2-T1 | IDE-210 | 说话人识别（转写区分发言人，会议纪要按发言人组织） | remaining #15 | medium | L |Todo|
-| V2-T2 | IDE-211 | 启动速度优化（懒加载非必要模块） | remaining #18 | low | M |Todo|
-| V2-T3 | IDE-212 | 标签颜色自定义（设置页 UI，数据模型已支持颜色字段） | remaining #22 | low | M |Todo|
-| V2-T4 | IDE-213 | 周报模板自定义（Markdown 模板 + 占位符） | remaining #23 | low | M |Todo|
-| V2-T5 | IDE-214 | 数据备份/恢复（一键 SQLite + 校验） | remaining #24 | high | M |Todo|
+| V2-T1 | IDE-210 | 说话人识别（转写区分发言人，会议纪要按发言人组织） | remaining #15 | medium | L | ✅ Done（commit 644c7ee：Whisper 说话人聚类 + 会议页标签 + AI 纪要按发言人组织） |
+| V2-T2 | IDE-211 | 启动速度优化（懒加载非必要模块） | remaining #18 | low | M | ✅ Done（commit 644c7ee：会议/周报页懒加载，首窗 2210ms→1522ms，-31%） |
+| V2-T3 | IDE-212 | 标签颜色自定义（设置页 UI，数据模型已支持颜色字段） | remaining #22 | low | M | ✅ Done（commit 644c7ee：设置页标签选色 + 侧栏/列表/卡片按色显示） |
+| V2-T4 | IDE-213 | 周报模板自定义（Markdown 模板 + 占位符） | remaining #23 | low | M | ✅ Done（commit 644c7ee：设置页模板编辑 + 8 类占位符） |
+| V2-T5 | IDE-214 | 数据备份/恢复（一键 SQLite + 校验） | remaining #24 | high | M | ✅ Done（commit 644c7ee：BackupService + 设置页 + 单测） |
+
+> 2026-08-06 状态：5 项全部实现并推送（单测 18/18 通过）。待 v1.2 Release Notes 与版本 tag 收口。
 
 **验收总入口**：5 个子任务全部 done + v1.2 Release Notes/tag 就绪（沿用 v1.1 收口流程）。
