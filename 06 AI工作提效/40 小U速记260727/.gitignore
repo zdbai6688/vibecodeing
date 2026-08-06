@@ -24,3 +24,8 @@ whisper/libwhisper.so.1*
 
 # ===== 测试产物/截图 =====
 test-artifacts/
+
+# ===== 玲珑构建产物/导出包（体积大，不入库）=====
+linglong/
+packaging/*.layer
+packaging/*.uab

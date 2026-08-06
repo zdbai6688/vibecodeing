@@ -373,8 +373,8 @@ extra-cmake-modules              # KF6GlobalAccel (Wayland)
 | P4-T7 | 回收站增强(批量恢复/永久删除/搜索) | remaining #12 | M | - | 批量操作+搜索可用 |Done|
 | P4-T8 | 编辑器撤销/重做 + 自动保存 + 字数统计 | remaining #19/20/21 | M | - | Ctrl+Z/Y, 自动保存, 字数显示 |Done|
 | P4-T9 | 国际化(ts/qm, 英文界面) | remaining #25 | L | - | 英文界面可切换 | Done |
-| P5-T1 | v1.1 回归(单测+GUI) + deb/玲珑打包 | IDE-109/112 延续 | M | P3, P4 | ctest 全绿, deb/玲珑可安装 | Pending |
-| P5-T2 | Release Notes v1.1.0 + tag + 商店/Release 发布 | IDE-93 延续 | S | P5-T1 | 发布材料齐, tag 存在 | Pending |
+| P5-T1 | v1.1 回归(单测+GUI) + deb/玲珑打包 | IDE-109/112 延续 | M | P3, P4 | ctest 全绿, deb/玲珑可安装 |Done|
+| P5-T2 | Release Notes v1.1.0 + tag + 商店/Release 发布 | IDE-93 延续 | S | P5-T1 | 发布材料齐, tag 存在 |Done|
 
 ## Validation Strategy
 
@@ -413,5 +413,5 @@ extra-cmake-modules              # KF6GlobalAccel (Wayland)
 | P4-T7 | IDE-199 |Done|
 | P4-T8 | IDE-200 |Done|
 | P4-T9 | IDE-201 |Done|
-| P5-T1 | IDE-202 |In Progress|
-| P5-T2 | IDE-203 | Phase 5 |
+| P5-T1 | IDE-202 |Done|
+| P5-T2 | IDE-203 |Done|

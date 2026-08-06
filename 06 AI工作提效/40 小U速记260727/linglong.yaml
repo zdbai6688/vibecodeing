@@ -1,20 +1,18 @@
+version: "1"
+
 package:
   id: org.deepin.uos-shorthand
   name: UOS速记
-  version: 1.0.0
+  version: 1.1.0.1
   kind: app
   description: |
     UOS速记 — 轻量级办公信息中枢
     笔记、待办、会议速记、AI摘要四合一工具
     支持全局快捷键快速录入、Markdown编辑器、语音录音、离线转写
 
-base:
-  id: org.deepin.base
-  version: 23.0.0
+base: org.deepin.base/25.2.2
 
-runtime:
-  id: org.deepin.Runtime
-  version: 23.0.0
+runtime: org.deepin.runtime.dtk/6.7.0
 
 command:
   - /opt/apps/org.deepin.uos-shorthand/files/bin/run.sh
@@ -24,12 +22,22 @@ sources:
     path: .
 
 build: |
+  rm -rf build
+  apt-get -o APT::Sandbox::User=root update
+  apt-get -o APT::Sandbox::User=root install -y --no-install-recommends libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
   cmake -B build \
     -DCMAKE_INSTALL_PREFIX=/opt/apps/org.deepin.uos-shorthand/files \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_TESTS=OFF
   cmake --build build -j$(nproc)
   cmake --install build
+  mkdir -p /opt/apps/org.deepin.uos-shorthand/files/lib
+  cp -a /opt/apps/org.deepin.uos-shorthand/files/share/uos-shorthand/whisper/*.so* /opt/apps/org.deepin.uos-shorthand/files/lib/
+  # 按 linglong 规范修正 desktop 文件名与 Exec
+  mv /opt/apps/org.deepin.uos-shorthand/files/share/applications/uos-shorthand.desktop \
+     /opt/apps/org.deepin.uos-shorthand/files/share/applications/org.deepin.uos-shorthand.desktop
+  sed -i 's|^Exec=run.sh|Exec=/usr/bin/ll-cli run org.deepin.uos-shorthand|' \
+     /opt/apps/org.deepin.uos-shorthand/files/share/applications/org.deepin.uos-shorthand.desktop
 
 permissions:
   audio: true

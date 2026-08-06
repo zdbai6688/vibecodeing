@@ -1,3 +1,17 @@
+uos-shorthand (1.1.0-1) unstable; urgency=medium
+
+  * v1.1.0 "速记·进阶"
+  * 待办日程化：日历网格视图、拖拽改期、标签徽章
+  * 周报日程联动：周视图每日待办展示、按标签统计、AI 周报标签维度
+  * 紧凑模式增强：拖拽贴边自动隐藏/悬停重现、多紧凑窗口独立保存
+  * 全局快捷键自定义、开机自启紧凑模式
+  * 深色主题完整适配、导出统一走 ExportService
+  * 回收站增强（批量恢复/永久删除/搜索）
+  * 编辑器撤销/重做 + 自动保存 + 字数统计
+  * 国际化：英文界面支持（ts/qm）
+
+ -- UnionTech Software Technology Co., Ltd. <packaging@uniontech.com>  Wed, 05 Aug 2026 00:00:00 +0800
+
 uos-shorthand (1.0.0-1) unstable; urgency=medium
 
   * Initial release v1.0.0 "速记·启程"
