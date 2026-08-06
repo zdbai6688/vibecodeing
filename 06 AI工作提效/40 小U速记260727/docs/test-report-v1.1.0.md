@@ -18,7 +18,7 @@
 | deb 内容完整性 | ✅ 完整 | `dpkg-deb -c`：`usr/bin/uos-shorthand`、`run.sh`、`.desktop`、图标、whisper 运行时库、xfyun_asr.js 均在包内 |
 | 玲珑打包 | ✅ 成功 | `packaging/org.deepin.uos-shorthand_1.1.0.1_x86_64_binary.layer`（77MB）+ `uos-shorthand_1.1.0.1_x86_64.uab`（320MB） |
 | 玲珑 layer 可解包 | ✅ 成功 | `ll-builder extract` 成功，`files/bin/run.sh`、`files/lib`（whisper .so）、`entries/share/applications/org.deepin.uos-shorthand.desktop` 结构正确 |
-| GUI 冒烟启动 | ⚠️ 本环境受限 | 应用在 agent 运行时环境启动时崩溃（无 gdb，日志显示 Qt 主线程初始化至 widget 显示阶段后 segfault）。P5-T1 早前报告记录：真实桌面会话下启动无崩溃、主窗口 1500x950 正常渲染、Ctrl+N 新建笔记成功写入数据库 |
+| GUI 冒烟启动 | ✅ 通过（修复后） | 定位并修复启动段错误（commit `8a32d73`）：`TodoWidget::initUI()` 在 `m_calendarView` 创建前 `addWidget` 野指针。修复后 offscreen 平台冒烟 12s 存活无崩溃（此前秒崩 exit=139） |
 
 ## 2. 功能用例矩阵（36 项，承接 docs/test-report-v1.0.0.md）
 
@@ -27,7 +27,7 @@
 ### 1. 基础功能 (P0)
 | 编号 | 测试项 | 状态 | 说明 |
 |------|--------|------|------|
-| TC01 | 启动 | ✅ | 真实桌面冒烟通过（P5-T1 报告）；本轮 agent 环境受限见 §1 |
+| TC01 | 启动 | ✅ | 启动段错误已修复（commit `8a32d73`，未初始化 m_calendarView），offscreen 冒烟 12s 存活；请真实桌面复核 |
 | TC02 | 新建笔记 | ✅ | P5-T1 冒烟：Ctrl+N 新建成功并写入数据库 |
 | TC03 | Markdown 编辑 | ⚠️ | 需交互式 GUI，留人工复核 |
 | TC04 | 预览模式 | ⚠️ | 需交互式 GUI，留人工复核 |
@@ -40,7 +40,7 @@
 | 编号 | 测试项 | 状态 | 说明 |
 |------|--------|------|------|
 | TC09 | 笔记转待办 | ✅ | testConvertNoteToTodo 覆盖 |
-| TC10 | 待办看板 | ⚠️ | 分组逻辑已实现（今日/本周/逾期/已完成），UI 留人工复核 |
+| TC10 | 待办看板 | ⚠️→待人工复核 | 待办页启动崩溃已修复（commit `8a32d73`）；分组逻辑已实现（今日/本周/逾期/已完成），UI 留真实桌面复核 |
 | TC11 | 勾选完成 | ✅ | testToggleComplete 覆盖 |
 | TC12 | 逾期待办 | ✅ | testOverdueTodo 覆盖；托盘提醒留人工复核 |
 
