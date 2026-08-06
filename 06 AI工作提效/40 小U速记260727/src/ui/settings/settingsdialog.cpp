@@ -619,12 +619,17 @@ bool SettingsDialog::eventFilter(QObject *watched, QEvent *event)
             }
             return false;
         }
-        // 其它事件（Hide/Show/Paint 等）直接放行：
-        // 构造期 QTabWidget 插入页面会向子控件发 Hide 事件，若转发给 DTK 基类
-        // DDialog::eventFilter 会触发死循环（IDE-192 启动挂起），故在此拦截。
+        // 其它事件（Hide/Show/Paint 等）只关心按键捕获，直接放行即可。
         return false;
     }
-    return SettingsDialog::eventFilter(watched, event);
+    // 其它对象直接放行，不再转发：
+    // ① 本对话框只对 m_shortcutEdit 装了事件过滤器，其余对象无需处理；
+    // ② 原代码 return SettingsDialog::eventFilter(watched, event) 是“自己递归自己”
+    //    （并非调用 DTK 基类），Release 下被编译器优化成死循环 jmp self，
+    //    导致：构造期 QTabWidget 插入页面的 Hide 事件、启动期 DDialog 内容过滤器
+    //    转发的 QLabel Show/Hide 事件全部卡死（IDE-192 启动挂起）。
+    // ③ 也不转发给 DDialog::eventFilter：DTK 基类处理 Hide 事件同样会死循环。
+    return false;
 }
 
 QString SettingsDialog::normalizedShortcut(const QString &text) const
