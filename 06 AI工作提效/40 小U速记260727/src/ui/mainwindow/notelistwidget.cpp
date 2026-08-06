@@ -60,8 +60,8 @@ void NoteListWidget::initUI()
     m_list->setStyleSheet(R"(
         QListWidget { background: transparent; border: none; padding: 4px 0; }
         QListWidget::item {
-            border-radius: 6px; padding: 0; margin: 2px 0;
-            background: palette(light); border: 1px solid transparent;
+            border-radius: 10px; padding: 0; margin: 2px 0;
+            background: palette(alternateBase); border: 1px solid transparent;
         }
         QListWidget::item:hover { background: palette(midlight); border-color: palette(mid); }
         QListWidget::item:selected { background: palette(highlight); border-color: palette(highlight); }
@@ -80,7 +80,7 @@ void NoteListWidget::initUI()
     m_searchEdit->setClearButtonEnabled(true);
     m_searchEdit->setFixedHeight(26);
     m_searchEdit->setStyleSheet(
-        "QLineEdit { border: 1px solid palette(mid); border-radius: 6px;"
+        "QLineEdit { border: 1px solid palette(mid); border-radius: 8px;"
         " padding: 2px 10px; font-size: 12px; background: palette(window); }"
         "QLineEdit:focus { border-color: palette(highlight); }");
     sortLayout->addWidget(m_searchEdit, 1);
@@ -94,7 +94,7 @@ void NoteListWidget::initUI()
     m_sortFieldCombo->addItem(tr("创建时间"), NoteSortParam::CreatedAt);
     m_sortFieldCombo->setCurrentIndex(static_cast<int>(m_sortParam.field));
     m_sortFieldCombo->setStyleSheet(
-        "QComboBox { border: 1px solid palette(mid); border-radius: 4px;"
+        "QComboBox { border: 1px solid palette(mid); border-radius: 6px;"
         " padding: 2px 8px; font-size: 11px; background: palette(base);"
         " min-width: 80px; }");
     m_sortFieldCombo->setFixedHeight(24);
@@ -105,7 +105,7 @@ void NoteListWidget::initUI()
     m_sortOrderBtn->setToolTip(m_sortParam.ascending ? tr("升序") : tr("降序"));
     m_sortOrderBtn->setFixedSize(24, 24);
     m_sortOrderBtn->setStyleSheet(
-        "DToolButton { border: 1px solid palette(mid); border-radius: 4px;"
+        "DToolButton { border: 1px solid palette(mid); border-radius: 6px;"
         " font-size: 12px; background: palette(base); }"
         "DToolButton:hover { background: palette(light); }");
     sortLayout->addWidget(m_sortOrderBtn);
@@ -115,7 +115,7 @@ void NoteListWidget::initUI()
     m_selectModeBtn->setCheckable(true);
     m_selectModeBtn->setFixedHeight(24);
     m_selectModeBtn->setStyleSheet(
-        "QPushButton { border: 1px solid palette(mid); border-radius: 4px;"
+        "QPushButton { border: 1px solid palette(mid); border-radius: 6px;"
         " padding: 2px 8px; font-size: 11px; background: palette(base); }"
         "QPushButton:hover { background: palette(light); }"
         "QPushButton:checked { background: palette(highlight); color: white; border-color: palette(highlight); }");

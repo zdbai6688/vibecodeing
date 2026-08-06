@@ -31,7 +31,7 @@ public:
     explicit TodoCard(const TodoData &todo, QWidget *parent = nullptr)
         : QWidget(parent), m_todoId(todo.id)
     {
-        setStyleSheet("TodoCard { background: palette(light); border-radius: 6px; }");
+        setStyleSheet("TodoCard { background: palette(alternateBase); border-radius: 8px; }");
         QHBoxLayout *h = new QHBoxLayout(this);
         h->setContentsMargins(8, 3, 8, 3);
         h->setSpacing(6);
@@ -55,7 +55,10 @@ public:
         if (!tagNames.isEmpty()) {
             auto *app = ShorthandApplication::instance();
             QList<TagData> allTags = app->tagManager()->getAllTags();
-            for (const QString &tn : tagNames) {
+            const int maxBadges = 2;
+            const int shown = qMin(tagNames.size(), maxBadges);
+            for (int i = 0; i < shown; ++i) {
+                const QString &tn = tagNames[i];
                 QString color = "#2178E5";
                 for (const auto &t : allTags) {
                     if (t.name == tn) { color = t.color; break; }
@@ -66,6 +69,15 @@ public:
                     "QLabel { background: %1; color: white; font-size: 9px; font-weight: 600;"
                     " border-radius: 8px; padding: 0 5px; }").arg(color));
                 h->addWidget(badge);
+            }
+            if (tagNames.size() > maxBadges) {
+                QLabel *more = new QLabel(tr("+%1").arg(tagNames.size() - maxBadges), this);
+                more->setFixedHeight(16);
+                more->setStyleSheet(
+                    "QLabel { background: palette(mid); color: palette(windowText);"
+                    " font-size: 9px; font-weight: 600; border-radius: 8px; padding: 0 5px; }");
+                more->setToolTip(tagNames.join(", "));
+                h->addWidget(more);
             }
         }
 
@@ -173,12 +185,24 @@ TodoWidget::TodoWidget(QWidget *parent)
 
 QWidget *TodoWidget::createSectionHeader(const QString &title, const QString &color)
 {
+    // 胶囊徽章式分组头：彩色圆点 + 文字 + 圆角底色，替代原先易溢出的纯文字标题
     QWidget *header = new QWidget(this);
-    QVBoxLayout *hl = new QVBoxLayout(header);
-    hl->setContentsMargins(0, 8, 0, 2);
-    DLabel *label = new DLabel(title, this);
+    QHBoxLayout *hl = new QHBoxLayout(header);
+    hl->setContentsMargins(2, 10, 2, 4);
+    hl->setSpacing(6);
+
+    DLabel *dot = new DLabel(header);
+    dot->setFixedSize(8, 8);
+    dot->setStyleSheet(QString("background: %1; border-radius: 4px;").arg(color));
+
+    DLabel *label = new DLabel(title, header);
+    label->setObjectName("sectionLabel");
     label->setStyleSheet(QString("font-size: 12px; font-weight: 600; color: %1;").arg(color));
+    label->setFixedHeight(18);
+
+    hl->addWidget(dot);
     hl->addWidget(label);
+    hl->addStretch();
     return header;
 }
 
@@ -196,7 +220,7 @@ void TodoWidget::initUI()
     m_newTodoInput->setPlaceholderText(tr("新建待办，输入内容按 Enter 创建"));
     m_newTodoInput->setFixedHeight(36);
     m_newTodoInput->setStyleSheet(
-        "QLineEdit { border: 1px solid palette(mid); border-radius: 6px;"
+        "QLineEdit { border: 1px solid palette(mid); border-radius: 8px;"
         " padding: 8px 12px; font-size: 13px; background: palette(base); }"
         "QLineEdit:focus { border-color: palette(highlight); }");
     topRow->addWidget(m_newTodoInput, 1);
@@ -207,7 +231,7 @@ void TodoWidget::initUI()
     m_selectModeBtn->setFixedHeight(36);
     m_selectModeBtn->setFixedWidth(60);
     m_selectModeBtn->setStyleSheet(
-        "QPushButton { border: 1px solid palette(mid); border-radius: 6px;"
+        "QPushButton { border: 1px solid palette(mid); border-radius: 8px;"
         " padding: 4px 8px; font-size: 12px; background: palette(base); }"
         "QPushButton:hover { background: palette(light); }"
         "QPushButton:checked { background: palette(highlight); color: white; border-color: palette(highlight); }");
@@ -219,7 +243,7 @@ void TodoWidget::initUI()
     m_calendarToggleBtn->setFixedHeight(36);
     m_calendarToggleBtn->setFixedWidth(96);
     m_calendarToggleBtn->setStyleSheet(
-        "QPushButton { border: 1px solid palette(mid); border-radius: 6px;"
+        "QPushButton { border: 1px solid palette(mid); border-radius: 8px;"
         " padding: 4px 8px; font-size: 12px; background: palette(base); }"
         "QPushButton:hover { background: palette(light); }"
         "QPushButton:checked { background: palette(highlight); color: white; border-color: palette(highlight); }");
@@ -316,7 +340,7 @@ void TodoWidget::initUI()
     m_pendingList->setSpacing(4);
     m_pendingList->setStyleSheet(R"(
         QListWidget { background: transparent; border: none; }
-        QListWidget::item { border-radius: 8px; background: palette(light); margin: 2px 0; }
+        QListWidget::item { border-radius: 10px; background: palette(alternateBase); margin: 2px 0; }
         QListWidget::item:hover { background: palette(midlight); }
         QListWidget::item:selected { background: palette(highlight); }
     )");
@@ -330,7 +354,7 @@ void TodoWidget::initUI()
     m_completedList->setSpacing(4);
     m_completedList->setStyleSheet(R"(
         QListWidget { background: transparent; border: none; }
-        QListWidget::item { border-radius: 8px; background: palette(light); margin: 2px 0; }
+        QListWidget::item { border-radius: 10px; background: palette(alternateBase); margin: 2px 0; }
         QListWidget::item:hover { background: palette(midlight); }
     )");
     layout->addWidget(m_completedList, 1);
@@ -612,6 +636,11 @@ QWidget *TodoWidget::createTodoRow(const TodoData &todo)
     titleLabel->setStyleSheet(todo.isCompleted
         ? "font-size: 13px; color: palette(placeholderText); text-decoration: line-through;"
         : "font-size: 13px; color: palette(windowText);");
+    titleLabel->setFixedHeight(18);
+    titleLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    QFontMetrics fm(titleLabel->font());
+    titleLabel->setText(fm.elidedText(title, Qt::ElideRight, 400));
+    titleLabel->setToolTip(title);
     tl->addWidget(titleLabel);
 
     // 创建时间 + 截止日期
@@ -621,6 +650,9 @@ QWidget *TodoWidget::createTodoRow(const TodoData &todo)
     }
     DLabel *timeLabel = new DLabel(timeStr, card);
     timeLabel->setStyleSheet("font-size: 10px; color: palette(placeholderText);");
+    timeLabel->setFixedHeight(16);
+    timeLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    timeLabel->setText(fm.elidedText(timeStr, Qt::ElideRight, 400));
     tl->addWidget(timeLabel);
 
     hLayout->addWidget(textWidget, 1);
@@ -636,13 +668,16 @@ QWidget *TodoWidget::createTodoRow(const TodoData &todo)
         hLayout->addWidget(p);
     }
 
-    // 标签徽章
+    // 标签徽章（最多显示 2 个，超出折叠为 +N，避免横向溢出）
     QStringList tagNames = todo.tags;
     if (tagNames.isEmpty() && !todo.tag.isEmpty()) tagNames << todo.tag;
     if (!tagNames.isEmpty()) {
         auto *app = ShorthandApplication::instance();
         QList<TagData> allTags = app->tagManager()->getAllTags();
-        for (const QString &tn : tagNames) {
+        const int maxBadges = 2;
+        const int shown = qMin(tagNames.size(), maxBadges);
+        for (int i = 0; i < shown; ++i) {
+            const QString &tn = tagNames[i];
             QString color = "#2178E5";
             for (const auto &t : allTags) {
                 if (t.name == tn) { color = t.color; break; }
@@ -653,6 +688,15 @@ QWidget *TodoWidget::createTodoRow(const TodoData &todo)
                 "QLabel { background: %1; color: white; font-size: 10px; font-weight: 600;"
                 " border-radius: 9px; padding: 0 6px; }").arg(color));
             hLayout->addWidget(badge);
+        }
+        if (tagNames.size() > maxBadges) {
+            QLabel *more = new QLabel(tr("+%1").arg(tagNames.size() - maxBadges), card);
+            more->setFixedHeight(18);
+            more->setStyleSheet(
+                "QLabel { background: palette(mid); color: palette(windowText);"
+                " font-size: 10px; font-weight: 600; border-radius: 9px; padding: 0 6px; }");
+            more->setToolTip(tagNames.join(", "));
+            hLayout->addWidget(more);
         }
     }
 
@@ -676,6 +720,37 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
 {
     m_pendingList->clear();
     m_completedList->clear();
+
+    // 已完成待办页：仅展示已完成项，按完成时间倒序，避免与主待办页内容重复
+    if (m_completedOnly) {
+        // 分组头文案改为「已完成待办」，与内容一致
+        DLabel *headerLabel = m_pendingHeader ? m_pendingHeader->findChild<DLabel *>("sectionLabel") : nullptr;
+        if (headerLabel) headerLabel->setText(tr("已完成待办"));
+        QList<TodoData> completed;
+        for (const auto &t : todos) {
+            if (t.isCompleted) completed.append(t);
+        }
+        if (completed.isEmpty()) {
+            QListWidgetItem *hint = new QListWidgetItem(tr("暂无已完成待办"));
+            hint->setFlags(Qt::NoItemFlags);
+            hint->setForeground(palette().color(QPalette::PlaceholderText));
+            hint->setTextAlignment(Qt::AlignCenter);
+            m_pendingList->addItem(hint);
+        } else {
+            for (const auto &t : completed) {
+                QWidget *row = createTodoRow(t);
+                QListWidgetItem *item = new QListWidgetItem(m_pendingList);
+                item->setData(Qt::UserRole, t.id);
+                item->setSizeHint(QSize(0, 52));
+                m_pendingList->addItem(item);
+                m_pendingList->setItemWidget(item, row);
+            }
+        }
+        m_pendingHeader->setVisible(true);
+        m_completedHeader->setVisible(false);
+        m_completedList->setVisible(false);
+        return;
+    }
 
     // 分组：已逾期 / 今日到期 / 本周到期 / 未安排（含无截止日期与其他周）/ 已完成
     QList<TodoData> overdue, today, thisWeek, other, completed;
@@ -706,7 +781,7 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
         QWidget *hdr = createSectionHeader(title, color);
         QListWidgetItem *item = new QListWidgetItem(list);
         item->setFlags(Qt::NoItemFlags);
-        item->setSizeHint(QSize(0, 26));
+        item->setSizeHint(QSize(0, 32));
         list->addItem(item);
         list->setItemWidget(item, hdr);
     };
@@ -720,19 +795,20 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
         m_pendingList->addItem(hint);
     } else {
         if (!overdue.isEmpty()) {
-            addSection(m_pendingList, tr("🔴 已逾期（%1）").arg(overdue.size()), "#E64545");
+            addSection(m_pendingList, tr("已逾期（%1）").arg(overdue.size()), "#E64545");
             fill(m_pendingList, overdue);
         }
         if (!today.isEmpty()) {
-            addSection(m_pendingList, tr("🟠 今日到期（%1）").arg(today.size()), "#FAAD14");
+            addSection(m_pendingList, tr("今日到期（%1）").arg(today.size()), "#FAAD14");
             fill(m_pendingList, today);
         }
         if (!thisWeek.isEmpty()) {
-            addSection(m_pendingList, tr("🔵 本周到期（%1）").arg(thisWeek.size()), "#2178E5");
+            addSection(m_pendingList, tr("本周到期（%1）").arg(thisWeek.size()), "#2178E5");
             fill(m_pendingList, thisWeek);
         }
         if (!other.isEmpty()) {
-            addSection(m_pendingList, tr("⚪ 未安排（%1）").arg(other.size()), "palette(placeholderText)");
+            // 未安排 = 无截止日期或截止日期在更晚的周，用说明性文案避免歧义
+            addSection(m_pendingList, tr("未安排 / 其他（%1）· 无截止日期或晚于本周").arg(other.size()), "palette(placeholderText)");
             fill(m_pendingList, other);
         }
     }
@@ -740,6 +816,10 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
     if (!completed.isEmpty()) {
         fill(m_completedList, completed);
     }
+
+    m_pendingHeader->setVisible(true);
+    m_completedHeader->setVisible(!completed.isEmpty());
+    m_completedList->setVisible(!completed.isEmpty());
 }
 
 void TodoWidget::refresh()
@@ -788,6 +868,17 @@ void TodoWidget::focusNewTodoInput()
 }
 
 // ─── 日程网格视图（Phase D） ──────────────────────────
+void TodoWidget::setCompletedOnly(bool on)
+{
+    if (m_completedOnly == on) return;
+    m_completedOnly = on;
+    // 已完成页强制列表视图（日程网格对已完成项意义不大）
+    if (on && m_calendarMode) {
+        if (m_calendarToggleBtn) m_calendarToggleBtn->setChecked(false);
+    }
+    refresh();
+}
+
 void TodoWidget::setCalendarMode(bool on)
 {
     m_calendarMode = on;
@@ -860,8 +951,8 @@ void TodoWidget::initCalendarView()
         list->setFrameShape(QFrame::NoFrame);
         list->setSpacing(2);
         list->setStyleSheet(R"(
-            QListWidget { background: palette(alternateBase); border: 1px solid palette(mid); border-radius: 6px; padding: 2px; }
-            QListWidget::item { border-radius: 6px; background: transparent; margin: 1px 0; }
+            QListWidget { background: palette(alternateBase); border: 1px solid palette(mid); border-radius: 10px; padding: 2px; }
+            QListWidget::item { border-radius: 8px; background: transparent; margin: 1px 0; }
             QListWidget::item:selected { background: palette(highlight); }
         )");
         connect(list, &TodoDayList::dropTodo, this, [this](int todoId, int dayIndex) {
@@ -882,8 +973,8 @@ void TodoWidget::initCalendarView()
     m_unscheduledList->setFrameShape(QFrame::NoFrame);
     m_unscheduledList->setSpacing(2);
     m_unscheduledList->setStyleSheet(
-        "QListWidget { background: palette(alternateBase); border: 1px dashed palette(mid); border-radius: 6px; padding: 2px; }"
-        "QListWidget::item { border-radius: 6px; background: transparent; margin: 1px 0; }"
+        "QListWidget { background: palette(alternateBase); border: 1px dashed palette(mid); border-radius: 10px; padding: 2px; }"
+        "QListWidget::item { border-radius: 8px; background: transparent; margin: 1px 0; }"
         "QListWidget::item:selected { background: palette(highlight); }");
     m_unscheduledList->setFixedHeight(150);
     connect(qobject_cast<TodoDayList *>(m_unscheduledList), &TodoDayList::dropTodo, this,

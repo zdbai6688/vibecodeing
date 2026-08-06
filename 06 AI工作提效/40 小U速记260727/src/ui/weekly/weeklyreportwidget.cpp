@@ -84,10 +84,10 @@ void WeeklyReportWidget::initUI()
     QHBoxLayout *navRow = new QHBoxLayout();
     m_prevBtn = new QPushButton(tr("◀ 上一周"), this);
     m_prevBtn->setFixedHeight(32);
-    m_prevBtn->setStyleSheet("QPushButton { background:transparent; border:1px solid palette(mid); border-radius:6px; padding:4px 14px; font-size:13px; color:palette(placeholderText); } QPushButton:hover { border-color:palette(highlight); color:palette(highlight); }");
+    m_prevBtn->setStyleSheet("QPushButton { background:transparent; border:1px solid palette(mid); border-radius:8px; padding:4px 14px; font-size:13px; color:palette(placeholderText); } QPushButton:hover { border-color:palette(highlight); color:palette(highlight); }");
     m_nextBtn = new QPushButton(tr("下一周 ▶"), this);
     m_nextBtn->setFixedHeight(32);
-    m_nextBtn->setStyleSheet("QPushButton { background:transparent; border:1px solid palette(mid); border-radius:6px; padding:4px 14px; font-size:13px; color:palette(placeholderText); } QPushButton:hover { border-color:palette(highlight); color:palette(highlight); }");
+    m_nextBtn->setStyleSheet("QPushButton { background:transparent; border:1px solid palette(mid); border-radius:8px; padding:4px 14px; font-size:13px; color:palette(placeholderText); } QPushButton:hover { border-color:palette(highlight); color:palette(highlight); }");
     m_weekLabel = new DLabel(this);
     m_weekLabel->setStyleSheet("font-size: 16px; font-weight: 700; color: palette(windowText);");
     m_weekLabel->setAlignment(Qt::AlignCenter);
@@ -98,7 +98,7 @@ void WeeklyReportWidget::initUI()
 
     // 日历卡片
     QWidget *calendarCard = new QWidget(this);
-    calendarCard->setStyleSheet("background: palette(alternateBase); border-radius: 8px;");
+    calendarCard->setStyleSheet("background: palette(alternateBase); border-radius: 12px;");
     QVBoxLayout *calendarCardLayout = new QVBoxLayout(calendarCard);
     calendarCardLayout->setContentsMargins(16, 16, 16, 16);
     calendarCardLayout->setSpacing(12);
@@ -113,7 +113,7 @@ void WeeklyReportWidget::initUI()
     QStringList dayNames = {tr("周一"), tr("周二"), tr("周三"), tr("周四"), tr("周五"), tr("周六"), tr("周日")};
     for (int i = 0; i < 7; i++) {
         ClickableDayCell *dayCell = new ClickableDayCell(i, this);
-        dayCell->setStyleSheet("QWidget { background: palette(base); border-radius: 8px; } QWidget:hover { background: palette(midlight); }");
+        dayCell->setStyleSheet("QWidget { background: palette(base); border-radius: 10px; } QWidget:hover { background: palette(midlight); }");
         QVBoxLayout *cellLayout = new QVBoxLayout(dayCell);
         cellLayout->setContentsMargins(8, 12, 8, 12);
         cellLayout->setSpacing(6);
@@ -156,7 +156,7 @@ void WeeklyReportWidget::initUI()
 
     // 当日待办卡片
     QWidget *dayTodoCard = new QWidget(this);
-    dayTodoCard->setStyleSheet("background: palette(alternateBase); border-radius: 8px;");
+    dayTodoCard->setStyleSheet("background: palette(alternateBase); border-radius: 12px;");
     QVBoxLayout *dayTodoCardLayout = new QVBoxLayout(dayTodoCard);
     dayTodoCardLayout->setContentsMargins(16, 12, 16, 12);
     dayTodoCardLayout->setSpacing(8);
@@ -170,14 +170,14 @@ void WeeklyReportWidget::initUI()
     m_dayTodoList->setFrameShape(QFrame::NoFrame);
     m_dayTodoList->setStyleSheet(
         "QListWidget { background: transparent; border: none; }"
-        "QListWidget::item { font-size: 13px; color: palette(windowText); padding: 6px 8px; border-radius: 4px; }");
+        "QListWidget::item { font-size: 13px; color: palette(windowText); padding: 6px 8px; border-radius: 6px; }");
     m_dayTodoList->setAlternatingRowColors(true);
     dayTodoCardLayout->addWidget(m_dayTodoList);
     mainLayout->addWidget(dayTodoCard);
 
     // 统计卡片
     QWidget *statsCard = new QWidget(this);
-    statsCard->setStyleSheet("background: palette(alternateBase); border-radius: 8px;");
+    statsCard->setStyleSheet("background: palette(alternateBase); border-radius: 12px;");
     QVBoxLayout *statsCardLayout = new QVBoxLayout(statsCard);
     statsCardLayout->setContentsMargins(16, 12, 16, 12);
     statsCardLayout->setSpacing(8);
@@ -218,7 +218,7 @@ void WeeklyReportWidget::initUI()
 
     // 事项列表卡片
     QWidget *listCard = new QWidget(this);
-    listCard->setStyleSheet("background: palette(alternateBase); border-radius: 8px;");
+    listCard->setStyleSheet("background: palette(alternateBase); border-radius: 12px;");
     QVBoxLayout *listCardLayout = new QVBoxLayout(listCard);
     listCardLayout->setContentsMargins(16, 12, 16, 12);
     listCardLayout->setSpacing(10);
@@ -244,7 +244,7 @@ void WeeklyReportWidget::initUI()
 
     // 周报预览卡片
     QWidget *previewCard = new QWidget(this);
-    previewCard->setStyleSheet("background: palette(alternateBase); border-radius: 8px;");
+    previewCard->setStyleSheet("background: palette(alternateBase); border-radius: 12px;");
     QVBoxLayout *previewCardLayout = new QVBoxLayout(previewCard);
     previewCardLayout->setContentsMargins(16, 12, 16, 12);
     previewCardLayout->setSpacing(8);
@@ -261,7 +261,7 @@ void WeeklyReportWidget::initUI()
 
     m_reportPreview = new QTextEdit(this);
     m_reportPreview->setMinimumHeight(160);
-    m_reportPreview->setStyleSheet("QTextEdit { background: palette(base); border: 1px solid palette(mid); border-radius: 6px; padding: 10px; font-size: 12px; color: palette(windowText); }");
+    m_reportPreview->setStyleSheet("QTextEdit { background: palette(base); border: 1px solid palette(mid); border-radius: 8px; padding: 10px; font-size: 12px; color: palette(windowText); }");
     m_reportPreview->setPlaceholderText(tr("点击「AI 生成周报」按钮，将基于本周待办数据生成周报..."));
     previewCardLayout->addWidget(m_reportPreview);
 
@@ -269,10 +269,10 @@ void WeeklyReportWidget::initUI()
     btnRow->addStretch();
     m_generateBtn = new QPushButton(tr("🤖 AI 生成周报"), this);
     m_generateBtn->setFixedHeight(36);
-    m_generateBtn->setStyleSheet("QPushButton { background:palette(highlight); color:palette(highlightedText); border:none; border-radius:6px; padding:6px 20px; font-size:13px; font-weight:600; } QPushButton:hover { background:palette(dark); } QPushButton:disabled { background:palette(mid); color:palette(windowText); }");
+    m_generateBtn->setStyleSheet("QPushButton { background:palette(highlight); color:palette(highlightedText); border:none; border-radius:8px; padding:6px 20px; font-size:13px; font-weight:600; } QPushButton:hover { background:palette(dark); } QPushButton:disabled { background:palette(mid); color:palette(windowText); }");
     m_exportBtn = new QPushButton(tr("📤 导出"), this);
     m_exportBtn->setFixedHeight(36);
-    m_exportBtn->setStyleSheet("QPushButton { background:transparent; border:1px solid palette(highlight); border-radius:6px; padding:6px 16px; font-size:12px; color:palette(highlight); } QPushButton:hover { background:palette(midlight); }");
+    m_exportBtn->setStyleSheet("QPushButton { background:transparent; border:1px solid palette(highlight); border-radius:8px; padding:6px 16px; font-size:12px; color:palette(highlight); } QPushButton:hover { background:palette(midlight); }");
     btnRow->addWidget(m_generateBtn);
     btnRow->addWidget(m_exportBtn);
     previewCardLayout->addLayout(btnRow);
@@ -296,8 +296,8 @@ void WeeklyReportWidget::applyDaySelection(int dayIndex)
     for (int i = 0; i < 7; i++) {
         const bool selected = (dayIndex >= 0 && i == dayIndex);
         m_dayCells[i]->setStyleSheet(selected
-            ? "QWidget { background: palette(highlight); border-radius: 8px; }"
-            : "QWidget { background: palette(base); border-radius: 8px; } QWidget:hover { background: palette(midlight); }");
+            ? "QWidget { background: palette(highlight); border-radius: 10px; }"
+            : "QWidget { background: palette(base); border-radius: 10px; } QWidget:hover { background: palette(midlight); }");
         // 选中日期的子标签同步切换为高亮文字色，避免深色主题下文字不可见
         m_weekdayLabels[i]->setStyleSheet(selected
             ? "font-size: 11px; color: palette(highlightedText);"

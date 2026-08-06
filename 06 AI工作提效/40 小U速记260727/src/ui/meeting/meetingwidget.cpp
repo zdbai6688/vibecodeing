@@ -37,7 +37,7 @@ static void stylePrimaryBtn(QPushButton *btn)
     btn->setStyleSheet(R"(
         QPushButton {
             background: palette(highlight); color: palette(highlightedText); border: none;
-            border-radius: 6px; padding: 4px 24px; font-size: 13px; font-weight: 600;
+            border-radius: 8px; padding: 4px 24px; font-size: 13px; font-weight: 600;
         }
         QPushButton:hover { background: palette(dark); }
         QPushButton:disabled { background: palette(mid); color: palette(windowText); }
@@ -98,14 +98,14 @@ void MeetingWidget::initUI()
     QPushButton *startBtn = new QPushButton(tr("🎤 开始会议"), m_emptyPage);
     startBtn->setFixedHeight(38);
     startBtn->setCursor(Qt::PointingHandCursor);
-    startBtn->setStyleSheet("QPushButton { background: palette(highlight); color: palette(highlightedText); border: none; border-radius: 6px; padding: 4px 32px; font-size: 14px; font-weight: 600; } QPushButton:hover { background: palette(dark); }");
+    startBtn->setStyleSheet("QPushButton { background: palette(highlight); color: palette(highlightedText); border: none; border-radius: 8px; padding: 4px 32px; font-size: 14px; font-weight: 600; } QPushButton:hover { background: palette(dark); }");
     emptyLayout->addWidget(startBtn, 0, Qt::AlignCenter);
     connect(startBtn, &QPushButton::clicked, this, &MeetingWidget::onStartRecording);
 
     QPushButton *manualBtn = new QPushButton(tr("📝 新建会议"), m_emptyPage);
     manualBtn->setFixedHeight(38);
     manualBtn->setCursor(Qt::PointingHandCursor);
-    manualBtn->setStyleSheet("QPushButton { background: transparent; color: palette(highlight); border: 1px solid palette(highlight); border-radius: 6px; padding: 4px 32px; font-size: 14px; } QPushButton:hover { background: palette(midlight); }");
+    manualBtn->setStyleSheet("QPushButton { background: transparent; color: palette(highlight); border: 1px solid palette(highlight); border-radius: 8px; padding: 4px 32px; font-size: 14px; } QPushButton:hover { background: palette(midlight); }");
     emptyLayout->addWidget(manualBtn, 0, Qt::AlignCenter);
     connect(manualBtn, &QPushButton::clicked, this, &MeetingWidget::onNewMeeting);
 
@@ -141,7 +141,7 @@ void MeetingWidget::initUI()
     m_searchEdit = new QLineEdit(this);
     m_searchEdit->setPlaceholderText(tr("搜索会议..."));
     m_searchEdit->setFixedHeight(32);
-    m_searchEdit->setStyleSheet("QLineEdit { border:1px solid palette(mid); border-radius:6px; padding:4px 12px; font-size:13px; background:palette(window); } QLineEdit:focus { border-color:palette(highlight); }");
+    m_searchEdit->setStyleSheet("QLineEdit { border:1px solid palette(mid); border-radius:8px; padding:4px 12px; font-size:13px; background:palette(window); } QLineEdit:focus { border-color:palette(highlight); }");
     listLayout->addWidget(m_searchEdit);
 
     m_meetingList = new QListWidget(this);
@@ -150,10 +150,10 @@ void MeetingWidget::initUI()
     m_meetingList->setStyleSheet(R"(
         QListWidget { background: transparent; border: none; }
         QListWidget::item {
-            border-radius: 6px; padding: 12px 16px; margin: 2px 0;
-            background: palette(base); border: 1px solid palette(midlight);
+            border-radius: 10px; padding: 12px 16px; margin: 2px 0;
+            background: palette(alternateBase); border: 1px solid transparent;
         }
-        QListWidget::item:hover { background: palette(light); }
+        QListWidget::item:hover { background: palette(midlight); border-color: palette(mid); }
         QListWidget::item:selected { background: palette(highlight); border-color: palette(highlight); }
     )");
     listLayout->addWidget(m_meetingList, 1);
@@ -323,7 +323,7 @@ void MeetingWidget::initUI()
     m_transcriptEdit = new QTextBrowser(this);
     m_transcriptEdit->setPlaceholderText(tr("点击「语音转写」识别录音内容..."));
     m_transcriptEdit->setReadOnly(true);
-    m_transcriptEdit->setStyleSheet("QTextBrowser { border: 1px solid palette(midlight); border-radius: 6px; padding: 8px; font-size: 12px; background: palette(base); }");
+    m_transcriptEdit->setStyleSheet("QTextBrowser { border: 1px solid palette(mid); border-radius: 8px; padding: 8px; font-size: 12px; background: palette(base); }");
     m_transcriptEdit->setMinimumHeight(200);
     m_transcriptEdit->setOpenExternalLinks(false);
     m_transcriptEdit->setOpenLinks(false);
@@ -343,7 +343,7 @@ void MeetingWidget::initUI()
     m_summaryEdit = new QTextEdit(this);
     m_summaryEdit->setPlaceholderText(tr("AI 生成的会议纪要..."));
     m_summaryEdit->setReadOnly(true);
-    m_summaryEdit->setStyleSheet("QTextEdit { border: 1px solid palette(midlight); border-radius: 6px; padding: 8px; font-size: 12px; background: palette(base); }");
+    m_summaryEdit->setStyleSheet("QTextEdit { border: 1px solid palette(mid); border-radius: 8px; padding: 8px; font-size: 12px; background: palette(base); }");
     m_summaryEdit->setMinimumHeight(100);
     summaryPanelLayout->addWidget(m_summaryEdit);
     contentLayout->addWidget(summaryPanel, 1);

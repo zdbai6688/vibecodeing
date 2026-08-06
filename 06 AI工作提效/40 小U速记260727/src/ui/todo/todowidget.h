@@ -41,6 +41,8 @@ public:
     void focusNewTodoInput();
     void setCalendarMode(bool on);
     bool calendarMode() const { return m_calendarMode; }
+    void setCompletedOnly(bool on);
+    bool completedOnly() const { return m_completedOnly; }
 
 signals:
     void todoSelected(int todoId);
@@ -90,6 +92,7 @@ private:
     QList<QLabel *> m_calendarDateLabels; // 各列日期数字（今日高亮）
     QListWidget *m_unscheduledList;    // 未安排（无截止日期 + 其他周）
     bool m_calendarMode = false;
+    bool m_completedOnly = false;      // 仅显示已完成待办（侧栏「已完成待办」入口）
 
     // 批量操作控件
     bool m_multiSelectMode = false;

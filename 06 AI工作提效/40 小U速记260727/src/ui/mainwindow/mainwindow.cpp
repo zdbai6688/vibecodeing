@@ -141,7 +141,8 @@ void MainWindow::initUI()
     m_sep1 = new QFrame(this);
     m_sep1->setFrameShape(QFrame::VLine);
     m_sep1->setObjectName("separator1");
-    m_sep1->setStyleSheet("#separator1 { color: palette(midlight); background: palette(midlight); width: 1px; }");
+    m_sep1->setFixedWidth(1);
+    m_sep1->setStyleSheet("#separator1 { background: transparent; width: 1px; }");
     m_mainLayout->addWidget(m_sep1);
 
     // 中间内容栏
@@ -167,7 +168,8 @@ void MainWindow::initUI()
     QFrame *sep2 = new QFrame(this);
     sep2->setFrameShape(QFrame::VLine);
     sep2->setObjectName("separator2");
-    sep2->setStyleSheet("#separator2 { color: palette(midlight); background: palette(midlight); width: 1px; }");
+    sep2->setFixedWidth(1);
+    sep2->setStyleSheet("#separator2 { background: transparent; width: 1px; }");
     m_mainLayout->addWidget(sep2);
 
     // 右侧编辑器
@@ -183,19 +185,27 @@ void MainWindow::initUI()
     QVBoxLayout *blankLayout = new QVBoxLayout(m_blankEditor);
     blankLayout->setAlignment(Qt::AlignCenter);
     blankLayout->setSpacing(12);
-    QLabel *blankIcon = new QLabel(tr("📄"), m_blankEditor);
-    blankIcon->setStyleSheet("font-size: 48px;");
+    QWidget *blankCard = new QWidget(m_blankEditor);
+    blankCard->setObjectName("blankCard");
+    blankCard->setStyleSheet(
+        "#blankCard { background: palette(alternateBase); border: 1px dashed palette(mid);"
+        " border-radius: 16px; padding: 32px 48px; }");
+    QVBoxLayout *blankCardLayout = new QVBoxLayout(blankCard);
+    blankCardLayout->setSpacing(10);
+    QLabel *blankIcon = new QLabel(tr("📝"), blankCard);
+    blankIcon->setStyleSheet("font-size: 44px;");
     blankIcon->setAlignment(Qt::AlignCenter);
-    blankLayout->addWidget(blankIcon);
-    QLabel *blankHint = new QLabel(tr("选择左侧笔记开始编辑，或点击「+」新建"), m_blankEditor);
-    blankHint->setStyleSheet("font-size: 14px; color: palette(windowText);");
+    blankCardLayout->addWidget(blankIcon);
+    QLabel *blankHint = new QLabel(tr("选择左侧笔记开始编辑，或点击「＋」新建"), blankCard);
+    blankHint->setStyleSheet("font-size: 14px; font-weight: 600; color: palette(windowText);");
     blankHint->setAlignment(Qt::AlignCenter);
-    blankLayout->addWidget(blankHint);
-    QLabel *blankSubHint = new QLabel(tr("Ctrl+N 新建笔记  ·  Ctrl+Shift+N 新建待办  ·  %1 快速录入")
-                                       .arg(QString(SHORTCUT_QUICK_ENTRY)), m_blankEditor);
-    blankSubHint->setStyleSheet("font-size: 12px; color: palette(buttonText);");
+    blankCardLayout->addWidget(blankHint);
+    QLabel *blankSubHint = new QLabel(tr("Ctrl+N 新建笔记 · Ctrl+Shift+N 新建待办 · %1 快速录入")
+                                       .arg(QString(SHORTCUT_QUICK_ENTRY)), blankCard);
+    blankSubHint->setStyleSheet("font-size: 12px; color: palette(placeholderText);");
     blankSubHint->setAlignment(Qt::AlignCenter);
-    blankLayout->addWidget(blankSubHint);
+    blankCardLayout->addWidget(blankSubHint);
+    blankLayout->addWidget(blankCard);
 
     m_mainLayout->addWidget(m_editor, 2);
     m_mainLayout->addWidget(m_blankEditor, 2);
@@ -545,6 +555,7 @@ void MainWindow::onSwitchToTodos()
     showMiddleWidget(m_todoWidget);
     // 回到待办视图时清除标签筛选
     m_todoWidget->clearFilterTags();
+    m_todoWidget->setCompletedOnly(false);
     m_todoWidget->refresh();
     m_todoWidget->focusNewTodoInput();
 }
@@ -581,6 +592,9 @@ void MainWindow::onSwitchToCompletedTodos()
 {
     m_sidebar->setActiveSection(4);
     showMiddleWidget(m_todoWidget);
+    // 已完成待办：仅显示已完成项，避免与主待办页内容重复
+    m_todoWidget->clearFilterTags();
+    m_todoWidget->setCompletedOnly(true);
     m_todoWidget->refresh();
 }
 

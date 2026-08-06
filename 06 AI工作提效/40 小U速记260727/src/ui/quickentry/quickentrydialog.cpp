@@ -32,20 +32,20 @@ static const char *COMPACT_STYLE = R"(
     QWidget#compactContainer {
         background: palette(window);
         border: 1px solid palette(mid);
-        border-radius: 6px;
+        border-radius: 12px;
     }
     QTextEdit#compactInput {
         border: none;
-        font-size: 13px;
+        font-size: 14px;
         background: transparent;
-        padding: 4px;
+        padding: 6px;
     }
     QPushButton#compactBtn {
         background: transparent;
         border: none;
-        border-radius: 6px;
-        font-size: 12px;
-        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 13px;
+        padding: 4px 10px;
         color: palette(placeholderText);
     }
     QPushButton#compactBtn:hover {
@@ -56,9 +56,9 @@ static const char *COMPACT_STYLE = R"(
         background: palette(highlight);
         color: palette(highlightedText);
         border: none;
-        border-radius: 6px;
-        font-size: 12px;
-        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        padding: 4px 16px;
         font-weight: 600;
     }
     QPushButton#compactSave:hover {
@@ -67,9 +67,9 @@ static const char *COMPACT_STYLE = R"(
     QPushButton#pinBtn {
         background: transparent;
         border: 1px solid palette(mid);
-        border-radius: 6px;
+        border-radius: 8px;
         font-size: 12px;
-        padding: 4px 8px;
+        padding: 4px 10px;
         color: palette(placeholderText);
     }
     QPushButton#pinBtn:hover {
@@ -169,7 +169,7 @@ void QuickEntryDialog::initCompactUI()
     m_compactEdit->setObjectName("compactInput");
     m_compactEdit->setPlaceholderText(tr("快速记录..."));
     m_compactEdit->setAcceptRichText(false);
-    m_compactEdit->setFixedHeight(60);
+    m_compactEdit->setFixedHeight(84);
     m_compactEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     layout->addWidget(m_compactEdit);
 
@@ -178,11 +178,11 @@ void QuickEntryDialog::initCompactUI()
     bottomRow->setSpacing(4);
     QPushButton *voiceBtn = new QPushButton(tr("🎤"), this);
     voiceBtn->setObjectName("compactBtn");
-    voiceBtn->setFixedSize(28, 28);
+    voiceBtn->setFixedSize(30, 30);
     voiceBtn->setToolTip(tr("语音"));
     QPushButton *ssBtn = new QPushButton(tr("📷"), this);
     ssBtn->setObjectName("compactBtn");
-    ssBtn->setFixedSize(28, 28);
+    ssBtn->setFixedSize(30, 30);
     ssBtn->setToolTip(tr("截图"));
     bottomRow->addWidget(voiceBtn);
     bottomRow->addWidget(ssBtn);
@@ -190,13 +190,13 @@ void QuickEntryDialog::initCompactUI()
 
     m_pinToDesktopBtn = new QPushButton(tr("📌 贴到桌面"), this);
     m_pinToDesktopBtn->setObjectName("pinBtn");
-    m_pinToDesktopBtn->setFixedHeight(26);
+    m_pinToDesktopBtn->setFixedHeight(30);
     m_pinToDesktopBtn->setToolTip(tr("保存并贴到桌面便签"));
     bottomRow->addWidget(m_pinToDesktopBtn);
 
     QPushButton *saveBtn = new QPushButton(tr("保存"), this);
     saveBtn->setObjectName("compactSave");
-    saveBtn->setFixedHeight(26);
+    saveBtn->setFixedHeight(30);
     bottomRow->addWidget(saveBtn);
     layout->addLayout(bottomRow);
 
@@ -209,7 +209,7 @@ void QuickEntryDialog::initCompactUI()
         m_modeStack->setCurrentWidget(m_fullPage);
         m_contentEdit->setPlainText(m_compactEdit->toPlainText());
         m_contentEdit->setFocus();
-        setFixedSize(520, 260);
+        setFixedSize(560, 320);
         centerOnScreen();
     });
     connect(m_compactBtn, &QPushButton::clicked, this, [this]() {
@@ -222,7 +222,7 @@ void QuickEntryDialog::initCompactUI()
             m_contentEdit->setPlainText(text);
             m_compactMode = false;
             m_modeStack->setCurrentWidget(m_fullPage);
-            setFixedSize(520, 260);
+            setFixedSize(560, 320);
             centerOnScreen();
             m_contentEdit->moveCursor(QTextCursor::End);
             m_contentEdit->setFocus();
@@ -281,7 +281,7 @@ void QuickEntryDialog::initFullUI()
     m_contentEdit->setObjectName("compactInput");
     m_contentEdit->setPlaceholderText(tr("记录笔记内容...\n\n支持 #标签 和 !优先级"));
     m_contentEdit->setAcceptRichText(false);
-    m_contentEdit->setFixedHeight(120);
+    m_contentEdit->setFixedHeight(160);
     layout->addWidget(m_contentEdit, 1);
 
     QHBoxLayout *bottomRow = new QHBoxLayout();
@@ -293,14 +293,14 @@ void QuickEntryDialog::initFullUI()
 
     QPushButton *pinBtn = new QPushButton(tr("📌 贴到桌面"), this);
     pinBtn->setObjectName("pinBtn");
-    pinBtn->setFixedHeight(26);
+    pinBtn->setFixedHeight(30);
     pinBtn->setToolTip(tr("保存并贴到桌面便签"));
     bottomRow->addWidget(pinBtn);
     connect(pinBtn, &QPushButton::clicked, this, &QuickEntryDialog::onPinToDesktop);
 
     QPushButton *fullSaveBtn = new QPushButton(tr("保存"), this);
     fullSaveBtn->setObjectName("compactSave");
-    fullSaveBtn->setFixedHeight(26);
+    fullSaveBtn->setFixedHeight(30);
     bottomRow->addWidget(fullSaveBtn);
     layout->addLayout(bottomRow);
 
@@ -308,7 +308,7 @@ void QuickEntryDialog::initFullUI()
         m_compactEdit->setPlainText(m_contentEdit->toPlainText());
         m_compactMode = true;
         m_modeStack->setCurrentWidget(m_compactPage);
-        setFixedSize(280, 160);
+        setFixedSize(360, 220);
         centerOnScreen();
         m_compactEdit->setFocus();
     });
@@ -351,10 +351,10 @@ void QuickEntryDialog::showCompact()
 
     if (m_compactMode) {
         m_modeStack->setCurrentWidget(m_compactPage);
-        setFixedSize(280, 160);
+        setFixedSize(360, 220);
     } else {
         m_modeStack->setCurrentWidget(m_fullPage);
-        setFixedSize(520, 260);
+        setFixedSize(560, 320);
     }
     centerOnScreen();
     show();
@@ -409,11 +409,11 @@ void QuickEntryDialog::toggleCompactMode()
     if (m_compactMode) {
         m_compactEdit->setPlainText(m_contentEdit->toPlainText());
         m_modeStack->setCurrentWidget(m_compactPage);
-        setFixedSize(280, 160);
+        setFixedSize(360, 220);
     } else {
         m_contentEdit->setPlainText(m_compactEdit->toPlainText());
         m_modeStack->setCurrentWidget(m_fullPage);
-        setFixedSize(520, 260);
+        setFixedSize(560, 320);
     }
     centerOnScreen();
 }

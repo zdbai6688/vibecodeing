@@ -18,6 +18,10 @@
 #include <QFileDialog>
 #include <QFile>
 #include <QTextBlockFormat>
+#include <QTextBlock>
+#include <QTextDocument>
+#include <QTextCursor>
+#include <QTextFormat>
 #include <QProgressDialog>
 #include <QToolButton>
 #include <QPair>
@@ -133,6 +137,19 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
         m_modified = true;
     };
 
+    // 记住上次选择的颜色：下次打开取色器时直接沿用，避免每次都要重新选色（TC03）
+    QColor lastTextColor;
+    connect(colorBtn, &QToolButton::clicked, this, [this, applyCharFormat, &lastTextColor]() {
+        QColor defaultColor = lastTextColor.isValid()
+                ? lastTextColor : palette().color(QPalette::WindowText);
+        QColor c = QColorDialog::getColor(defaultColor, this, tr("选择文字颜色"));
+        if (c.isValid()) {
+            lastTextColor = c;
+            applyCharFormat([c](QTextCharFormat &fmt) { fmt.setForeground(c); });
+            m_contentEdit->setFocus();
+        }
+    });
+
     // 字体族：全部中文字体，供选择
     m_fontCombo->clear();
     m_fontCombo->addItem(tr("默认字体"), QString());
@@ -158,16 +175,6 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
         double pt = sizeText.toDouble(&ok);
         if (!ok || pt <= 0) return;
         applyCharFormat([pt](QTextCharFormat &fmt) { fmt.setFontPointSize(pt); });
-    });
-
-    // 颜色：作用于选中文字（不再全文生效）
-    connect(colorBtn, &QToolButton::clicked, this, [this, applyCharFormat]() {
-        QColor defaultColor = m_contentEdit->textColor().isValid()
-                ? m_contentEdit->textColor() : palette().color(QPalette::WindowText);
-        QColor c = QColorDialog::getColor(defaultColor, this, tr("选择文字颜色"));
-        if (c.isValid()) {
-            applyCharFormat([c](QTextCharFormat &fmt) { fmt.setForeground(c); });
-        }
     });
 
     connect(m_boldBtn, &QToolButton::clicked, this, [this, applyCharFormat]() {
@@ -340,7 +347,11 @@ void NoteEditorWidget::initUI()
     m_previewBrowser->setOpenExternalLinks(true);
     m_previewBrowser->setReadOnly(true);
     m_previewBrowser->setFrameShape(QFrame::NoFrame);
-    m_previewBrowser->setStyleSheet("QTextBrowser { border: none; padding: 16px; font-size: 14px; }");
+    m_previewBrowser->setStyleSheet(
+        "QTextBrowser { border: none; padding: 16px;"
+        " font-size: 14px; color: palette(windowText);"
+        " selection-background-color: palette(highlight);"
+        " selection-color: palette(highlightedText); }");
     m_contentStack->addWidget(m_previewBrowser);
     m_contentStack->setCurrentWidget(m_contentEdit);
     mainLayout->addWidget(m_contentStack, 1);
@@ -560,22 +571,65 @@ void NoteEditorWidget::togglePreview()
 
 QString NoteEditorWidget::renderPreviewHtml() const
 {
-    // 以富文本文档为基础，保留工具栏设置的粗体/颜色/字号；再补充手动输入的 Markdown 语法转换
-    QString html = m_contentEdit->document()->toHtml();
+    // 以富文本文档副本为基础：保留工具栏设置的粗体/颜色/字号，同时把
+    // 手动输入的 Markdown 行级标记（# 标题 / - 列表 / > 引用）转换为对应格式，
+    // 再把行内标记（加粗/斜体/代码/图片/链接）转为 HTML。深拷贝保证不改动编辑区。
+    QTextDocument docCopy;
+    docCopy.setDefaultFont(m_contentEdit->font());
+    docCopy.setHtml(m_contentEdit->document()->toHtml());
+    QTextCursor cur(&docCopy);
+    cur.beginEditBlock();
 
-    // 行级：标题 / 列表（在 QTextDocument 的 <p> 块上做替换）
-    html.replace(QRegularExpression("^(<p[^>]*>)\\s*### (.+?)(</p>)", QRegularExpression::MultilineOption),
-                 "\\1<h3>\\2</h3>\\3");
-    html.replace(QRegularExpression("^(<p[^>]*>)\\s*## (.+?)(</p>)", QRegularExpression::MultilineOption),
-                 "\\1<h2>\\2</h2>\\3");
-    html.replace(QRegularExpression("^(<p[^>]*>)\\s*# (.+?)(</p>)", QRegularExpression::MultilineOption),
-                 "\\1<h1>\\2</h1>\\3");
-    html.replace(QRegularExpression("^(<p[^>]*>)\\s*- (.+?)(</p>)", QRegularExpression::MultilineOption),
-                 "\\1<ul><li>\\2</li></ul>\\3");
-    html.replace(QRegularExpression("^(<p[^>]*>)\\s*\\d+\\. (.+?)(</p>)", QRegularExpression::MultilineOption),
-                 "\\1<ol><li>\\2</li></ol>\\3");
-    html.replace(QRegularExpression("^(<p[^>]*>)\\s*> (.+?)(</p>)", QRegularExpression::MultilineOption),
-                 "\\1<blockquote>\\2</blockquote>\\3");
+    for (QTextBlock block = docCopy.begin(); block.isValid(); block = block.next()) {
+        QString text = block.text();
+        QString stripped = text.trimmed();
+        QTextCharFormat bf = block.charFormat();
+        int prefixLen = 0;
+
+        if (stripped.startsWith("### ")) {
+            bf.setFontPointSize(15); bf.setFontWeight(QFont::Bold); prefixLen = 4;
+        } else if (stripped.startsWith("## ")) {
+            bf.setFontPointSize(17); bf.setFontWeight(QFont::Bold); prefixLen = 3;
+        } else if (stripped.startsWith("# ")) {
+            bf.setFontPointSize(20); bf.setFontWeight(QFont::Bold); prefixLen = 2;
+        } else if (stripped.startsWith("> ")) {
+            bf.setForeground(QColor(0x8e, 0x8e, 0x93));
+            prefixLen = 2;
+        }
+        // 列表项（- / *）保留标记，交由下方 HTML 正则包成 <ul><li>，避免转换后无法识别
+
+        if (prefixLen > 0) {
+            QTextCursor bc(&docCopy);
+            bc.setPosition(block.position());
+            bc.setPosition(block.position() + prefixLen, QTextCursor::KeepAnchor);
+            bc.removeSelectedText();
+            QTextCursor bfCur(&docCopy);
+            bfCur.setPosition(block.position());
+            bfCur.setPosition(block.position() + block.length() - 1, QTextCursor::KeepAnchor);
+            bfCur.setCharFormat(bf);
+        }
+    }
+    cur.endEditBlock();
+
+    QString html = docCopy.toHtml();
+
+    // 列表：把转换后的 - 项包成 <ul><li>（逐项处理，避免嵌套错乱）
+    QStringList lines;
+    const QStringList rawLines = html.split('\n');
+    bool inUl = false;
+    for (QString line : rawLines) {
+        QRegularExpressionMatch m = QRegularExpression("^\\s*(<p[^>]*>)\\s*[-*] (.+?)(</p>)\\s*$",
+                                                       QRegularExpression::MultilineOption).match(line);
+        if (m.hasMatch()) {
+            if (!inUl) { lines << "<ul>"; inUl = true; }
+            lines << m.captured(1) + "<li>" + m.captured(2) + "</li>" + m.captured(3);
+        } else {
+            if (inUl) { lines << "</ul>"; inUl = false; }
+            lines << line;
+        }
+    }
+    if (inUl) lines << "</ul>";
+    html = lines.join('\n');
 
     // 行内：图片 / 链接 / 加粗 / 斜体 / 行内代码
     html.replace(QRegularExpression("!\\[([^\\]]*)\\]\\(([^\\)]+)\\)"),

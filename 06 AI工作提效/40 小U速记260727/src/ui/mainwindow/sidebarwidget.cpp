@@ -57,7 +57,7 @@ void SidebarWidget::initUI()
     m_headerWidget = new QWidget(this);
     m_headerWidget->setObjectName("sidebarHeader");
     QHBoxLayout *headerLayout = new QHBoxLayout(m_headerWidget);
-    headerLayout->setContentsMargins(12, 8, 8, 8);
+    headerLayout->setContentsMargins(14, 10, 10, 10);
     headerLayout->setSpacing(6);
 
     m_logoIcon = new QLabel(QString::fromUtf8("\xF0\x9F\x93\x9D"), this);
@@ -91,8 +91,8 @@ void SidebarWidget::initUI()
 
     QWidget *scrollContent = new QWidget(scroll);
     QVBoxLayout *scrollLayout = new QVBoxLayout(scrollContent);
-    scrollLayout->setContentsMargins(6, 8, 6, 8);
-    scrollLayout->setSpacing(2);
+    scrollLayout->setContentsMargins(8, 10, 8, 12);
+    scrollLayout->setSpacing(10);
 
     // ===== 第一组：核心功能 =====
     m_coreGroup = new QWidget(this);
@@ -118,7 +118,7 @@ void SidebarWidget::initUI()
     // 核心功能区段标题
     DLabel *sectionCore = new DLabel(tr("核心功能"), this);
     sectionCore->setObjectName("sectionCore");
-    sectionCore->setFixedHeight(24);
+    sectionCore->setFixedHeight(26);
     sectionCore->setContentsMargins(12, 4, 12, 2);
     QFont f = sectionCore->font();
     f.setPointSize(9);
@@ -131,7 +131,7 @@ void SidebarWidget::initUI()
     m_btnNotes->setObjectName("navBtn");
     m_btnNotes->setCheckable(true);
     m_btnNotes->setCursor(Qt::PointingHandCursor);
-    m_btnNotes->setFixedHeight(34);
+    m_btnNotes->setFixedHeight(36);
     QHBoxLayout *notesLayout = new QHBoxLayout(m_btnNotes);
     notesLayout->setContentsMargins(10, 0, 6, 0);
     notesLayout->setSpacing(6);
@@ -156,7 +156,7 @@ void SidebarWidget::initUI()
     m_btnTodos->setObjectName("navBtn");
     m_btnTodos->setCheckable(true);
     m_btnTodos->setCursor(Qt::PointingHandCursor);
-    m_btnTodos->setFixedHeight(34);
+    m_btnTodos->setFixedHeight(36);
     QHBoxLayout *todosLayout = new QHBoxLayout(m_btnTodos);
     todosLayout->setContentsMargins(10, 0, 6, 0);
     todosLayout->setSpacing(6);
@@ -181,7 +181,7 @@ void SidebarWidget::initUI()
     m_btnMeetings->setObjectName("navBtn");
     m_btnMeetings->setCheckable(true);
     m_btnMeetings->setCursor(Qt::PointingHandCursor);
-    m_btnMeetings->setFixedHeight(34);
+    m_btnMeetings->setFixedHeight(36);
     QHBoxLayout *meetingsLayout = new QHBoxLayout(m_btnMeetings);
     meetingsLayout->setContentsMargins(10, 0, 10, 0);
     meetingsLayout->setSpacing(6);
@@ -206,7 +206,7 @@ void SidebarWidget::initUI()
 
     DLabel *sectionTags = new DLabel(tr("标签筛选"), this);
     sectionTags->setObjectName("sectionTags");
-    sectionTags->setFixedHeight(24);
+    sectionTags->setFixedHeight(26);
     sectionTags->setContentsMargins(12, 4, 12, 2);
     QFont ft = sectionTags->font();
     ft.setPointSize(9);
@@ -238,7 +238,7 @@ void SidebarWidget::initUI()
 
     DLabel *sectionArchive = new DLabel(tr("归档"), this);
     sectionArchive->setObjectName("sectionArchive");
-    sectionArchive->setFixedHeight(24);
+    sectionArchive->setFixedHeight(26);
     sectionArchive->setContentsMargins(12, 4, 12, 2);
     QFont fa = sectionArchive->font();
     fa.setPointSize(9);
@@ -251,7 +251,7 @@ void SidebarWidget::initUI()
     m_btnCompleted->setObjectName("navBtn");
     m_btnCompleted->setCheckable(true);
     m_btnCompleted->setCursor(Qt::PointingHandCursor);
-    m_btnCompleted->setFixedHeight(34);
+    m_btnCompleted->setFixedHeight(36);
     QHBoxLayout *completedLayout = new QHBoxLayout(m_btnCompleted);
     completedLayout->setContentsMargins(10, 0, 10, 0);
     completedLayout->setSpacing(6);
@@ -271,7 +271,7 @@ void SidebarWidget::initUI()
     m_btnWeekly->setObjectName("navBtn");
     m_btnWeekly->setCheckable(true);
     m_btnWeekly->setCursor(Qt::PointingHandCursor);
-    m_btnWeekly->setFixedHeight(34);
+    m_btnWeekly->setFixedHeight(36);
     QHBoxLayout *weeklyLayout = new QHBoxLayout(m_btnWeekly);
     weeklyLayout->setContentsMargins(10, 0, 10, 0);
     weeklyLayout->setSpacing(6);
@@ -289,7 +289,7 @@ void SidebarWidget::initUI()
     m_btnTrash->setObjectName("navBtn");
     m_btnTrash->setCheckable(true);
     m_btnTrash->setCursor(Qt::PointingHandCursor);
-    m_btnTrash->setFixedHeight(34);
+    m_btnTrash->setFixedHeight(36);
     QHBoxLayout *trashLayout = new QHBoxLayout(m_btnTrash);
     trashLayout->setContentsMargins(10, 0, 10, 0);
     trashLayout->setSpacing(6);
@@ -322,7 +322,7 @@ void SidebarWidget::initUI()
     m_btnSettings->setObjectName("navBtn");
     m_btnSettings->setCheckable(true);
     m_btnSettings->setCursor(Qt::PointingHandCursor);
-    m_btnSettings->setFixedHeight(34);
+    m_btnSettings->setFixedHeight(36);
     QHBoxLayout *settingsLayout = new QHBoxLayout(m_btnSettings);
     settingsLayout->setContentsMargins(10, 0, 10, 0);
     settingsLayout->setSpacing(6);
@@ -516,25 +516,28 @@ void SidebarWidget::refreshStyleSheet()
     setStyleSheet(QString(R"(
         SidebarWidget#SidebarWidget {
             background: %1;
-            border-right: 1px solid %2;
         }
         #sidebarHeader {
-            border-bottom: 1px solid %2;
+            border-bottom: 1px solid rgba(128,128,128,0.12);
+            padding-bottom: 4px;
         }
         #logoIcon {
-            font-size: 18px;
+            font-size: 17px;
+            background: %6;
+            border-radius: 8px;
         }
         #logoText {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 15px;
+            font-weight: 700;
             color: %3;
+            letter-spacing: 1px;
         }
         #collapseBtn {
             background: transparent;
             border: none;
             color: %4;
             font-size: 11px;
-            border-radius: 4px;
+            border-radius: 6px;
         }
         #collapseBtn:hover {
             background: rgba(128,128,128,0.15);
@@ -545,14 +548,30 @@ void SidebarWidget::refreshStyleSheet()
             color: %4;
             font-size: 11px;
             font-weight: 600;
+            letter-spacing: 2px;
             padding: 4px 12px 2px 12px;
             background: transparent;
             border: none;
         }
+        QPushButton#newNoteBtn {
+            background: %5;
+            color: %8;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 0 8px;
+        }
+        QPushButton#newNoteBtn:hover {
+            background: %2;
+        }
+        QPushButton#newNoteBtn:pressed {
+            background: %2;
+        }
         QPushButton#navBtn {
             background: transparent;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             text-align: left;
         }
         QPushButton#navBtn:hover {
@@ -591,8 +610,8 @@ void SidebarWidget::refreshStyleSheet()
             padding: 0 4px;
         }
         QListWidget#tagList::item {
-            border-radius: 6px;
-            padding: 6px 10px;
+            border-radius: 8px;
+            padding: 7px 10px;
             font-size: 13px;
             color: %3;
         }
@@ -612,10 +631,10 @@ void SidebarWidget::refreshStyleSheet()
             background: transparent;
         }
         #sidebarBottom {
-            border-top: 1px solid %2;
+            border-top: 1px solid rgba(128,128,128,0.12);
             background: transparent;
         }
-    )").arg(bgSidebarStr, borderStr, textPrimaryStr, textSecondaryStr,
+    )").arg(bgSidebarStr, accentStr, textPrimaryStr, textSecondaryStr,
             accentStr, accentSoftStr, badgeBgStr, badgeTextStr));
 }
 
