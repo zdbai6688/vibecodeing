@@ -18,7 +18,7 @@
 | deb 内容完整性 | ✅ 完整 | `dpkg-deb -c`：`usr/bin/uos-shorthand`、`run.sh`、`.desktop`、图标、whisper 运行时库、xfyun_asr.js 均在包内 |
 | 玲珑打包 | ✅ 成功 | `packaging/org.deepin.uos-shorthand_1.1.0.1_x86_64_binary.layer`（77MB）+ `uos-shorthand_1.1.0.1_x86_64.uab`（320MB） |
 | 玲珑 layer 可解包 | ✅ 成功 | `ll-builder extract` 成功，`files/bin/run.sh`、`files/lib`（whisper .so）、`entries/share/applications/org.deepin.uos-shorthand.desktop` 结构正确 |
-| GUI 冒烟启动 | ✅ 通过（真实桌面 X11 :0） | 累计修复 3 个根因：① `TodoWidget` 未初始化 `m_calendarView` 段错误（commit `8a32d73`）；② `SettingsDialog::eventFilter` 构造期把 Hide 事件转发给 DTK 基类造成死循环（CPU 空转、界面卡在初始化）；③ `m_fallbackShortcut` 未初始化野指针 delete 段错误（commit `fbec5a1`，mainwindow.h 成员统一 `= nullptr`）。修复后 `DISPLAY=:0` 实测：应用 12s 存活（此前秒崩/挂起），`xwininfo` 确认 **“UOS速记” 1500x950 主窗口**已创建，全局热键 Alt+Space 注册成功 |
+| GUI 冒烟启动 | ✅ 通过（真实桌面 X11 :0） | 累计修复 4 个根因：① `TodoWidget` 未初始化 `m_calendarView` 段错误（`8a32d73`）；② `SettingsDialog::eventFilter` 兜底分支 `return SettingsDialog::eventFilter(...)` 是自身递归（非调用基类），Release 下被优化成死循环 `jmp self`——构造期 QTabWidget 的 Hide 事件（`fbec5a1` 部分修复）与启动期 DDialog 内容过滤器转发的 QLabel Show/Hide 事件（`0c32d46` 根治）都触发无限自旋，主窗口永不映射；③ `m_fallbackShortcut` 野指针段错误（`fbec5a1`，成员统一 `= nullptr`）。`0c32d46` 后实测：日志完整到“进入事件循环/初始笔记加载完成”，窗口 **IsViewable + WM_STATE Normal**（被 WM 正常接管、居中 +210+36、可激活）；交互冒烟：设置对话框打开 → 快捷键页签切换 → 录入 Ctrl+Shift+N → Esc 关闭均正常，CPU 无空转 |
 
 ## 2. 功能用例矩阵（36 项，承接 docs/test-report-v1.0.0.md）
 
@@ -27,7 +27,7 @@
 ### 1. 基础功能 (P0)
 | 编号 | 测试项 | 状态 | 说明 |
 |------|--------|------|------|
-| TC01 | 启动 | ✅ | 启动挂起/段错误已修复（commit `8a32d73` + `fbec5a1`：m_calendarView、m_fallbackShortcut 野指针 + SettingsDialog eventFilter 死循环）；真实桌面 X11 实测主窗口 1500x950 正常创建 |
+| TC01 | 启动 | ✅ | 启动挂起/段错误已修复（`8a32d73`/`fbec5a1`/`0c32d46`：三个野指针/死循环根因）；真实桌面 X11 实测主窗口 1500x950 显示（IsViewable、WM_STATE Normal、可激活） |
 | TC02 | 新建笔记 | ✅ | P5-T1 冒烟：Ctrl+N 新建成功并写入数据库 |
 | TC03 | Markdown 编辑 | ⚠️ | 需交互式 GUI，留人工复核 |
 | TC04 | 预览模式 | ⚠️ | 需交互式 GUI，留人工复核 |
@@ -40,7 +40,7 @@
 | 编号 | 测试项 | 状态 | 说明 |
 |------|--------|------|------|
 | TC09 | 笔记转待办 | ✅ | testConvertNoteToTodo 覆盖 |
-| TC10 | 待办看板 | ⚠️→待人工复核 | 待办页启动崩溃已修复（commit `8a32d73`）；分组逻辑已实现（今日/本周/逾期/已完成），启动链路真实桌面已通，看板交互留人工复核 |
+| TC10 | 待办看板 | ⚠️→待人工复核 | 待办页启动崩溃已修复（`8a32d73`）；分组逻辑已实现（今日/本周/逾期/已完成），启动链路真实桌面已通，看板交互留人工复核 |
 | TC11 | 勾选完成 | ✅ | testToggleComplete 覆盖 |
 | TC12 | 逾期待办 | ✅ | testOverdueTodo 覆盖；托盘提醒留人工复核 |
 
@@ -96,6 +96,6 @@
 
 - **构建/测试/打包全链路通过**：Release 构建 0 错误、ctest 全绿、无 QWARN、deb（v1.1.0）与玲珑（1.1.0.1 layer/uab）包均构建成功且结构有效。
 - **功能验证**：storage 层 13 项单测覆盖笔记/待办/标签/回收站核心逻辑；P3/P4 新功能均有对应提交与实现。
-- **遗留**：启动类缺陷已全部修复并在真实桌面 X11 验证（主窗口正常创建、全局热键注册成功）；其余需交互/API 的用例（约 20 项）仍留人工复核（建议按 `docs/gui-acceptance-checklist.md` 回填），AI 类用例需配置 API Key。
+- **遗留**：启动类缺陷已全部修复并在真实桌面 X11 验证（主窗口 IsViewable/WM_STATE Normal、设置对话框交互正常、全局热键注册成功）；其余需交互/API 的用例（约 20 项）仍留人工复核（建议按 `docs/gui-acceptance-checklist.md` 回填），AI 类用例需配置 API Key。
 
 *执行：Multica Helper（2026-08-06）*
