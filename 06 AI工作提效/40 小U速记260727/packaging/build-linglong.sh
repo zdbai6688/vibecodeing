@@ -13,7 +13,7 @@ mkdir -p "$BUILD_DIR"
 # 使用玲珑构建（linyaps 1.13.7：--skip-verify-package 已移除，用 --skip-output-check）
 cd "$PROJECT_DIR"
 ll-builder build --skip-output-check
-ll-builder export -o "$PROJECT_DIR/packaging/uos-shorthand_1.1.0.1_x86_64.uab"
+ll-builder export -o "$PROJECT_DIR/packaging/uos-shorthand_1.2.0.1_x86_64.uab"
 
 echo "=== 玲珑包构建完成 ==="
 ls -lh *.uab 2>/dev/null || ls -lh *.layer 2>/dev/null || echo "玲珑包构建完成"
