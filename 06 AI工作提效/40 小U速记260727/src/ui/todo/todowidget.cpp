@@ -336,6 +336,8 @@ void TodoWidget::initUI()
     layout->addWidget(m_completedList, 1);
 
     // ─── 日程网格视图（默认隐藏，切换按钮开启） ──
+    // 先构建再入布局：此前 m_calendarView 是未初始化指针，直接 addWidget 导致启动段错误
+    initCalendarView();
     layout->addWidget(m_calendarView, 1);
 
     // ─── 批量操作工具栏（底部，多选模式时显示） ──
@@ -449,7 +451,6 @@ void TodoWidget::initUI()
         setCalendarMode(on);
     });
 
-    initCalendarView();
 }
 
 void TodoWidget::enterMultiSelectMode()

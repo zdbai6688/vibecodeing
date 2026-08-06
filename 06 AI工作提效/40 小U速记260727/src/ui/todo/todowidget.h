@@ -81,7 +81,7 @@ private:
 
     // 日程网格视图控件
     QPushButton *m_calendarToggleBtn;
-    QWidget *m_calendarView;
+    QWidget *m_calendarView = nullptr;   // 必须在 addWidget 前创建（initCalendarView）
     QLabel *m_calendarWeekLabel;
     QPushButton *m_calendarPrevBtn;
     QPushButton *m_calendarNextBtn;
