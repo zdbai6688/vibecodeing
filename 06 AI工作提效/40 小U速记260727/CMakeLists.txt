@@ -84,6 +84,7 @@ set(SOURCES
     src/services/aiservice.cpp
     src/services/asrservice.cpp
     src/services/exportservice.cpp
+    src/services/backupservice.cpp
     src/services/screenshotmanager.cpp
     src/services/globalshortcutmanager.cpp
     # Whisper 离线 ASR
@@ -125,6 +126,7 @@ set(HEADERS
     src/services/aiservice.h
     src/services/asrservice.h
     src/services/exportservice.h
+    src/services/backupservice.h
     src/services/screenshotmanager.h
     src/services/globalshortcutmanager.h
     src/whisper/whisperasrengine.h

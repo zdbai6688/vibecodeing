@@ -19,6 +19,7 @@
 #include <QInputDialog>
 #include <QListWidgetItem>
 #include <QMap>
+#include <QSettings>
 #include <QMouseEvent>
 
 DWIDGET_USE_NAMESPACE
@@ -571,13 +572,43 @@ void WeeklyReportWidget::onNextWeek()
     if (nextMonday <= thisMonday) { m_currentMonday = nextMonday; refresh(); }
 }
 
-QString WeeklyReportWidget::buildReportContent()
+const char *WeeklyReportWidget::kDefaultTemplate = R"md(# 周报：{date_range}
+
+## 本周总结
+
+{summary}
+
+## 完成事项
+
+{completed}
+
+## 未完成事项
+
+{pending}
+
+## 本周日程
+
+{schedule}
+
+## 标签统计
+
+{tag_stats}
+
+笔记总数：{note_count}
+
+---
+*自动生成于 {generated_at}*
+)md";
+
+QMap<QString, QString> WeeklyReportWidget::buildReportSections()
 {
     QDate sunday = m_currentMonday.addDays(6);
     auto *app = ShorthandApplication::instance();
     auto *todoMgr = app->todoManager();
     qint64 weekStart = QDateTime(m_currentMonday, QTime(0, 0)).toSecsSinceEpoch();
     qint64 weekEnd = QDateTime(sunday, QTime(23, 59, 59)).toSecsSinceEpoch();
+
+    QMap<QString, QString> sections;
 
     int total = 0, completed = 0;
     QStringList completedItems, pendingItems;
@@ -600,15 +631,15 @@ QString WeeklyReportWidget::buildReportContent()
     }
 
     double rate = total > 0 ? (double)completed / total * 100 : 0;
-    QString report;
-    report += QString("# 周报：%1 - %2\n\n").arg(m_currentMonday.toString("yyyy-MM-dd"), sunday.toString("yyyy-MM-dd"));
-    report += QString("## 本周总结\n\n共 %1 项待办，已完成 %2 项，完成率 %3%。\n\n").arg(total).arg(completed).arg(QString::number(rate, 'f', 1));
-    report += "## 完成事项\n\n" + (completedItems.isEmpty() ? "无\n\n" : completedItems.join("\n") + "\n\n");
-    report += "## 未完成事项\n\n" + (pendingItems.isEmpty() ? "无\n\n" : pendingItems.join("\n") + "\n\n");
+    sections["date_range"] = QString("%1 - %2").arg(m_currentMonday.toString("yyyy-MM-dd"), sunday.toString("yyyy-MM-dd"));
+    sections["summary"] = QString("共 %1 项待办，已完成 %2 项，完成率 %3%。")
+                              .arg(total).arg(completed).arg(QString::number(rate, 'f', 1));
+    sections["completed"] = completedItems.isEmpty() ? "无" : completedItems.join("\n");
+    sections["pending"] = pendingItems.isEmpty() ? "无" : pendingItems.join("\n");
 
-    // 本周日程（7天分组，企业微信日程式）
+    // 本周日程（7天分组）
     QStringList dayNames = {tr("周一"), tr("周二"), tr("周三"), tr("周四"), tr("周五"), tr("周六"), tr("周日")};
-    report += "## 本周日程\n\n";
+    QStringList scheduleLines;
     for (int i = 0; i < 7; i++) {
         QDate d = m_currentMonday.addDays(i);
         qint64 dayStart = QDateTime(d, QTime(0, 0)).toSecsSinceEpoch();
@@ -628,27 +659,37 @@ QString WeeklyReportWidget::buildReportContent()
                 dayLines << line;
             }
         }
-        report += QString("### %1 %2\n\n").arg(d.toString("MM-dd"), dayNames[i]);
-        report += (dayLines.isEmpty() ? "无\n\n" : dayLines.join("\n") + "\n\n");
+        scheduleLines << QString("### %1 %2\n\n%3").arg(d.toString("MM-dd"), dayNames[i],
+                                                        dayLines.isEmpty() ? "无" : dayLines.join("\n"));
     }
+    sections["schedule"] = scheduleLines.join("\n\n");
 
-    // 标签维度统计（本周各标签待办数/完成数/完成率）
+    // 标签维度统计
     QList<TagStat> tagStats = todoMgr->getTagStats(weekStart, weekEnd);
-    report += "## 标签统计\n\n";
-    if (tagStats.isEmpty()) {
-        report += "无\n\n";
-    } else {
+    QStringList tagParts;
+    if (!tagStats.isEmpty()) {
         for (const auto &st : tagStats) {
-            report += QString("- %1：本周 %2 项，完成 %3 项（完成率 %4%）\n")
-                          .arg(st.tag, QString::number(st.total), QString::number(st.completed),
-                               QString::number(st.rate(), 'f', 0));
+            tagParts << QString("- %1：本周 %2 项，完成 %3 项（完成率 %4%）")
+                            .arg(st.tag, QString::number(st.total), QString::number(st.completed),
+                                 QString::number(st.rate(), 'f', 0));
         }
-        report += "\n";
     }
+    sections["tag_stats"] = tagParts.isEmpty() ? "无" : tagParts.join("\n");
 
-    report += QString("笔记总数：%1\n\n").arg(app->noteManager()->noteCount());
-    report += QString("---\n*自动生成于 %1*").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm"));
-    return report;
+    sections["note_count"] = QString::number(app->noteManager()->noteCount());
+    sections["generated_at"] = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm");
+    return sections;
+}
+
+QString WeeklyReportWidget::buildReportContent()
+{
+    // 使用用户自定义模板（设置页可编辑），未设置时回退默认模板
+    QSettings settings;
+    QString tpl = settings.value("weekly/template").toString();
+    if (tpl.trimmed().isEmpty()) {
+        tpl = QString::fromUtf8(kDefaultTemplate);
+    }
+    return renderTemplate(tpl, buildReportSections());
 }
 
 void WeeklyReportWidget::onGenerateReport()

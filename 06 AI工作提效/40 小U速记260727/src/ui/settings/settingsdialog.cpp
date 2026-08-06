@@ -5,7 +5,10 @@
 #include "application/shorthandapplication.h"
 #include "services/aiservice.h"
 #include "services/asrservice.h"
+#include "services/backupservice.h"
 #include "services/cryptoutil.h"
+#include "core/tagmanager.h"
+#include "ui/weekly/weeklyreportwidget.h"
 #include "globaldef.h"
 
 #include <QVBoxLayout>
@@ -30,6 +33,9 @@
 #include <QUrl>
 #include <QKeyEvent>
 #include <QEvent>
+#include <QColorDialog>
+#include <QMap>
+#include <QScrollArea>
 
 SettingsDialog::SettingsDialog(QWidget *parent)
     : DDialog(parent)
@@ -43,6 +49,9 @@ SettingsDialog::SettingsDialog(QWidget *parent)
     tabs->addTab(createAiPage(), tr("AI 服务"));
     tabs->addTab(createAsrPage(), tr("语音识别"));
     tabs->addTab(createShortcutPage(), tr("快捷键"));
+    tabs->addTab(createTagsPage(), tr("标签颜色"));
+    tabs->addTab(createWeeklyTemplatePage(), tr("周报模板"));
+    tabs->addTab(createBackupPage(), tr("数据备份"));
     addContent(tabs);
 
     // 保存统一由 MainWindow::onShowSettings 在 exec 返回 Accepted 后调用，
@@ -443,9 +452,266 @@ QWidget *SettingsDialog::createShortcutPage()
     return page;
 }
 
+QWidget *SettingsDialog::createBackupPage()
+{
+    QWidget *page = new QWidget(this);
+    QVBoxLayout *layout = new QVBoxLayout(page);
+    layout->setContentsMargins(20, 16, 20, 16);
+    layout->setSpacing(12);
+
+    DLabel *titleLabel = new DLabel(tr("💾 数据备份 / 恢复"), this);
+    titleLabel->setStyleSheet("font-size: 15px; font-weight: 600;");
+    layout->addWidget(titleLabel);
+
+    DLabel *desc = new DLabel(tr("一键备份全部笔记、待办、会议等数据（SQLite 数据库），可在需要时恢复。备份文件包含时间戳与 SHA-256 校验。"), this);
+    desc->setWordWrap(true);
+    desc->setStyleSheet("color:palette(placeholderText); font-size:12px;");
+    layout->addWidget(desc);
+
+    QHBoxLayout *backupRow = new QHBoxLayout();
+    backupRow->addWidget(new DLabel(tr("备份数据库"), this));
+    backupRow->addStretch();
+    QPushButton *backupBtn = new QPushButton(tr("💾 立即备份…"), this);
+    backupBtn->setFixedHeight(32);
+    backupBtn->setCursor(Qt::PointingHandCursor);
+    backupRow->addWidget(backupBtn);
+    layout->addLayout(backupRow);
+
+    QHBoxLayout *restoreRow = new QHBoxLayout();
+    restoreRow->addWidget(new DLabel(tr("从备份恢复"), this));
+    restoreRow->addStretch();
+    QPushButton *restoreBtn = new QPushButton(tr("♻️ 选择备份文件…"), this);
+    restoreBtn->setFixedHeight(32);
+    restoreBtn->setCursor(Qt::PointingHandCursor);
+    restoreRow->addWidget(restoreBtn);
+    layout->addLayout(restoreRow);
+
+    QLabel *tip = new QLabel(tr("💡 备份前会自动执行数据落盘（WAL checkpoint）；恢复前会把当前数据自动备份为 .pre-restore 文件以防误操作，恢复后建议重启应用。"), this);
+    tip->setWordWrap(true);
+    tip->setStyleSheet("color:palette(placeholderText); font-size:11px;");
+    layout->addWidget(tip);
+
+    m_backupLastPathLabel = new QLabel(this);
+    m_backupLastPathLabel->setStyleSheet("color:palette(highlight); font-size:11px;");
+    m_backupLastPathLabel->setWordWrap(true);
+    layout->addWidget(m_backupLastPathLabel);
+
+    layout->addStretch();
+
+    connect(backupBtn, &QPushButton::clicked, this, [this]() {
+        auto *app = ShorthandApplication::instance();
+        auto *backup = app ? app->backupService() : nullptr;
+        if (!backup) {
+            DDialog d(this);
+            d.setTitle(tr("提示"));
+            d.setMessage(tr("备份服务未初始化"));
+            d.addButton(tr("确定"));
+            d.exec();
+            return;
+        }
+        QString dir = QFileDialog::getExistingDirectory(this, tr("选择备份目录"),
+                                                        BackupService::defaultBackupDir());
+        if (dir.isEmpty()) return;
+        auto result = backup->backupTo(dir);
+        DDialog d(this);
+        d.setTitle(result.ok ? tr("备份成功") : tr("备份失败"));
+        d.setMessage(result.message);
+        d.addButton(tr("确定"));
+        d.exec();
+        if (result.ok) {
+            m_backupLastPathLabel->setText(tr("最近备份：%1").arg(result.backupPath));
+        }
+    });
+
+    connect(restoreBtn, &QPushButton::clicked, this, [this]() {
+        auto *app = ShorthandApplication::instance();
+        auto *backup = app ? app->backupService() : nullptr;
+        if (!backup) {
+            DDialog d(this);
+            d.setTitle(tr("提示"));
+            d.setMessage(tr("备份服务未初始化"));
+            d.addButton(tr("确定"));
+            d.exec();
+            return;
+        }
+        QString file = QFileDialog::getOpenFileName(this, tr("选择备份文件"),
+                                                    BackupService::defaultBackupDir(),
+                                                    tr("备份文件 (*.db);;所有文件 (*)"));
+        if (file.isEmpty()) return;
+
+        // 恢复前二次确认
+        DDialog confirm(this);
+        confirm.setTitle(tr("确认恢复"));
+        confirm.setMessage(tr("恢复将覆盖当前全部数据。当前数据会自动保留为 .pre-restore 备份。确定继续吗？"));
+        confirm.addButton(tr("取消"));
+        confirm.addButton(tr("确认恢复"), true, DDialog::ButtonWarning);
+        if (confirm.exec() != 1) return;
+
+        auto result = backup->restoreFrom(file);
+        DDialog d(this);
+        d.setTitle(result.ok ? tr("恢复成功") : tr("恢复失败"));
+        d.setMessage(result.message);
+        d.addButton(tr("确定"));
+        d.exec();
+    });
+
+    return page;
+}
+
+QWidget *SettingsDialog::createTagsPage()
+{
+    QWidget *page = new QWidget(this);
+    QVBoxLayout *layout = new QVBoxLayout(page);
+    layout->setContentsMargins(20, 16, 20, 16);
+    layout->setSpacing(12);
+
+    DLabel *titleLabel = new DLabel(tr("🎨 标签颜色"), this);
+    titleLabel->setStyleSheet("font-size: 15px; font-weight: 600;");
+    layout->addWidget(titleLabel);
+
+    DLabel *desc = new DLabel(tr("为每个标签设置颜色，保存后笔记列表、待办卡片与侧栏标签将按此颜色展示。"), this);
+    desc->setWordWrap(true);
+    desc->setStyleSheet("color:palette(placeholderText); font-size:12px;");
+    layout->addWidget(desc);
+
+    QScrollArea *scroll = new QScrollArea(this);
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    m_tagsContainer = new QWidget(scroll);
+    m_tagsLayout = new QVBoxLayout(m_tagsContainer);
+    m_tagsLayout->setContentsMargins(0, 0, 0, 0);
+    m_tagsLayout->setSpacing(8);
+    m_tagsLayout->addStretch();
+    scroll->setWidget(m_tagsContainer);
+    layout->addWidget(scroll, 1);
+
+    refreshTagRows();
+
+    return page;
+}
+
+void SettingsDialog::refreshTagRows()
+{
+    if (!m_tagsLayout || !m_tagsContainer) return;
+    // 清空除末尾 stretch 外的所有行
+    while (m_tagsLayout->count() > 1) {
+        QLayoutItem *item = m_tagsLayout->takeAt(0);
+        if (QWidget *w = item->widget()) w->deleteLater();
+        delete item;
+    }
+    m_tagColorEdits.clear();
+
+    auto *app = ShorthandApplication::instance();
+    auto *mgr = app ? app->tagManager() : nullptr;
+    if (!mgr) return;
+
+    QList<TagData> tags = mgr->getAllTags();
+    if (tags.isEmpty()) {
+        DLabel *empty = new DLabel(tr("暂无标签，可在侧栏「标签筛选」右键新建"), m_tagsContainer);
+        empty->setStyleSheet("color:palette(placeholderText); font-size:12px;");
+        m_tagsLayout->insertWidget(0, empty);
+        return;
+    }
+
+    for (const TagData &tag : tags) {
+        QWidget *row = new QWidget(m_tagsContainer);
+        QHBoxLayout *hl = new QHBoxLayout(row);
+        hl->setContentsMargins(8, 4, 8, 4);
+        hl->setSpacing(10);
+
+        QLabel *dot = new QLabel(row);
+        dot->setFixedSize(14, 14);
+        dot->setStyleSheet(QString("background: %1; border-radius: 7px;").arg(tag.color));
+        hl->addWidget(dot);
+
+        DLabel *name = new DLabel(tag.name.isEmpty() ? tr("未命名") : tag.name, row);
+        name->setStyleSheet("font-size: 13px; color: palette(windowText);");
+        hl->addWidget(name, 1);
+
+        QPushButton *colorBtn = new QPushButton(tr("选择颜色…"), row);
+        colorBtn->setFixedHeight(28);
+        colorBtn->setCursor(Qt::PointingHandCursor);
+        hl->addWidget(colorBtn);
+
+        m_tagColorEdits.insert(tag.name, QColor(tag.color));
+
+        connect(colorBtn, &QPushButton::clicked, this, [this, mgr, tag, dot, colorBtn]() {
+            QColor cur = m_tagColorEdits.value(tag.name, QColor("#1890FF"));
+            QColor c = QColorDialog::getColor(cur, this, tr("选择「%1」的颜色").arg(tag.name));
+            if (!c.isValid()) return;
+            m_tagColorEdits.insert(tag.name, c);
+            dot->setStyleSheet(QString("background: %1; border-radius: 7px;").arg(c.name()));
+            colorBtn->setStyleSheet(QString("QPushButton { background: %1; color: white; border: none;"
+                                            " border-radius: 6px; padding: 2px 12px; font-size: 12px; }").arg(c.name()));
+            // 立即持久化并刷新
+            mgr->updateTag(tag.id, tag.name, c.name());
+        });
+
+        m_tagsLayout->insertWidget(m_tagsLayout->count() - 1, row);
+    }
+}
+
+QWidget *SettingsDialog::createWeeklyTemplatePage()
+{
+    QWidget *page = new QWidget(this);
+    QVBoxLayout *layout = new QVBoxLayout(page);
+    layout->setContentsMargins(20, 16, 20, 16);
+    layout->setSpacing(12);
+
+    DLabel *titleLabel = new DLabel(tr("📝 周报模板"), this);
+    titleLabel->setStyleSheet("font-size: 15px; font-weight: 600;");
+    layout->addWidget(titleLabel);
+
+    DLabel *desc = new DLabel(tr("自定义周报 Markdown 模板。使用以下占位符，生成周报时会自动替换为本周数据："), this);
+    desc->setWordWrap(true);
+    desc->setStyleSheet("color:palette(placeholderText); font-size:12px;");
+    layout->addWidget(desc);
+
+    DLabel *placeholders = new DLabel(tr("{date_range} 日期范围 · {summary} 本周总结 · {completed} 完成事项 · {pending} 未完成事项\n{schedule} 本周日程 · {tag_stats} 标签统计 · {note_count} 笔记总数 · {generated_at} 生成时间"), this);
+    placeholders->setWordWrap(true);
+    placeholders->setStyleSheet("color:palette(highlight); font-size:11px;");
+    layout->addWidget(placeholders);
+
+    m_weeklyTemplateEdit = new QPlainTextEdit(this);
+    m_weeklyTemplateEdit->setPlaceholderText(tr("在此输入周报模板（Markdown），留空则使用默认模板..."));
+    m_weeklyTemplateEdit->setStyleSheet(
+        "QPlainTextEdit { background: palette(base); border: 1px solid palette(mid);"
+        " border-radius: 8px; padding: 8px; font-size: 12px; font-family: 'Noto Sans Mono CJK SC', monospace; }");
+    layout->addWidget(m_weeklyTemplateEdit, 1);
+
+    QHBoxLayout *btnRow = new QHBoxLayout();
+    QPushButton *resetBtn = new QPushButton(tr("恢复默认模板"), this);
+    resetBtn->setFixedHeight(30);
+    resetBtn->setCursor(Qt::PointingHandCursor);
+    btnRow->addWidget(resetBtn);
+    btnRow->addStretch();
+    QLabel *tip = new QLabel(tr("💡 保存后，周报页「AI 生成周报 / 预览」将按此模板输出"), this);
+    tip->setStyleSheet("color:palette(placeholderText); font-size:11px;");
+    btnRow->addWidget(tip);
+    layout->addLayout(btnRow);
+
+    connect(resetBtn, &QPushButton::clicked, this, [this]() {
+        m_weeklyTemplateEdit->clear();
+        m_weeklyTemplateEdit->setPlainText(QString::fromUtf8(WeeklyReportWidget::kDefaultTemplate));
+    });
+
+    return page;
+}
+
 void SettingsDialog::loadSettings()
 {
     QSettings settings;
+
+    // 标签颜色行（数据可能已被侧栏等修改，进入设置页时刷新）
+    refreshTagRows();
+
+    // 周报模板
+    QString weeklyTpl = settings.value("weekly/template").toString();
+    if (m_weeklyTemplateEdit) {
+        m_weeklyTemplateEdit->setPlainText(weeklyTpl.trimmed().isEmpty()
+            ? QString::fromUtf8(WeeklyReportWidget::kDefaultTemplate)
+            : weeklyTpl);
+    }
 
     m_autostartSwitch->setChecked(QFile::exists(
         QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart/uos-shorthand.desktop"));
@@ -550,6 +816,11 @@ void SettingsDialog::saveSettings()
     settings.setValue("asr/xunfei_secret", m_xunfeiAsrSecret->text());
     settings.setValue("asr/aliyun_key", m_aliyunAsrKey->text());
     settings.setValue("asr/aliyun_secret", m_aliyunAsrSecret->text());
+
+    // 周报模板（留空 = 使用默认模板）
+    if (m_weeklyTemplateEdit) {
+        settings.setValue("weekly/template", m_weeklyTemplateEdit->toPlainText());
+    }
 
     // 实时更新 ASR 服务（重新加载凭据，保证重新配置后立即生效）
     if (auto *asr = app->asrService()) {

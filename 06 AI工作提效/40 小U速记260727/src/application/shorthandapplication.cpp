@@ -12,6 +12,7 @@
 #include "services/aiservice.h"
 #include "services/asrservice.h"
 #include "services/exportservice.h"
+#include "services/backupservice.h"
 #include "services/globalshortcutmanager.h"
 #include "ui/desktop/desktopmodemanager.h"
 
@@ -71,6 +72,7 @@ void ShorthandApplication::initServices()
     m_aiService = new AiServiceManager(this);
     m_asrService = new AsrServiceManager(this);
     m_exportService = new ExportService(this);
+    m_backupService = new BackupService(m_database, this);
     m_trayManager = new TrayManager(this);
     m_globalShortcut = new GlobalShortcutManager(this);
     m_desktopModeManager = new DesktopModeManager(m_noteManager, this);
@@ -82,6 +84,7 @@ void ShorthandApplication::cleanupServices()
     m_trayManager = nullptr;
     m_meetingManager = nullptr;
     m_aiService = nullptr;
+    m_backupService = nullptr;
     m_migration = nullptr;
     m_noteManager = nullptr;
     m_todoManager = nullptr;

@@ -71,6 +71,8 @@ private:
     void applyGlobalShortcut();
     void showMiddleWidget(QWidget *w);
     void updateCreateButtonTooltip();
+    MeetingWidget *meetingWidget();
+    WeeklyReportWidget *weeklyWidget();
 
     SidebarWidget *m_sidebar = nullptr;
     QWidget *m_middlePanel = nullptr;
@@ -78,8 +80,10 @@ private:
     NoteListWidget *m_noteList = nullptr;
     NoteEditorWidget *m_editor = nullptr;
     TodoWidget *m_todoWidget = nullptr;
-    MeetingWidget *m_meetingWidget = nullptr;
-    WeeklyReportWidget *m_weeklyWidget = nullptr;
+    MeetingWidget *m_meetingWidget = nullptr;     // 懒加载：首次进入会议页才构造
+    WeeklyReportWidget *m_weeklyWidget = nullptr; // 懒加载：首次进入周报页才构造
+    QWidget *m_meetingPlaceholder = nullptr;      // 会议页占位（懒加载期显示）
+    QWidget *m_weeklyPlaceholder = nullptr;       // 周报页占位（懒加载期显示）
     QList<QuickEntryDialog *> m_quickEntries;
     SettingsDialog *m_settingsDialog = nullptr;
     GlobalShortcutManager *m_globalShortcut = nullptr;

@@ -702,9 +702,11 @@ void MeetingWidget::onAiSummary()
     MeetingData meeting = mgr->getMeeting(m_currentMeetingId);
     QString transcriptText;
     for (const auto &t : transcripts) {
-        transcriptText += QString("[%1] %2\n").arg(t.formattedTimestamp(), t.text);
+        // 带上说话人标签，便于 AI 纪要按发言人组织内容（V2-T1）
+        QString speaker = t.speaker.isEmpty() ? tr("说话人") : t.speaker;
+        transcriptText += QString("[%1] %2: %3\n").arg(t.formattedTimestamp(), speaker, t.text);
     }
-    QString prompt = QString("你是一个会议纪要助手。请根据以下转写内容生成结构化会议纪要。\n会议主题：%1\n\n%2").arg(meeting.title, transcriptText);
+    QString prompt = QString("你是一个会议纪要助手。请根据以下转写内容生成结构化会议纪要，并按发言人（说话人1/说话人2…）组织要点。\n会议主题：%1\n\n%2").arg(meeting.title, transcriptText);
     m_aiSummaryBtn->setEnabled(false);
     m_aiSummaryBtn->setText(tr("生成中..."));
     AiCompletionRequest req;

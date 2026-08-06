@@ -578,6 +578,12 @@ void NoteListWidget::populateList(const QList<NoteData> &notes)
         QString preview = note.previewText(100);
         QString timeStr = note.createdAt().toString("MM-dd HH:mm");
         QString tagStr = note.tag.isEmpty() ? "" : QString("  #%1").arg(note.tag);
+        // 标签颜色：从 TagManager 查询，未找到用主题高亮色
+        QString tagColor;
+        if (!note.tag.isEmpty()) {
+            TagData td = ShorthandApplication::instance()->tagManager()->getTagByName(note.tag);
+            if (td.id > 0) tagColor = td.color;
+        }
 
         QWidget *card = new QWidget(this);
         QHBoxLayout *cardLayout = new QHBoxLayout(card);
@@ -621,7 +627,9 @@ void NoteListWidget::populateList(const QList<NoteData> &notes)
 
         if (!tagStr.isEmpty()) {
             DLabel *tagLabel = new DLabel(tagStr, this);
-            tagLabel->setStyleSheet("font-size: 10px; color: palette(highlight);");
+            tagLabel->setStyleSheet(tagColor.isEmpty()
+                ? "font-size: 10px; color: palette(highlight);"
+                : QString("font-size: 10px; color: %1;").arg(tagColor));
             textLayout->addWidget(tagLabel);
         }
 

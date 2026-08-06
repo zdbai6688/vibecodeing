@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QTextEdit>
 #include <QDate>
+#include <QMap>
 #include <DLabel>
 
 DWIDGET_USE_NAMESPACE
@@ -23,6 +24,22 @@ public:
     explicit WeeklyReportWidget(QWidget *parent = nullptr);
     void refresh();
 
+    // 默认周报模板（设置页用于「恢复默认」展示）
+    static const char *kDefaultTemplate;
+
+    // 模板占位符替换（{key} → 区块），供单测与设置页预览复用
+    static QString renderTemplate(const QString &tpl, const QMap<QString, QString> &sections)
+    {
+        // 未定义的占位符保持原样，避免误删用户模板内容
+        QString out = tpl;
+        QMapIterator<QString, QString> it(sections);
+        while (it.hasNext()) {
+            it.next();
+            out.replace(QString("{%1}").arg(it.key()), it.value());
+        }
+        return out;
+    }
+
 private slots:
     void onPrevWeek();
     void onNextWeek();
@@ -33,6 +50,7 @@ private slots:
 private:
     void initUI();
     QString buildReportContent();
+    QMap<QString, QString> buildReportSections();
     QString formatWeekDate(const QDate &date);
     void onDayCellDoubleClicked(int dayIndex);
     void updateCalendarCells();

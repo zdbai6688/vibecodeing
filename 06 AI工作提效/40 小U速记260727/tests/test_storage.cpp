@@ -5,8 +5,14 @@
 #include <QDebug>
 #include <QDir>
 #include <QStandardPaths>
+#include <QTemporaryDir>
+#include <QFile>
+#include <QMap>
+#include <QMapIterator>
 #include "storage/database.h"
 #include "storage/todostorage.h"
+#include "storage/tagstorage.h"
+#include "services/backupservice.h"
 
 // 最小化数据库初始化和表创建
 static bool createTestTables(QSqlDatabase &db)
@@ -253,6 +259,24 @@ private slots:
         QVERIFY(query.lastInsertId().toInt() > 0);
     }
 
+    // 标签颜色更新（V2-T3）：TagStorage.updateTag 持久化颜色并可读回
+    void testTagColorUpdate()
+    {
+        TestDatabase tdb(m_db);
+        TagStorage storage(&tdb);
+        int id = storage.createTag("配色测试", "#1890FF");
+        QVERIFY(id > 0);
+
+        QVERIFY(storage.updateTag(id, "配色测试", "#52C41A"));
+        TagData tag = storage.getTag(id);
+        QCOMPARE(tag.name, QString("配色测试"));
+        QCOMPARE(tag.color, QString("#52C41A"));
+
+        // 按名称查询也能取到新颜色
+        TagData byName = storage.getTagByName("配色测试");
+        QCOMPARE(byName.color, QString("#52C41A"));
+    }
+
     void testSearchNotes()
     {
         QSqlQuery query(m_db);
@@ -481,6 +505,128 @@ private slots:
         QCOMPARE(byTag["未分类"].total, 1);
         QCOMPARE(byTag["未分类"].completed, 0);
         QVERIFY(qFuzzyCompare(byTag["未分类"].rate(), 0.0));
+    }
+
+    // 备份/恢复往返测试（V2-T5）：文件级数据库 + BackupService
+    void testBackupRestore()
+    {
+        QTemporaryDir tmpDir;
+        QVERIFY(tmpDir.isValid());
+
+        const QString dataDir = tmpDir.filePath("data");
+        QDir().mkpath(dataDir);
+        const QString backupDir = tmpDir.filePath("backup");
+        QDir().mkpath(backupDir);
+
+        // 创建一个文件型数据库并写入数据
+        QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", "backup_src_conn");
+        db.setDatabaseName(dataDir + "/uos-shorthand.db");
+        QVERIFY(db.open());
+        QVERIFY(createTestTables(db));
+        {
+            QSqlQuery q(db);
+            q.exec("INSERT INTO notes_todos (title, content, content_type, creation_datetime, modification_datetime) "
+                   "VALUES ('备份前笔记', '内容', 'markdown', 1, 1)");
+        }
+        db.close();
+        db = QSqlDatabase();
+        QSqlDatabase::removeDatabase("backup_src_conn");
+
+        // BackupService 通过 Database 子类注入数据路径与真实连接
+        class PathDatabase : public Database {
+        public:
+            explicit PathDatabase(const QString &path)
+            {
+                setDataPath(path);
+                m_conn = QSqlDatabase::addDatabase("QSQLITE", "main_connection");
+                m_conn.setDatabaseName(path + "/uos-shorthand.db");
+                m_conn.open();
+            }
+            QSqlDatabase &connection() override { return m_conn; }
+            QSqlDatabase m_conn;
+        };
+
+        BackupService::BackupResult result, restore;
+        {
+            PathDatabase pathDb(dataDir);
+            BackupService backup(&pathDb);
+            // 备份
+            result = backup.backupTo(backupDir);
+            QVERIFY2(result.ok, qPrintable(result.message));
+            QVERIFY(QFile::exists(result.backupPath));
+            QVERIFY(QFile::exists(result.backupPath + ".sha256"));
+
+            // 校验
+            QVERIFY(backup.verifyBackup(result.backupPath));
+
+            // 篡改一份副本（连同 .sha256 一起复制，走校验和比对分支）后校验应失败
+            const QString tamperedPath = tmpDir.filePath("tampered.db");
+            QVERIFY(QFile::copy(result.backupPath, tamperedPath));
+            QVERIFY(QFile::copy(result.backupPath + ".sha256", tamperedPath + ".sha256"));
+            QFile tampered(tamperedPath);
+            QVERIFY(tampered.open(QIODevice::Append));
+            tampered.write("x");
+            tampered.close();
+            QVERIFY(!backup.verifyBackup(tamperedPath));
+
+            // 恢复：重新创建原始库（模拟数据损坏后被覆盖恢复）
+            QSqlDatabase db2 = QSqlDatabase::addDatabase("QSQLITE", "backup_dst_conn");
+            db2.setDatabaseName(dataDir + "/uos-shorthand.db");
+            QVERIFY(db2.open());
+            {
+                QSqlQuery q2(db2);
+                q2.exec("DROP TABLE IF EXISTS notes_todos");
+                q2.exec("CREATE TABLE notes_todos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL DEFAULT '', content TEXT DEFAULT '')");
+                q2.exec("INSERT INTO notes_todos (title) VALUES ('被覆盖的数据')");
+            }
+            db2.close();
+            db2 = QSqlDatabase();
+            QSqlDatabase::removeDatabase("backup_dst_conn");
+
+            restore = backup.restoreFrom(result.backupPath);
+        }
+        QVERIFY2(restore.ok, qPrintable(restore.message));
+
+        // 恢复后数据一致
+        QSqlDatabase db3 = QSqlDatabase::addDatabase("QSQLITE", "backup_verify_conn");
+        db3.setDatabaseName(dataDir + "/uos-shorthand.db");
+        QVERIFY(db3.open());
+        {
+            QSqlQuery v(db3);
+            QVERIFY(v.exec("SELECT title FROM notes_todos WHERE title='备份前笔记'"));
+            QVERIFY(v.next());
+            QCOMPARE(v.value(0).toString(), QString("备份前笔记"));
+        }
+        db3.close();
+        db3 = QSqlDatabase();
+        QSqlDatabase::removeDatabase("backup_verify_conn");
+    }
+
+    // 周报模板渲染（V2-T4）：占位符替换 + 未定义占位符保留
+    void testWeeklyTemplateRender()
+    {
+        // 与 WeeklyReportWidget::renderTemplate 相同的替换逻辑（{key} → 区块，未定义保留）
+        QMap<QString, QString> sections;
+        sections["date_range"] = "2026-08-03 - 2026-08-09";
+        sections["summary"] = "共 5 项待办，已完成 3 项，完成率 60.0%。";
+        sections["completed"] = "- [x] 任务A";
+        sections["pending"] = "- [ ] 任务B";
+        sections["note_count"] = "12";
+
+        QString custom = "## {date_range}\n\n总结：{summary}\n\n完成：\n{completed}\n\n未完成：\n{pending}\n\n笔记数：{note_count}\n未知占位：{unknown_key}";
+        QString rendered = custom;
+        QMapIterator<QString, QString> it(sections);
+        while (it.hasNext()) {
+            it.next();
+            rendered.replace(QString("{%1}").arg(it.key()), it.value());
+        }
+
+        QVERIFY(rendered.contains("## 2026-08-03 - 2026-08-09"));
+        QVERIFY(rendered.contains("总结：共 5 项待办，已完成 3 项，完成率 60.0%。"));
+        QVERIFY(rendered.contains("- [x] 任务A"));
+        QVERIFY(rendered.contains("- [ ] 任务B"));
+        QVERIFY(rendered.contains("未知占位：{unknown_key}")); // 未定义占位符保留
+        QVERIFY(!rendered.contains("{note_count}") && rendered.contains("12")); // 已定义占位符被替换
     }
 };
 

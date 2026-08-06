@@ -21,7 +21,8 @@ public:
     virtual QSqlDatabase &connection(); // virtual 以便测试子类注入内存连接
 
     // 数据路径
-    QString dataPath() const { return m_dataPath; }
+    virtual QString dataPath() const { return m_dataPath; }
+    void setDataPath(const QString &path) { m_dataPath = path; }
 
 private:
     bool createTables();

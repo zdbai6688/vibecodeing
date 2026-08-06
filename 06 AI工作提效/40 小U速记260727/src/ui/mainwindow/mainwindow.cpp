@@ -156,12 +156,13 @@ void MainWindow::initUI()
     m_middleStack = new QStackedWidget(this);
     m_noteList = new NoteListWidget(this);
     m_todoWidget = new TodoWidget(this);
-    m_meetingWidget = new MeetingWidget(this);
-    m_weeklyWidget = new WeeklyReportWidget(this);
+    // 会议/周报页懒加载：启动时仅创建轻量占位，首次进入对应页面时才构造真实控件（启动提速 V2-T2）
+    m_meetingPlaceholder = new QWidget(this);
+    m_weeklyPlaceholder = new QWidget(this);
     m_middleStack->addWidget(m_noteList);
     m_middleStack->addWidget(m_todoWidget);
-    m_middleStack->addWidget(m_meetingWidget);
-    m_middleStack->addWidget(m_weeklyWidget);
+    m_middleStack->addWidget(m_meetingPlaceholder);
+    m_middleStack->addWidget(m_weeklyPlaceholder);
     middleLayout->addWidget(m_middleStack);
     m_mainLayout->addWidget(m_middlePanel, 1);
 
@@ -369,7 +370,7 @@ void MainWindow::updateCreateButtonTooltip()
     QWidget *current = m_middleStack->currentWidget();
     if (current == m_todoWidget) {
         m_createBtn->setToolTip(tr("新建待办 (Ctrl+Shift+N)"));
-    } else if (current == m_meetingWidget) {
+    } else if (current == m_meetingWidget || current == m_meetingPlaceholder) {
         m_createBtn->setToolTip(tr("新建会议"));
     } else {
         m_createBtn->setToolTip(tr("新建笔记 (Ctrl+N)"));
@@ -382,7 +383,7 @@ void MainWindow::onUnifiedCreate()
     QWidget *current = m_middleStack->currentWidget();
     if (current == m_todoWidget) {
         onNewTodo();
-    } else if (current == m_meetingWidget) {
+    } else if (current == m_meetingWidget || current == m_meetingPlaceholder) {
         onNewMeeting();
     } else {
         onNewNote();
@@ -425,10 +426,10 @@ void MainWindow::onNewTodo()
 void MainWindow::onNewMeeting()
 {
     m_sidebar->setActiveSection(2);
-    showMiddleWidget(m_meetingWidget);
-    m_meetingWidget->refresh();
+    showMiddleWidget(meetingWidget());
+    meetingWidget()->refresh();
     // 触发新建会议
-    m_meetingWidget->onNewMeeting();
+    meetingWidget()->onNewMeeting();
 }
 
 void MainWindow::onNewNoteWithTag()
@@ -441,6 +442,42 @@ void MainWindow::onNewNoteWithTag()
 void MainWindow::showMiddleWidget(QWidget *w)
 {
     m_middleStack->setCurrentWidget(w);
+}
+
+MeetingWidget *MainWindow::meetingWidget()
+{
+    // 懒加载：首次访问时构造真实会议控件并替换占位（启动提速 V2-T2）
+    if (!m_meetingWidget) {
+        m_meetingWidget = new MeetingWidget(this);
+        const int idx = m_middleStack->indexOf(m_meetingPlaceholder);
+        if (idx >= 0) {
+            m_middleStack->removeWidget(m_meetingPlaceholder);
+            m_meetingPlaceholder->deleteLater();
+            m_meetingPlaceholder = nullptr;
+            m_middleStack->insertWidget(idx, m_meetingWidget);
+        } else {
+            m_middleStack->addWidget(m_meetingWidget);
+        }
+    }
+    return m_meetingWidget;
+}
+
+WeeklyReportWidget *MainWindow::weeklyWidget()
+{
+    // 懒加载：首次访问时构造真实周报控件并替换占位（启动提速 V2-T2）
+    if (!m_weeklyWidget) {
+        m_weeklyWidget = new WeeklyReportWidget(this);
+        const int idx = m_middleStack->indexOf(m_weeklyPlaceholder);
+        if (idx >= 0) {
+            m_middleStack->removeWidget(m_weeklyPlaceholder);
+            m_weeklyPlaceholder->deleteLater();
+            m_weeklyPlaceholder = nullptr;
+            m_middleStack->insertWidget(idx, m_weeklyWidget);
+        } else {
+            m_middleStack->addWidget(m_weeklyWidget);
+        }
+    }
+    return m_weeklyWidget;
 }
 
 void MainWindow::onNoteSelected(int noteId)
@@ -563,8 +600,8 @@ void MainWindow::onSwitchToTodos()
 void MainWindow::onSwitchToMeetings()
 {
     m_sidebar->setActiveSection(2);
-    showMiddleWidget(m_meetingWidget);
-    m_meetingWidget->refresh();
+    showMiddleWidget(meetingWidget());
+    meetingWidget()->refresh();
     // 会议页独立全宽显示，隐藏右侧笔记编辑器
     m_editor->hide();
     m_blankEditor->hide();
@@ -573,8 +610,8 @@ void MainWindow::onSwitchToMeetings()
 void MainWindow::onSwitchToWeekly()
 {
     m_sidebar->setActiveSection(5);
-    showMiddleWidget(m_weeklyWidget);
-    m_weeklyWidget->refresh();
+    showMiddleWidget(weeklyWidget());
+    weeklyWidget()->refresh();
     // 周报页独立全宽显示，隐藏右侧笔记编辑器
     m_editor->hide();
     m_blankEditor->hide();

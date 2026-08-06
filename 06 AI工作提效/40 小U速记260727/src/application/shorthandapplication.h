@@ -17,6 +17,7 @@ class Migration;
 class AiServiceManager;
 class AsrServiceManager;
 class ExportService;
+class BackupService;
 class GlobalShortcutManager;
 class DesktopModeManager;
 
@@ -43,6 +44,7 @@ public:
     Migration *migration() const { return m_migration; }
     AiServiceManager *aiService() const { return m_aiService; }
     ExportService *exportService() const { return m_exportService; }
+    BackupService *backupService() const { return m_backupService; }
     AsrServiceManager *asrService() const { return m_asrService; }
     GlobalShortcutManager *globalShortcut() const { return m_globalShortcut; }
     DesktopModeManager *desktopModeManager() const { return m_desktopModeManager; }
@@ -64,6 +66,7 @@ private:
     AiServiceManager *m_aiService = nullptr;
     AsrServiceManager *m_asrService = nullptr;
     ExportService *m_exportService = nullptr;
+    BackupService *m_backupService = nullptr;
     GlobalShortcutManager *m_globalShortcut = nullptr;
     DesktopModeManager *m_desktopModeManager = nullptr;
 };

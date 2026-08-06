@@ -5,6 +5,7 @@
 #include <QCommandLineParser>
 #include <QSettings>
 #include <QTimer>
+#include <QElapsedTimer>
 #include <QTranslator>
 #include <DWidgetUtil>
 #include "application/shorthandapplication.h"
@@ -16,6 +17,9 @@ int main(int argc, char *argv[])
 {
     QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
         Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+
+    QElapsedTimer startupTimer;
+    startupTimer.start();
 
     ShorthandApplication app(argc, argv);
     app.setOrganizationName("deepin");
@@ -47,10 +51,10 @@ int main(int argc, char *argv[])
         qCritical("应用初始化失败，退出");
         return 1;
     }
-    qInfo() << "[main] 初始化完成，开始创建主窗口";
+    qInfo() << "[main] 初始化完成，耗时" << startupTimer.elapsed() << "ms，开始创建主窗口";
 
     MainWindow *window = new MainWindow();
-    qInfo() << "[main] 主窗口创建完成";
+    qInfo() << "[main] 主窗口创建完成，累计耗时" << startupTimer.elapsed() << "ms";
     window->setMinimumSize(960, 640);
     window->resize(1200, 760);
 

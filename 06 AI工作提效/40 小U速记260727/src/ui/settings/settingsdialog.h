@@ -13,6 +13,7 @@
 #include <QTabWidget>
 #include <QStackedWidget>
 #include <QSlider>
+#include <QPlainTextEdit>
 #include <DSwitchButton>
 #include <DPushButton>
 
@@ -41,6 +42,10 @@ private:
     QWidget *createAsrPage();
     QWidget *createShortcutPage();
     QWidget *createDesktopPage();
+    QWidget *createBackupPage();
+    QWidget *createTagsPage();
+    QWidget *createWeeklyTemplatePage();
+    void refreshTagRows();
 
     DSwitchButton *m_autostartSwitch;
     QCheckBox *m_trayNotifyCheck;
@@ -74,6 +79,17 @@ private:
     QComboBox *m_defaultColorCombo;
     QSlider *m_opacitySlider;
     QSpinBox *m_maxNotesSpin;
+
+    // 备份/恢复
+    QLabel *m_backupLastPathLabel;
+
+    // 标签颜色
+    QVBoxLayout *m_tagsLayout = nullptr;
+    QWidget *m_tagsContainer = nullptr;
+    QMap<QString, QColor> m_tagColorEdits;  // 标签名 -> 当前选中颜色
+
+    // 周报模板
+    QPlainTextEdit *m_weeklyTemplateEdit = nullptr;
 };
 
 #endif // SETTINGSDIALOG_H

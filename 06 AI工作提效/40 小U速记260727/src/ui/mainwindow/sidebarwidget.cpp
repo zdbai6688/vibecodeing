@@ -646,10 +646,25 @@ void SidebarWidget::updateTagList()
     auto *app = ShorthandApplication::instance();
     QList<TagData> tags = app->tagManager()->getAllTags();
     for (const TagData &tag : tags) {
-        QListWidgetItem *item = new QListWidgetItem("  " + tag.name);
+        QListWidgetItem *item = new QListWidgetItem;
+        // 标签前置彩色圆点徽章
+        QWidget *w = new QWidget(m_tagList);
+        QHBoxLayout *hl = new QHBoxLayout(w);
+        hl->setContentsMargins(6, 2, 6, 2);
+        hl->setSpacing(8);
+        QLabel *dot = new QLabel(w);
+        dot->setFixedSize(10, 10);
+        dot->setStyleSheet(QString("background: %1; border-radius: 5px;").arg(tag.color));
+        DLabel *name = new DLabel(tag.name, w);
+        name->setStyleSheet("font-size: 13px; color: palette(windowText);");
+        hl->addWidget(dot);
+        hl->addWidget(name);
+        hl->addStretch();
+        item->setSizeHint(QSize(0, 30));
         item->setData(Qt::UserRole, tag.name);
         item->setData(Qt::UserRole + 1, tag.id);
         m_tagList->addItem(item);
+        m_tagList->setItemWidget(item, w);
     }
 }
 
