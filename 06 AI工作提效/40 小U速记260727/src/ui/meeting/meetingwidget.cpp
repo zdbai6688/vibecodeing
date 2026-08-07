@@ -755,21 +755,21 @@ void MeetingWidget::refresh()
 void MeetingWidget::populateMeetingList(const QList<MeetingData> &meetings)
 {
     m_meetingList->clear();
-    // 有历史会议时显示列表页（支持多选/全选删除，TC09 ②）；
-    // 无会议时显示空状态引导页（喇叭 + 开始会议，TC08 ①）；搜索时始终显示列表页结果。
-    if (!meetings.isEmpty()) {
-        m_stack->setCurrentWidget(m_listPage);
-    } else if (m_searching) {
-        m_stack->setCurrentWidget(m_listPage);
-        QListWidgetItem *hint = new QListWidgetItem(tr("没有匹配的会议"));
-        hint->setFlags(Qt::NoItemFlags);
-        hint->setForeground(palette().color(QPalette::PlaceholderText));
-        hint->setTextAlignment(Qt::AlignCenter);
-        hint->setSizeHint(QSize(0, 80));
-        m_meetingList->addItem(hint);
-        return;
-    } else {
+    // 主区域始终显示空状态引导页（🎤 喇叭 + 开始会议 + 新建会议，TC10 ①），
+    // 历史会议经右侧清单栏访问；仅搜索时切换到列表页显示结果。
+    if (!m_searching) {
         m_stack->setCurrentWidget(m_emptyPage);
+    } else {
+        m_stack->setCurrentWidget(m_listPage);
+        if (meetings.isEmpty()) {
+            QListWidgetItem *hint = new QListWidgetItem(tr("没有匹配的会议"));
+            hint->setFlags(Qt::NoItemFlags);
+            hint->setForeground(palette().color(QPalette::PlaceholderText));
+            hint->setTextAlignment(Qt::AlignCenter);
+            hint->setSizeHint(QSize(0, 80));
+            m_meetingList->addItem(hint);
+            return;
+        }
     }
 
     for (const auto &m : meetings) {

@@ -70,8 +70,6 @@ private:
     DLabel *m_overdueLabel;
     DLabel *m_rateLabel;
     DLabel *m_tagStatsLabel;
-    QListWidget *m_completedList;
-    QListWidget *m_pendingList;
     QLabel *m_dayTodoTitle;
     QListWidget *m_dayTodoList;
     QTextEdit *m_reportPreview;
