@@ -497,6 +497,9 @@ void MeetingWidget::initConnections()
         QAction *openAction = menu.addAction(tr("📂 打开"));
         connect(openAction, &QAction::triggered, this, [this, meetingId]() { showMeetingDetail(meetingId); });
 
+        QAction *renameAction = menu.addAction(tr("✏️ 重命名"));
+        connect(renameAction, &QAction::triggered, this, [this, meetingId]() { renameMeeting(meetingId); });
+
         menu.addSeparator();
 
         QAction *transcribeAction = menu.addAction(tr("🎤 语音转写"));
@@ -521,12 +524,37 @@ void MeetingWidget::initConnections()
 
         menu.exec(m_meetingList->viewport()->mapToGlobal(pos));
     });
-    connect(m_searchEdit, &QLineEdit::textChanged, this, &MeetingWidget::onSearch);
 
-    // 历史会议清单：点击打开详情；搜索过滤
+    // 历史会议清单：点击打开详情；搜索过滤；右键支持重命名/删除
     connect(m_historyList, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
         int meetingId = item->data(Qt::UserRole).toInt();
         if (meetingId > 0) showMeetingDetail(meetingId);
+    });
+    m_historyList->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_historyList, &QListWidget::customContextMenuRequested, this, [this](const QPoint &pos) {
+        QListWidgetItem *item = m_historyList->itemAt(pos);
+        if (!item) return;
+        int meetingId = item->data(Qt::UserRole).toInt();
+        if (meetingId <= 0) return;
+
+        QMenu menu(this);
+        menu.setStyleSheet(R"(
+            QMenu { background: palette(window); border: 1px solid palette(mid); border-radius: 6px; padding: 4px; }
+            QMenu::item { padding: 6px 24px; border-radius: 4px; font-size: 13px; color: palette(windowText); }
+            QMenu::item:selected { background: palette(highlight); color: palette(highlightedText); }
+            QMenu::separator { height: 1px; background: palette(midlight); margin: 4px 8px; }
+        )");
+        QAction *openAction = menu.addAction(tr("📂 打开"));
+        connect(openAction, &QAction::triggered, this, [this, meetingId]() { showMeetingDetail(meetingId); });
+        QAction *renameAction = menu.addAction(tr("✏️ 重命名"));
+        connect(renameAction, &QAction::triggered, this, [this, meetingId]() { renameMeeting(meetingId); });
+        menu.addSeparator();
+        QAction *deleteAction = menu.addAction(tr("🗑 删除"));
+        connect(deleteAction, &QAction::triggered, this, [this, meetingId]() {
+            m_currentMeetingId = meetingId;
+            onDeleteMeeting();
+        });
+        menu.exec(m_historyList->viewport()->mapToGlobal(pos));
     });
     connect(m_historySearch, &QLineEdit::textChanged, this, [this](const QString &kw) {
         QList<MeetingData> all = ShorthandApplication::instance()->meetingManager()->getAllMeetings();
@@ -759,6 +787,30 @@ void MeetingWidget::populateMeetingList(const QList<MeetingData> &meetings)
     }
 }
 
+
+void MeetingWidget::renameMeeting(int meetingId)
+{
+    auto *app = ShorthandApplication::instance();
+    MeetingData meeting = app->meetingManager()->getMeeting(meetingId);
+    if (meeting.id <= 0) return;
+
+    bool ok = false;
+    QString newTitle = QInputDialog::getText(this, tr("重命名会议"),
+                                             tr("会议名称："), QLineEdit::Normal,
+                                             meeting.title, &ok);
+    if (!ok) return;
+    newTitle = newTitle.trimmed();
+    if (newTitle.isEmpty() || newTitle == meeting.title) return;
+
+    meeting.title = newTitle;
+    if (app->meetingManager()->updateMeeting(meeting)) {
+        // 详情页标题同步更新
+        if (m_currentMeetingId == meetingId && m_titleLabel) {
+            m_titleLabel->setText(newTitle);
+        }
+        refresh();
+    }
+}
 
 void MeetingWidget::onDeleteMeeting()
 {

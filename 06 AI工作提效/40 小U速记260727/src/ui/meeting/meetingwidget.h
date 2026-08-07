@@ -47,6 +47,7 @@ private:
     void showMeetingDetail(int meetingId);
     void populateMeetingList(const QList<MeetingData> &meetings);
     void populateHistoryList(const QList<MeetingData> &meetings);
+    void renameMeeting(int meetingId);
     // 批量操作
     void enterMultiSelectMode();
     void exitMultiSelectMode();
