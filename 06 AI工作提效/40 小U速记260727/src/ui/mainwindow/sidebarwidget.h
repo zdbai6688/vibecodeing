@@ -28,6 +28,7 @@ DWIDGET_USE_NAMESPACE
  * - 使用 DTK6 DPalette 语义色 token
  * - 扁平背景
  */
+class QScrollArea;
 class SidebarWidget : public QWidget
 {
     Q_OBJECT
@@ -104,13 +105,16 @@ private:
 
     // Layout
     QVBoxLayout *m_mainLayout;
+    QVBoxLayout *m_scrollLayout = nullptr;
+    QWidget *m_scrollContent = nullptr;
+    QScrollArea *m_scrollArea = nullptr;
 
     // State
     bool m_collapsed = false;
     int m_currentWidth = 200;
     int m_activeSection = 0;
     static const int EXPANDED_WIDTH = 200;
-    static const int COLLAPSED_WIDTH = 64;
+    static const int COLLAPSED_WIDTH = 48;
 };
 
 #endif // SIDEBARWIDGET_H

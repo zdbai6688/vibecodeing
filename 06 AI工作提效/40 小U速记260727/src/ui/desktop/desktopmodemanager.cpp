@@ -56,7 +56,7 @@ bool DesktopModeManager::isX11() const
     return QGuiApplication::platformName() == "xcb";
 }
 
-// X11: 设置 _NET_WM_STATE_BELOW 让窗口始终置底，并设置 _NET_WM_STATE_SKIP_TASKBAR
+// X11: 设置 _NET_WM_STATE_STICKY + SKIP_TASKBAR，让便签悬浮在桌面与应用之上（TC06 六轮⑤）
 static void setupX11WindowHints(QWidget *w)
 {
     if (!w || !w->windowHandle()) return;
@@ -70,20 +70,20 @@ static void setupX11WindowHints(QWidget *w)
 
     // 获取所需 X11 原子
     xcb_intern_atom_cookie_t stateCookie = xcb_intern_atom(conn, false, 12, "_NET_WM_STATE");
-    xcb_intern_atom_cookie_t belowCookie = xcb_intern_atom(conn, false, 18, "_NET_WM_STATE_BELOW");
+    xcb_intern_atom_cookie_t stickyCookie = xcb_intern_atom(conn, false, 15, "_NET_WM_STATE_STICKY");
     xcb_intern_atom_cookie_t skipCookie = xcb_intern_atom(conn, false, 20, "_NET_WM_STATE_SKIP_TASKBAR");
     xcb_intern_atom_cookie_t typeCookie = xcb_intern_atom(conn, false, 22, "_NET_WM_WINDOW_TYPE");
     xcb_intern_atom_cookie_t utilCookie = xcb_intern_atom(conn, false, 25, "_NET_WM_WINDOW_TYPE_UTILITY");
 
     xcb_intern_atom_reply_t *stateAtom = xcb_intern_atom_reply(conn, stateCookie, nullptr);
-    xcb_intern_atom_reply_t *belowAtom = xcb_intern_atom_reply(conn, belowCookie, nullptr);
+    xcb_intern_atom_reply_t *stickyAtom = xcb_intern_atom_reply(conn, stickyCookie, nullptr);
     xcb_intern_atom_reply_t *skipAtom = xcb_intern_atom_reply(conn, skipCookie, nullptr);
     xcb_intern_atom_reply_t *typeAtom = xcb_intern_atom_reply(conn, typeCookie, nullptr);
     xcb_intern_atom_reply_t *utilAtom = xcb_intern_atom_reply(conn, utilCookie, nullptr);
 
-    if (stateAtom && belowAtom && skipAtom) {
-        // 设置 _NET_WM_STATE: _NET_WM_STATE_BELOW | _NET_WM_STATE_SKIP_TASKBAR
-        xcb_atom_t atoms[2] = { belowAtom->atom, skipAtom->atom };
+    if (stateAtom && stickyAtom && skipAtom) {
+        // 设置 _NET_WM_STATE: STICKY | SKIP_TASKBAR（TC06 六轮⑤：不再置底，悬浮在应用之上）
+        xcb_atom_t atoms[2] = { stickyAtom->atom, skipAtom->atom };
         xcb_change_property(conn, XCB_PROP_MODE_REPLACE, xid,
                             stateAtom->atom, XCB_ATOM_ATOM, 32, 2, atoms);
         xcb_flush(conn);
@@ -98,7 +98,7 @@ static void setupX11WindowHints(QWidget *w)
     }
 
     free(stateAtom);
-    free(belowAtom);
+    free(stickyAtom);
     free(skipAtom);
     free(typeAtom);
     free(utilAtom);
@@ -108,11 +108,11 @@ void DesktopModeManager::applyDesktopWindowHints(QWidget *w)
 {
     if (!w) return;
 
-    // 统一使用 FramelessWindowHint + WindowStaysOnBottomHint + Tool + WindowSkipTaskbarHint
-    // 不再使用 X11BypassWindowManagerHint（会导致窗口无法被窗口管理器管理）
+    // 统一使用 FramelessWindowHint + WindowStaysOnTopHint + Tool + WindowSkipTaskbarHint
+    // 置顶让便签悬浮在桌面与应用之上（TC06 六轮⑤：原置底导致被应用遮挡，需关掉所有应用才可见）
     w->setWindowFlags(
         Qt::FramelessWindowHint
-        | Qt::WindowStaysOnBottomHint
+        | Qt::WindowStaysOnTopHint
         | Qt::Tool
 
     );
@@ -121,7 +121,7 @@ void DesktopModeManager::applyDesktopWindowHints(QWidget *w)
     w->setAttribute(Qt::WA_X11DoNotAcceptFocus);
 
     // X11: 延迟到窗口实际创建后通过原生 XCB 设置 _NET_WM_STATE
-    // 确保窗口始终置底并跳过任务栏
+    // STICKY + SKIP_TASKBAR，悬浮桌面且不入任务栏
     if (isX11()) {
         QTimer::singleShot(0, this, [w]() {
             setupX11WindowHints(w);

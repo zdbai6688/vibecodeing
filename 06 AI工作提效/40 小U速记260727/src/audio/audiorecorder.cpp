@@ -71,23 +71,21 @@ bool AudioRecorder::startRecording(const QString &filePath)
     QDir().mkpath(QFileInfo(path).absolutePath());
 
     // 构建 GStreamer 管道。参考系统语音记事本（deepin-voice-note）：其用 pulsesrc 直接录制
-    // 「audioconvert ! audioresample ! wavenc」，无重采样/DSP 伪影，底噪低（TC19 五轮③）。
+    // 「audioconvert ! audioresample ! wavenc」，无 DSP 滤波伪影，底噪极低（TC06 六轮②）。
     //
-    // pulsesrc        PulseAudio 声源（走硬件 AGC，比 autoaudiosrc 音质稳、底噪小）
+    // pulsesrc        PulseAudio 声源（走硬件 AGC，音质最稳）
     //   → audioconvert      格式转换
     //   → audioresample     重采样
     //   → audiorate         校准采样率至 16000Hz（ASR 依赖）
-    //   → audiochebband     100–4000Hz 温和带通（贴人声频段，滤掉高低频杂音；不再用激进压缩器）
-    //   → audioconvert      转换回 S16LE
     //   → capsfilter        16000Hz mono S16LE
     //   → level             实时电平
     //   → wavenc → filesink
     //
-    // 注意：不要叠加 audiodynamic 压缩器——增益/压缩组合不佳会在静音段放大底噪（沙沙声）。
+    // 注意：去掉 audiochebband 带通滤波器——滤波器在 DSP 上会引入振铃/伪影（沙沙声），
+    // 系统语音记事本不做滤波反而更干净。
     QString pipelineStr = QString(
         "pulsesrc name=src ! "
         "audioconvert ! audioresample ! audiorate ! "
-        "audiochebband name=band mode=1 lower-frequency=100 upper-frequency=4000 ! "
         "audioconvert ! "
         "audio/x-raw, format=S16LE, rate=16000, channels=1 ! "
         "level name=level interval=200000000 ! "

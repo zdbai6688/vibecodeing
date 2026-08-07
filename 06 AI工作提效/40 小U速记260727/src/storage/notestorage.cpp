@@ -106,7 +106,15 @@ bool NoteStorage::restoreNote(int id)
 
 bool NoteStorage::permanentDelete(int id)
 {
+    QSqlDatabase db = QSqlDatabase::database(m_db->connection().connectionName());
     QSqlQuery query(m_db->connection());
+    // 先删除关联表记录，避免外键约束阻止永久删除（TC06 六轮：最近删除无法删除的根因）
+    query.prepare("DELETE FROM todo_tags WHERE todo_id = :id");
+    query.bindValue(":id", id);
+    query.exec();
+    query.prepare("DELETE FROM sticky_notes WHERE note_id = :id");
+    query.bindValue(":id", id);
+    query.exec();
     query.prepare("DELETE FROM notes_todos WHERE id = :id AND is_deleted = 1");
     query.bindValue(":id", id);
     return query.exec();
@@ -114,7 +122,11 @@ bool NoteStorage::permanentDelete(int id)
 
 bool NoteStorage::permanentDeleteAll()
 {
+    QSqlDatabase db = QSqlDatabase::database(m_db->connection().connectionName());
     QSqlQuery query(m_db->connection());
+    // 先清空关联表，再清空回收站
+    query.exec("DELETE FROM todo_tags WHERE todo_id IN (SELECT id FROM notes_todos WHERE is_deleted = 1)");
+    query.exec("DELETE FROM sticky_notes WHERE note_id IN (SELECT id FROM notes_todos WHERE is_deleted = 1)");
     return query.exec("DELETE FROM notes_todos WHERE is_deleted = 1");
 }
 
@@ -182,8 +194,15 @@ bool NoteStorage::batchPermanentDelete(const QList<int> &ids)
     }
 
     QSqlQuery query(m_db->connection());
-    query.prepare("DELETE FROM notes_todos WHERE id = :id AND is_deleted = 1");
     for (int id : ids) {
+        // 先删除关联表记录，避免外键约束阻止永久删除
+        query.prepare("DELETE FROM todo_tags WHERE todo_id = :id");
+        query.bindValue(":id", id);
+        query.exec();
+        query.prepare("DELETE FROM sticky_notes WHERE note_id = :id");
+        query.bindValue(":id", id);
+        query.exec();
+        query.prepare("DELETE FROM notes_todos WHERE id = :id AND is_deleted = 1");
         query.bindValue(":id", id);
         if (!query.exec()) {
             qWarning() << "batchPermanentDelete: 永久删除笔记" << id << "失败:" << query.lastError().text();

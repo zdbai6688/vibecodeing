@@ -83,6 +83,7 @@ void SidebarWidget::initUI()
 
     // ===== 可滚动内容区域 =====
     QScrollArea *scroll = new QScrollArea(this);
+    m_scrollArea = scroll;
     scroll->setObjectName("sidebarScroll");
     scroll->setWidgetResizable(true);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -90,9 +91,10 @@ void SidebarWidget::initUI()
     scroll->setFrameShape(QFrame::NoFrame);
 
     QWidget *scrollContent = new QWidget(scroll);
-    QVBoxLayout *scrollLayout = new QVBoxLayout(scrollContent);
-    scrollLayout->setContentsMargins(8, 10, 8, 12);
-    scrollLayout->setSpacing(10);
+    m_scrollContent = scrollContent;
+    m_scrollLayout = new QVBoxLayout(scrollContent);
+    m_scrollLayout->setContentsMargins(8, 10, 8, 12);
+    m_scrollLayout->setSpacing(10);
 
     // ===== 第一组：核心功能 =====
     m_coreGroup = new QWidget(this);
@@ -195,7 +197,7 @@ void SidebarWidget::initUI()
     meetingsLayout->addWidget(meetingsText, 1);
     coreLayout->addWidget(m_btnMeetings);
 
-    scrollLayout->addWidget(m_coreGroup);
+    m_scrollLayout->addWidget(m_coreGroup);
 
     // ===== 第二组：标签筛选 =====
     m_tagGroup = new QWidget(this);
@@ -227,7 +229,7 @@ void SidebarWidget::initUI()
         emit tagClicked(tag);
     });
     tagGroupLayout->addWidget(m_tagList);
-    scrollLayout->addWidget(m_tagGroup);
+    m_scrollLayout->addWidget(m_tagGroup);
 
     // ===== 第三组：归档 =====
     m_archiveGroup = new QWidget(this);
@@ -303,10 +305,10 @@ void SidebarWidget::initUI()
     trashLayout->addWidget(trashText, 1);
     archiveLayout->addWidget(m_btnTrash);
 
-    scrollLayout->addWidget(m_archiveGroup);
+    m_scrollLayout->addWidget(m_archiveGroup);
 
     // 弹性空间
-    scrollLayout->addStretch(1);
+    m_scrollLayout->addStretch(1);
 
     scroll->setWidget(scrollContent);
     m_mainLayout->addWidget(scroll, 1);
@@ -423,17 +425,27 @@ void SidebarWidget::setCollapsed(bool collapsed)
     if (m_collapsed == collapsed) return;
     m_collapsed = collapsed;
 
-    int targetWidth = m_collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+    // 直接设置宽度（TC06 六轮：动画在部分布局下不生效导致「只折叠一部分」）
+    m_currentWidth = m_collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+    setFixedWidth(m_currentWidth);
+    setMinimumWidth(m_currentWidth);
+    setMaximumWidth(m_currentWidth);
+    // 显式 resize，避免布局按 sizeHint 撑回原宽
+    resize(m_currentWidth, height());
 
-    QPropertyAnimation *anim = new QPropertyAnimation(this, "sidebarWidth", this);
-    anim->setDuration(180);
-    anim->setStartValue(m_currentWidth);
-    anim->setEndValue(targetWidth);
-    anim->setEasingCurve(QEasingCurve::InOutCubic);
-    anim->start(QAbstractAnimation::DeleteWhenStopped);
-
-    m_currentWidth = targetWidth;
     updateItemVisibility();
+    if (m_scrollLayout) {
+        m_scrollLayout->setContentsMargins(m_collapsed ? 2 : 10, 10, m_collapsed ? 2 : 10, 12);
+    }
+    if (m_scrollContent) {
+        // 折叠时限制滚动内容最小宽度，避免内容撑开固定宽度
+        m_scrollContent->setMinimumWidth(m_collapsed ? 0 : 170);
+    }
+    if (m_scrollArea) {
+        m_scrollArea->setMinimumWidth(m_currentWidth);
+        m_scrollArea->setMaximumWidth(m_currentWidth);
+    }
+    updateGeometry();
 
     m_collapseBtn->setText(m_collapsed
         ? QString::fromUtf8("\xE2\x96\xB6")   // ▶
@@ -457,20 +469,14 @@ void SidebarWidget::setSidebarWidth(int w)
 
 void SidebarWidget::updateItemVisibility()
 {
-    bool show = !m_collapsed;
+    const bool show = !m_collapsed;
 
-    // 折叠时隐藏文字标签、角标和分组标题
+    // 折叠时隐藏文字标签、角标、分组标题、标签列表、新建按钮文字
     QList<QLabel*> textLabels = findChildren<QLabel*>("navText");
-    for (auto *label : textLabels) {
-        label->setVisible(show);
-    }
+    for (auto *label : textLabels) label->setVisible(show);
 
-    // 折叠标签列表
-    if (m_tagList) {
-        m_tagList->setVisible(show);
-    }
+    if (m_tagList) m_tagList->setVisible(show);
 
-    // 分组标题
     QList<DLabel*> sectionLabels = findChildren<DLabel*>();
     for (auto *label : sectionLabels) {
         QString on = label->objectName();
@@ -479,9 +485,23 @@ void SidebarWidget::updateItemVisibility()
         }
     }
 
-    // Logo 文字
     if (m_logoText) m_logoText->setVisible(show);
-    // 折叠按钮始终保持可见：折叠后仍可点击展开（TC03 五轮③：原实现折叠时隐藏按钮导致无法再展开）
+
+    // 新建笔记按钮折叠时收缩为纯图标（隐藏文字）
+    if (m_btnNewNote) {
+        m_btnNewNote->setText(show ? tr("＋ 新建笔记") : tr("＋"));
+        m_btnNewNote->setFixedHeight(show ? 36 : 36);
+    }
+
+    // 折叠后导航项图标居中（去除左右留白）
+    const QList<QPushButton*> navBtns = findChildren<QPushButton*>("navBtn");
+    for (auto *btn : navBtns) {
+        if (btn->layout()) {
+            btn->layout()->setContentsMargins(m_collapsed ? 0 : 10, 0, m_collapsed ? 0 : 6, 0);
+        }
+    }
+
+    // 折叠按钮始终保持可见：折叠后仍可点击展开（TC03 五轮③）
     if (m_collapseBtn) m_collapseBtn->setVisible(true);
 }
 
@@ -534,14 +554,15 @@ void SidebarWidget::refreshStyleSheet()
             letter-spacing: 1px;
         }
         #collapseBtn {
-            background: transparent;
+            background: rgba(128,128,128,0.08);
             border: none;
-            color: %4;
-            font-size: 11px;
+            color: %3;
+            font-size: 12px;
+            font-weight: 600;
             border-radius: 6px;
         }
         #collapseBtn:hover {
-            background: rgba(128,128,128,0.15);
+            background: rgba(128,128,128,0.18);
         }
         DLabel#sectionCore,
         DLabel#sectionTags,

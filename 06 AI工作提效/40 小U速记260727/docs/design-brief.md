@@ -155,3 +155,12 @@
 | TC14 | Enter 保存也换行 | 根因：QTextEdit 自行消费 Enter。改用 `eventFilter` 在子控件层拦截 Enter→保存、Ctrl+Enter→换行 |
 | TC19 | 沙沙声仍严重 | 参考系统语音记事本：换用 `pulsesrc`（硬件 AGC），去掉 audiodynamic 压缩器（增益/压缩组合不佳会在静音段放大底噪），带通改为 100–4000Hz 温和过滤；并修复 level `get-level` 信号检测避免刷屏告警 |
 | TC20 | 会议搜索跳主页 | 搜索时列表为空显示「没有匹配的会议」提示，不再跳回会议主页 |
+
+## 14. 六轮实施记录（2026-08-07 用户反馈修复）
+| 编号 | 问题 | 修复 |
+|------|------|------|
+| 侧边栏① | 折叠"只折叠一部分" | 根因：`setFixedWidth` 后 QScrollArea 内容最小宽度撑开。改为直接 setFixedWidth + 限制滚动内容/滚动区最小宽度，折叠宽 48px、图标居中、文字/标签/分组全部隐藏 |
+| 录音② | 沙沙声仍严重听不清 | 参考系统语音记事本：完全去掉 `audiochebband` 带通滤波器（滤波器 DSP 引入振铃伪影），链路简化为 `pulsesrc ! audioconvert ! audioresample ! audiorate ! wavenc`（16kHz mono）。已用真实麦克风验证产出正常 WAV |
+| 最近删除③ | 内容无法删除 | 根因：`todo_tags`/`sticky_notes` 表外键引用 `notes_todos`，永久删除时未删关联记录导致外键约束阻止 DELETE。永久删除/批量删除/清空时先清关联表 |
+| 会议④ | 会议主页右侧应有历史清单入口 | 列表为空时不再切到纯空状态页，统一显示列表页 + 「暂无历史会议」引导，保证始终有入口 |
+| 贴桌面⑤ | 需关掉所有应用才能看到便签 | 根因：便签窗口设 `_NET_WM_STATE_BELOW`(置底) 被应用遮挡。改为 `WindowStaysOnTopHint` + `_NET_WM_STATE_STICKY`，便签悬浮在桌面与应用之上 |
