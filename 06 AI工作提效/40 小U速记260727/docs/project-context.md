@@ -1,11 +1,12 @@
 # Project Context
 
-> Updated: 2026-08-06 (Asia/Shanghai)
+> Updated: 2026-08-08 (Asia/Shanghai)
 
 ## Current Goal
 
 推进 **UOS速记 v1.1** 收口与 **v1.2 规划**：Phase 0~5 开发任务 19/20 done（P4-T9/IDE-201 国际化已 done），
 Phase 5 已完成：v1.1 回归通过、deb/玲珑包构建成功、v1.1.0 Release Notes 与 tag 就绪。
+2026-08-08 收口：dev-plan P1-T2 单测 QWARN 已全部消除（数据库 v2→v3 迁移建表顺序 + BackupService 连接释放），
 仅剩 **IDE-186（P1-T2）GUI 功能验收** 待真实桌面人工复核（23 项 ⚠️ 用例，清单见 docs/gui-acceptance-checklist.md）。
 v1.2 已建卡规划（父任务 IDE-209，子任务 IDE-210~214，5 项功能增强）。
 
