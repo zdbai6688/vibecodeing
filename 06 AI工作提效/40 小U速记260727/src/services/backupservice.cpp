@@ -98,10 +98,7 @@ BackupService::BackupResult BackupService::restoreFrom(const QString &backupFile
     }
 
     // 先关闭连接，避免文件占用导致恢复失败
-    QSqlDatabase &conn = m_db->connection();
-    const QString connName = conn.connectionName();
-    if (conn.isOpen()) conn.close();
-    QSqlDatabase::removeDatabase(connName);
+    m_db->closeConnection();
 
     // 恢复前先把当前库备份为 .pre-restore-<时间戳>
     const QString preRestore = dbPath + ".pre-restore-" +

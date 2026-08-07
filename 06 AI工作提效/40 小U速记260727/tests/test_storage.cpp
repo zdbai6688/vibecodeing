@@ -533,16 +533,24 @@ private slots:
         QSqlDatabase::removeDatabase("backup_src_conn");
 
         // BackupService 通过 Database 子类注入数据路径与真实连接
+        // 注意：连接名必须与全局 DB_CONNECTION_NAME 不同，
+        // 否则 BackupService::restoreFrom 关闭/移除连接后会与全局连接冲突。
         class PathDatabase : public Database {
         public:
             explicit PathDatabase(const QString &path)
             {
                 setDataPath(path);
-                m_conn = QSqlDatabase::addDatabase("QSQLITE", "main_connection");
+                m_conn = QSqlDatabase::addDatabase("QSQLITE", "backup_path_conn");
                 m_conn.setDatabaseName(path + "/uos-shorthand.db");
                 m_conn.open();
             }
             QSqlDatabase &connection() override { return m_conn; }
+            void closeConnection() override
+            {
+                if (m_conn.isOpen()) m_conn.close();
+                m_conn = QSqlDatabase();
+                QSqlDatabase::removeDatabase("backup_path_conn");
+            }
             QSqlDatabase m_conn;
         };
 

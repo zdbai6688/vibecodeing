@@ -81,6 +81,25 @@ bool Database::initialize()
         }
         if (dbVersion < 3) {
             // v2 → v3: meetings 表增加回收站字段（is_deleted / deleted_at），支持会议软删除进回收站
+            // 先确保 meetings 表存在（旧库已有该表；测试/空库可能没有，避免 ALTER 报错）
+            QSqlQuery ensure(m_db);
+            ensure.exec(R"(
+                CREATE TABLE IF NOT EXISTS meetings (
+                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title           TEXT NOT NULL DEFAULT '',
+                    started_at      INTEGER NOT NULL,
+                    ended_at        INTEGER DEFAULT 0,
+                    duration_secs   INTEGER DEFAULT 0,
+                    audio_file_path TEXT DEFAULT '',
+                    ai_summary      TEXT DEFAULT '',
+                    manual_notes    TEXT DEFAULT '',
+                    status          TEXT DEFAULT 'completed',
+                    created_at      INTEGER NOT NULL
+                )
+            )");
+            if (ensure.lastError().isValid()) {
+                qWarning() << "创建 meetings 表失败:" << ensure.lastError().text();
+            }
             QSqlQuery alter(m_db);
             QList<QPair<QString, QString>> cols = {
                 {"is_deleted", "INTEGER DEFAULT 0"},
@@ -110,6 +129,19 @@ bool Database::initialize()
 QSqlDatabase &Database::connection()
 {
     return m_db;
+}
+
+void Database::closeConnection()
+{
+    if (m_db.isOpen()) {
+        m_db.close();
+    }
+    // 置空值对象并移除连接：确保 removeDatabase 时无存活引用
+    const QString name = m_db.connectionName();
+    m_db = QSqlDatabase();
+    if (!name.isEmpty()) {
+        QSqlDatabase::removeDatabase(name);
+    }
 }
 
 bool Database::createTables()
