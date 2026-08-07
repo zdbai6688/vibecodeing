@@ -23,10 +23,11 @@ int main(int argc, char *argv[])
 
     ShorthandApplication app(argc, argv);
     app.setOrganizationName("deepin");
+    // applicationName 保持 "UOS速记" 以兼容既有数据目录/数据库，仅展示名改为「小U速记」
     app.setApplicationName("UOS速记");
-    app.setApplicationDisplayName(QObject::tr("UOS速记"));
+    app.setApplicationDisplayName(QObject::tr("小U速记"));
     app.setApplicationVersion(APP_VERSION);
-    app.setProductName(QObject::tr("UOS速记"));
+    app.setProductName(QObject::tr("小U速记"));
     app.setApplicationDescription(QObject::tr("轻量级办公信息中枢 — 笔记、待办、会议速记"));
 
     // 国际化（IDE-201 P4-T9）：按设置加载界面语言，需在主窗口创建前生效

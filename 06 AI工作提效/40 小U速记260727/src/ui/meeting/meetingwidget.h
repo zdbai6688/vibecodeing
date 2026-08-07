@@ -94,6 +94,7 @@ private:
     QString m_currentAudioFilePath;
     QList<TranscriptData> m_currentTranscripts;
     int m_highlightedSegmentIndex = -1;
+    bool m_searching = false;   // 搜索态：列表为空时显示「无匹配」，不跳回主页（TC20）
 };
 
 #endif // MEETINGWIDGET_H

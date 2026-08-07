@@ -138,15 +138,48 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
     };
 
     // 记住上次选择的颜色：下次打开取色器时直接沿用，避免每次都要重新选色（TC03）
-    connect(colorBtn, &QToolButton::clicked, this, [this, applyCharFormat]() {
-        QColor defaultColor = m_lastTextColor.isValid()
-                ? m_lastTextColor : palette().color(QPalette::WindowText);
-        QColor c = QColorDialog::getColor(defaultColor, this, tr("选择文字颜色"));
-        if (c.isValid()) {
-            m_lastTextColor = c;
-            applyCharFormat([c](QTextCharFormat &fmt) { fmt.setForeground(c); });
-            m_contentEdit->setFocus();
+    // 预设色板：点击颜色按钮弹出常用色菜单，点选即用并固定为当前颜色；
+    // 底部提供「自定义...」打开取色器。按钮圆点实时显示当前颜色。
+    const QList<QColor> presetColors = {
+        QColor("#E64545"), QColor("#FA8C16"), QColor("#FAAD14"), QColor("#52C41A"),
+        QColor("#00A870"), QColor("#2178E5"), QColor("#722ED1"), QColor("#8a8a8a"),
+        QColor("#000000"), QColor("#ffffff"),
+    };
+    auto updateColorBtn = [colorBtn](const QColor &c) {
+        colorBtn->setStyleSheet(QString(
+            "QToolButton { background: transparent; border: none; border-radius: 6px;"
+            " font-size: 16px; color: %1; }"
+            "QToolButton:hover { background: palette(light); }").arg(c.isValid() ? c.name() : QStringLiteral("palette(highlight)")));
+    };
+    connect(colorBtn, &QToolButton::clicked, this, [this, colorBtn, applyCharFormat, presetColors, updateColorBtn]() {
+        // 弹出菜单前先保存光标（菜单 popup 可能触发 focusOut 导致选区丢失）
+        QTextCursor savedCursor = m_contentEdit->textCursor();
+        QMenu colorMenu(this);
+        for (const QColor &c : presetColors) {
+            QAction *a = colorMenu.addAction(QStringLiteral("●  %1").arg(c.name()));
+            a->setData(c);
         }
+        colorMenu.addSeparator();
+        QAction *customAct = colorMenu.addAction(tr("自定义..."));
+        QAction *chosen = colorMenu.exec(colorBtn->mapToGlobal(QPoint(0, colorBtn->height())));
+        if (!chosen) return;
+
+        QColor c;
+        if (chosen == customAct) {
+            QColor defaultColor = m_lastTextColor.isValid()
+                    ? m_lastTextColor : palette().color(QPalette::WindowText);
+            c = QColorDialog::getColor(defaultColor, this, tr("选择文字颜色"));
+        } else {
+            c = chosen->data().value<QColor>();
+        }
+        if (!c.isValid()) return;
+
+        m_lastTextColor = c;
+        updateColorBtn(c);
+        // 恢复光标（选区）再应用颜色
+        m_contentEdit->setTextCursor(savedCursor);
+        applyCharFormat([c](QTextCharFormat &fmt) { fmt.setForeground(c); });
+        m_contentEdit->setFocus();
     });
 
     // 字体族：全部中文字体，供选择

@@ -869,7 +869,7 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
             fill(m_pendingList, overdue);
         }
         if (!today.isEmpty()) {
-            addSection(m_pendingList, tr("今日到期（%1）").arg(today.size()), "#FAAD14");
+            addSection(m_pendingList, tr("今天到期（%1）").arg(today.size()), "#FAAD14");
             fill(m_pendingList, today);
         }
         if (!thisWeek.isEmpty()) {
@@ -877,9 +877,20 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
             fill(m_pendingList, thisWeek);
         }
         if (!other.isEmpty()) {
-            // 未安排 = 无截止日期或截止日期在更晚的周，用说明性文案避免歧义
-            addSection(m_pendingList, tr("未安排 / 无截止日期（%1）").arg(other.size()), "#8a8a8a");
-            fill(m_pendingList, other);
+            // 无截止日期的待办归入「无截止日期」；更晚周的归入「更晚到期」（TC10 五轮①：拆分语义，避免「未安排」歧义）
+            QList<TodoData> noDue, later;
+            for (const auto &t : other) {
+                if (t.dueDatetime <= 0) noDue.append(t);
+                else later.append(t);
+            }
+            if (!noDue.isEmpty()) {
+                addSection(m_pendingList, tr("无截止日期（%1）").arg(noDue.size()), "#8a8a8a");
+                fill(m_pendingList, noDue);
+            }
+            if (!later.isEmpty()) {
+                addSection(m_pendingList, tr("更晚到期（%1）").arg(later.size()), "#8a8a8a");
+                fill(m_pendingList, later);
+            }
         }
     }
 
@@ -896,7 +907,8 @@ void TodoWidget::refresh()
     auto *app = ShorthandApplication::instance();
     TodoManager *mgr = app->todoManager();
 
-    QList<TodoData> all = mgr->getAllTodos();
+    // 已完成页：getAllTodos 默认不含已完成项，需改用 getCompletedTodos（TC10 五轮②：此前已完成页恒为空）
+    QList<TodoData> all = m_completedOnly ? mgr->getCompletedTodos() : mgr->getAllTodos();
 
     if (!m_filterTags.isEmpty()) {
         all.erase(std::remove_if(all.begin(), all.end(), [this](const TodoData &t) {

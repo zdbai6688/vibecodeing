@@ -640,6 +640,16 @@ void MeetingWidget::populateMeetingList(const QList<MeetingData> &meetings)
 {
     m_meetingList->clear();
     if (meetings.isEmpty()) {
+        // 搜索时列表为空：显示「无匹配结果」提示，不跳回主页（TC20 五轮①）
+        if (m_searching) {
+            m_stack->setCurrentWidget(m_listPage);
+            QListWidgetItem *hint = new QListWidgetItem(tr("没有匹配的会议"));
+            hint->setFlags(Qt::NoItemFlags);
+            hint->setForeground(palette().color(QPalette::PlaceholderText));
+            hint->setTextAlignment(Qt::AlignCenter);
+            m_meetingList->addItem(hint);
+            return;
+        }
         m_stack->setCurrentWidget(m_emptyPage);
         return;
     }
@@ -821,7 +831,8 @@ void MeetingWidget::onTranscribe()
 
 void MeetingWidget::onSearch(const QString &keyword)
 {
-    if (keyword.isEmpty()) { showMeetingList(); return; }
+    if (keyword.isEmpty()) { m_searching = false; showMeetingList(); return; }
+    m_searching = true;
     auto *app = ShorthandApplication::instance();
     QList<MeetingData> meetings = app->meetingManager()->searchMeetings(keyword);
     populateMeetingList(meetings);

@@ -45,7 +45,7 @@ enum ShortcutId {
 MainWindow::MainWindow(QWidget *parent)
     : DMainWindow(parent)
 {
-    setWindowTitle(tr("UOS速记"));
+    setWindowTitle(tr("小U速记"));
     setObjectName("MainWindow");
     setMinimumSize(1100, 700);   // PRD §5.2: 最小窗口 1100×700
 
@@ -234,6 +234,14 @@ void MainWindow::initConnections()
     });
     connect(app->desktopModeManager(), &DesktopModeManager::desktopModeExited, this, [this, app]() {
         app->trayManager()->updateDesktopModeAction(false);
+    });
+
+    // 双击桌面便签：在主窗口聚焦该笔记（TC13 五轮：不退出桌面模式、不隐藏便签）
+    connect(app->desktopModeManager(), &DesktopModeManager::stickyNoteRemoved, this, [this](int noteId) {
+        focusNote(noteId);
+        show();
+        raise();
+        activateWindow();
     });
 
     // 托盘便签点击

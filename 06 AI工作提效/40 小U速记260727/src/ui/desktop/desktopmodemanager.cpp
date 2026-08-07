@@ -368,10 +368,9 @@ StickyNoteCard *DesktopModeManager::createCard(int noteId)
         removeStickyNote(id);
     });
 
-    // 双击展开 -> 退出桌面模式并聚焦该笔记
+    // 双击展开 -> 在主窗口聚焦该笔记（TC13 五轮：不再退出桌面模式导致便签消失）
     connect(card, &StickyNoteCard::expandRequested, this, [this](int id) {
-        exitDesktopMode();
-        // 发射 stickyNoteRemoved 让 MainWindow 知道要聚焦哪条笔记
+        // 发射 stickyNoteRemoved 让 MainWindow 聚焦该笔记，但不退出桌面模式、不隐藏便签
         Q_EMIT stickyNoteRemoved(id);
     });
 

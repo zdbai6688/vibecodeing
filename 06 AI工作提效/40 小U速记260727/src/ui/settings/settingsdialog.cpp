@@ -866,7 +866,7 @@ void SettingsDialog::saveSettings()
             if (f.open(QIODevice::WriteOnly)) {
                 QTextStream out(&f);
                 out.setEncoding(QStringConverter::Utf8);
-                out << "[Desktop Entry]\nType=Application\nName=UOS速记\nExec=uos-shorthand\nX-GNOME-Autostart-enabled=true\n";
+                out << "[Desktop Entry]\nType=Application\nName=小U速记\nExec=uos-shorthand\nX-GNOME-Autostart-enabled=true\n";
                 f.close();
             }
         }

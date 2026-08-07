@@ -165,6 +165,9 @@ void QuickEntryDialog::initUI()
     m_contentEdit->setMinimumHeight(64);
     m_contentEdit->setMaximumHeight(140);
     layout->addWidget(m_contentEdit, 1);
+    // TC14 五轮：QTextEdit 会自行消费 Enter 插入换行，需在事件过滤器里拦截，
+    // 否则父窗口 keyPressEvent 收不到 → Enter 保存失效
+    m_contentEdit->installEventFilter(this);
 
     // Bottom row: voice, screenshot, hint, save, pin-to-desktop
     QHBoxLayout *bottomRow = new QHBoxLayout();
@@ -318,6 +321,23 @@ void QuickEntryDialog::leaveGhostState()
 }
 
 void QuickEntryDialog::updateHint() {}
+
+bool QuickEntryDialog::eventFilter(QObject *watched, QEvent *event)
+{
+    // 拦截 QTextEdit 上的 Enter/Ctrl+Enter（QTextEdit 会先消费 Enter 换行，父窗口收不到）
+    if (watched == m_contentEdit && event->type() == QEvent::KeyPress) {
+        auto *ke = static_cast<QKeyEvent *>(event);
+        if (ke->key() == Qt::Key_Return || ke->key() == Qt::Key_Enter) {
+            if (ke->modifiers() & Qt::ControlModifier) {
+                m_contentEdit->insertPlainText("\n");
+            } else {
+                onSave();
+            }
+            return true;
+        }
+    }
+    return QWidget::eventFilter(watched, event);
+}
 
 void QuickEntryDialog::keyPressEvent(QKeyEvent *event)
 {

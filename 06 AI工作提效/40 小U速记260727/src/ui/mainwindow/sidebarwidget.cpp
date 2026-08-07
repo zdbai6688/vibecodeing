@@ -65,7 +65,7 @@ void SidebarWidget::initUI()
     m_logoIcon->setFixedSize(28, 28);
     m_logoIcon->setAlignment(Qt::AlignCenter);
 
-    m_logoText = new QLabel(tr("UOS速记"), this);
+    m_logoText = new QLabel(tr("小U速记"), this);
     m_logoText->setObjectName("logoText");
 
     m_collapseBtn = new QPushButton(this);
@@ -481,7 +481,8 @@ void SidebarWidget::updateItemVisibility()
 
     // Logo 文字
     if (m_logoText) m_logoText->setVisible(show);
-    if (m_collapseBtn) m_collapseBtn->setVisible(show);
+    // 折叠按钮始终保持可见：折叠后仍可点击展开（TC03 五轮③：原实现折叠时隐藏按钮导致无法再展开）
+    if (m_collapseBtn) m_collapseBtn->setVisible(true);
 }
 
 // ─── 样式 ──────────────────────────────────────────────────────

@@ -47,7 +47,7 @@ static void setAutostartEnabled(bool enable)
             QTextStream out(&file);
             out << "[Desktop Entry]\n";
             out << "Type=Application\n";
-            out << "Name=UOS速记\n";
+            out << "Name=小U速记\n";
             out << "Exec=uos-shorthand\n";
             out << "X-GNOME-Autostart-enabled=true\n";
             out << "NoDisplay=true\n";

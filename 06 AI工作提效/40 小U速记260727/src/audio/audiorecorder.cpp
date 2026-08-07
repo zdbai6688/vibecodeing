@@ -70,29 +70,24 @@ bool AudioRecorder::startRecording(const QString &filePath)
     // 确保目标目录存在
     QDir().mkpath(QFileInfo(path).absolutePath());
 
-    // 构建 GStreamer 管道（参考系统语音记事本 deepin-voice-note 的录音链路优化）：
+    // 构建 GStreamer 管道。参考系统语音记事本（deepin-voice-note）：其用 pulsesrc 直接录制
+    // 「audioconvert ! audioresample ! wavenc」，无重采样/DSP 伪影，底噪低（TC19 五轮③）。
     //
-    // autoaudiosrc
+    // pulsesrc        PulseAudio 声源（走硬件 AGC，比 autoaudiosrc 音质稳、底噪小）
     //   → audioconvert      格式转换
-    //   → audioresample     重采样至 16000Hz
-    //   → audiorate         校准采样率，保证输出严格 16000Hz（ASR 依赖精确采样率）
-    //   → audiochebband     80–4000Hz 带通滤波，滤除低频噪声/高频杂音，突出人声
-    //   → volume            增益 1.0x（TC19：原 1.5x 会放大麦克风底噪，导致「沙沙声」明显）
-    //   → audiodynamic      扩展器（mode=2 expander，低于阈值的安静片段自动压低），
-    //                       抑制说话间隙的底噪/沙沙声；参数沿用已验证可解析的 threshold/ratio
+    //   → audioresample     重采样
+    //   → audiorate         校准采样率至 16000Hz（ASR 依赖）
+    //   → audiochebband     100–4000Hz 温和带通（贴人声频段，滤掉高低频杂音；不再用激进压缩器）
     //   → audioconvert      转换回 S16LE
-    //   → capsfilter        设置格式: 16000Hz, mono, S16LE（与 ASR 引擎一致）
-    //   → level             实时电平检测（替换原来的假电平）
-    //   → wavenc            WAV 编码
-    //   → filesink          文件输出
+    //   → capsfilter        16000Hz mono S16LE
+    //   → level             实时电平
+    //   → wavenc → filesink
     //
-    // 注意：filesink 的 location 不嵌入管道字符串，避免路径含空格/中文/特殊字符时解析失败。
+    // 注意：不要叠加 audiodynamic 压缩器——增益/压缩组合不佳会在静音段放大底噪（沙沙声）。
     QString pipelineStr = QString(
-        "autoaudiosrc name=src ! "
+        "pulsesrc name=src ! "
         "audioconvert ! audioresample ! audiorate ! "
-        "audiochebband name=band mode=1 lower-frequency=80 upper-frequency=4000 ! "
-        "volume name=volume volume=1.0 ! "
-        "audiodynamic name=dynamic mode=expander threshold=0.25 ratio=3.0 ! "
+        "audiochebband name=band mode=1 lower-frequency=100 upper-frequency=4000 ! "
         "audioconvert ! "
         "audio/x-raw, format=S16LE, rate=16000, channels=1 ! "
         "level name=level interval=200000000 ! "
@@ -241,22 +236,25 @@ void AudioRecorder::timerEvent(QTimerEvent *event)
 
     // 从 GStreamer level 元素获取实时音频电平
     if (m_level) {
-        GstStructure *s = nullptr;
-        g_signal_emit_by_name(m_level, "get-level", (gdouble)1.0, 0.0, &s);
-        if (s) {
-            gdouble peak_dB;
-            if (gst_structure_get_double(s, "peak", &peak_dB)) {
-                // 将 dB 值映射到 0-100 范围
-                // 通常语音峰值在 -30dB ~ -6dB 之间
-                // -60dB 以下视为静音（0%），0dB 为最大（100%）
-                const double minDb = -60.0;
-                const double maxDb = -3.0;
-                double normalized = (peak_dB - minDb) / (maxDb - minDb);
-                m_audioLevel = qBound(0, static_cast<int>(normalized * 100.0), 100);
+        // 检测 get-level 信号是否存在，避免在部分 GLib 版本上刷屏告警
+        if (g_signal_lookup("get-level", G_OBJECT_TYPE(m_level)) != 0) {
+            GstStructure *s = nullptr;
+            g_signal_emit_by_name(m_level, "get-level", (gdouble)1.0, 0.0, &s);
+            if (s) {
+                gdouble peak_dB;
+                if (gst_structure_get_double(s, "peak", &peak_dB)) {
+                    // 将 dB 值映射到 0-100 范围
+                    // 通常语音峰值在 -30dB ~ -6dB 之间
+                    // -60dB 以下视为静音（0%），0dB 为最大（100%）
+                    const double minDb = -60.0;
+                    const double maxDb = -3.0;
+                    double normalized = (peak_dB - minDb) / (maxDb - minDb);
+                    m_audioLevel = qBound(0, static_cast<int>(normalized * 100.0), 100);
+                }
+                gst_structure_free(s);
             }
-            gst_structure_free(s);
+            emit audioLevelChanged(m_audioLevel);
         }
-        emit audioLevelChanged(m_audioLevel);
     }
 }
 

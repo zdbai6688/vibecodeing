@@ -81,7 +81,7 @@ void TrayManager::init()
         icon = QIcon::fromTheme("uos-shorthand");
     }
     m_trayIcon->setIcon(icon);
-    m_trayIcon->setToolTip(tr("UOS速记"));
+    m_trayIcon->setToolTip(tr("小U速记"));
 
     initMenu();
     m_trayIcon->show();
