@@ -16,6 +16,7 @@
 #include <DDialog>
 #include <QDebug>
 #include <QFileDialog>
+#include <QClipboard>
 #include <QInputDialog>
 #include <QListWidgetItem>
 #include <QMap>
@@ -262,7 +263,11 @@ void WeeklyReportWidget::initUI()
     m_exportBtn = new QPushButton(tr("📤 导出"), this);
     m_exportBtn->setFixedHeight(36);
     m_exportBtn->setStyleSheet("QPushButton { background:transparent; border:1px solid palette(highlight); border-radius:8px; padding:6px 16px; font-size:12px; color:palette(highlight); } QPushButton:hover { background:palette(midlight); }");
+    m_copyBtn = new QPushButton(tr("📋 复制全文"), this);
+    m_copyBtn->setFixedHeight(36);
+    m_copyBtn->setStyleSheet("QPushButton { background:transparent; border:1px solid palette(mid); border-radius:8px; padding:6px 16px; font-size:12px; color:palette(windowText); } QPushButton:hover { background:palette(midlight); border-color:palette(highlight); color:palette(highlight); }");
     btnRow->addWidget(m_generateBtn);
+    btnRow->addWidget(m_copyBtn);
     btnRow->addWidget(m_exportBtn);
     previewCardLayout->addLayout(btnRow);
     rightCol->addWidget(previewCard, 1);
@@ -278,6 +283,7 @@ void WeeklyReportWidget::initUI()
     connect(m_nextBtn, &QPushButton::clicked, this, &WeeklyReportWidget::onNextWeek);
     connect(m_generateBtn, &QPushButton::clicked, this, &WeeklyReportWidget::onGenerateReport);
     connect(m_exportBtn, &QPushButton::clicked, this, &WeeklyReportWidget::onExportReport);
+    connect(m_copyBtn, &QPushButton::clicked, this, &WeeklyReportWidget::onCopyReport);
 }
 
 
@@ -725,6 +731,25 @@ void WeeklyReportWidget::onExportReport()
         d.setTitle(tr("导出失败"));
         d.setMessage(tr("周报导出失败，请检查目标路径是否可写。"));
     }
+    d.addButton(tr("确定"));
+    d.exec();
+}
+
+void WeeklyReportWidget::onCopyReport()
+{
+    QString content = m_reportPreview->toPlainText();
+    if (content.trimmed().isEmpty()) {
+        DDialog d(this);
+        d.setTitle(tr("提示"));
+        d.setMessage(tr("请先生成周报内容"));
+        d.addButton(tr("确定"));
+        d.exec();
+        return;
+    }
+    QApplication::clipboard()->setText(content);
+    DDialog d(this);
+    d.setTitle(tr("复制成功"));
+    d.setMessage(tr("周报已复制到剪贴板，可直接粘贴使用。"));
     d.addButton(tr("确定"));
     d.exec();
 }

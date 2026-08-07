@@ -45,6 +45,7 @@ private slots:
     void onNextWeek();
     void onGenerateReport();
     void onExportReport();
+    void onCopyReport();
     void onDayClicked(int dayIndex);
 
 private:
@@ -77,6 +78,7 @@ private:
     QPushButton *m_nextBtn;
     QPushButton *m_generateBtn;
     QPushButton *m_exportBtn;
+    QPushButton *m_copyBtn;
 };
 
 #endif // WEEKLYREPORTWIDGET_H
