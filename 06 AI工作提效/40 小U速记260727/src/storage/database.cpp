@@ -42,7 +42,7 @@ bool Database::initialize()
     pragma.exec("PRAGMA foreign_keys=ON");
 
     // 数据库架构版本管理
-    int currentVersion = 2;
+    int currentVersion = 3;
     QSqlQuery versionQuery(m_db);
     versionQuery.exec("PRAGMA user_version");
     int dbVersion = 0;
@@ -77,6 +77,21 @@ bool Database::initialize()
                     WHERE n.is_todo = 1 AND n.tag != '' AND n.tag = t.name
                 )");
                 qInfo() << "标签数据迁移完成";
+            }
+        }
+        if (dbVersion < 3) {
+            // v2 → v3: meetings 表增加回收站字段（is_deleted / deleted_at），支持会议软删除进回收站
+            QSqlQuery alter(m_db);
+            QList<QPair<QString, QString>> cols = {
+                {"is_deleted", "INTEGER DEFAULT 0"},
+                {"deleted_at", "INTEGER DEFAULT 0"},
+            };
+            for (const auto &c : cols) {
+                alter.exec(QString("ALTER TABLE meetings ADD COLUMN %1 %2").arg(c.first, c.second));
+                if (alter.lastError().isValid()
+                    && !alter.lastError().text().contains("duplicate column", Qt::CaseInsensitive)) {
+                    qWarning() << "添加 meetings 列失败:" << alter.lastError().text();
+                }
             }
         }
 
@@ -200,7 +215,9 @@ bool Database::createTables()
             ai_summary      TEXT DEFAULT '',
             manual_notes    TEXT DEFAULT '',
             status          TEXT DEFAULT 'completed',
-            created_at      INTEGER NOT NULL
+            created_at      INTEGER NOT NULL,
+            is_deleted      INTEGER DEFAULT 0,
+            deleted_at      INTEGER DEFAULT 0
         )
     )";
 

@@ -6,6 +6,8 @@
 #include "core/notemanager.h"
 #include "core/tagmanager.h"
 #include "core/todomanager.h"
+#include "core/meetingmanager.h"
+#include "storage/meetingstorage.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -544,6 +546,83 @@ void NoteListWidget::populateList(const QList<NoteData> &notes)
 {
     m_list->clear();
 
+    // 回收站模式：先展示已删除的会议（TC09 ①），再展示已删除笔记
+    if (m_mode == Trash && m_searchText.isEmpty()) {
+        auto *app = ShorthandApplication::instance();
+        QList<MeetingData> delMeetings = app->meetingManager()->getDeletedMeetings();
+        if (!delMeetings.isEmpty()) {
+            // 区块标题
+            QWidget *secHdr = new QWidget(this);
+            QHBoxLayout *shl = new QHBoxLayout(secHdr);
+            shl->setContentsMargins(8, 10, 8, 2);
+            DLabel *secLabel = new DLabel(tr("🗂 已删除会议（%1）").arg(delMeetings.size()), this);
+            secLabel->setStyleSheet("font-size: 12px; font-weight: 600; color: palette(placeholderText);");
+            shl->addWidget(secLabel);
+            shl->addStretch();
+            QListWidgetItem *secItem = new QListWidgetItem();
+            secItem->setFlags(Qt::NoItemFlags);
+            secItem->setSizeHint(QSize(0, 30));
+            m_list->addItem(secItem);
+            m_list->setItemWidget(secItem, secHdr);
+
+            for (const auto &m : delMeetings) {
+                QWidget *card = new QWidget(this);
+                QHBoxLayout *cl = new QHBoxLayout(card);
+                cl->setContentsMargins(10, 8, 10, 8);
+                cl->setSpacing(8);
+                QLabel *icon = new QLabel(tr("🎤"), card);
+                icon->setStyleSheet("font-size: 16px;");
+                cl->addWidget(icon);
+                QVBoxLayout *tl = new QVBoxLayout();
+                tl->setSpacing(2);
+                DLabel *title = new DLabel(m.title.isEmpty() ? tr("无标题会议") : m.title, card);
+                title->setStyleSheet("font-size: 13px; font-weight: 600;");
+                tl->addWidget(title);
+                DLabel *time = new DLabel(
+                    tr("删除于 ") + QDateTime::fromSecsSinceEpoch(m.deletedAt).toString("MM-dd HH:mm"),
+                    card);
+                time->setStyleSheet("font-size: 10px; color: palette(placeholderText);");
+                tl->addWidget(time);
+                cl->addLayout(tl, 1);
+                QPushButton *restoreBtn = new QPushButton(tr("恢复"), card);
+                restoreBtn->setFixedHeight(26);
+                restoreBtn->setCursor(Qt::PointingHandCursor);
+                restoreBtn->setStyleSheet(
+                    "QPushButton { border:1px solid palette(highlight); color:palette(highlight);"
+                    " border-radius:6px; padding:2px 10px; font-size:11px; background:transparent; }"
+                    "QPushButton:hover { background:palette(midlight); }");
+                cl->addWidget(restoreBtn);
+                int meetingId = m.id;
+                connect(restoreBtn, &QPushButton::clicked, this, [this, app, meetingId]() {
+                    app->meetingManager()->restoreMeeting(meetingId);
+                    refresh();
+                });
+                QPushButton *delBtn = new QPushButton(tr("删除"), card);
+                delBtn->setFixedHeight(26);
+                delBtn->setCursor(Qt::PointingHandCursor);
+                delBtn->setStyleSheet(
+                    "QPushButton { border:1px solid palette(mid); color:palette(placeholderText);"
+                    " border-radius:6px; padding:2px 10px; font-size:11px; background:transparent; }"
+                    "QPushButton:hover { background:#E64545; color:white; }");
+                cl->addWidget(delBtn);
+                connect(delBtn, &QPushButton::clicked, this, [this, app, meetingId]() {
+                    auto reply = QMessageBox::question(this, tr("永久删除会议"),
+                                                       tr("确定要永久删除该会议吗？此操作不可恢复。"));
+                    if (reply == QMessageBox::Yes) {
+                        app->meetingManager()->permanentDeleteMeeting(meetingId);
+                        refresh();
+                    }
+                });
+                QListWidgetItem *item = new QListWidgetItem();
+                item->setData(Qt::UserRole, -m.id); // 负值标记为会议，避免与笔记 id 冲突
+                card->setFixedHeight(56);
+                item->setSizeHint(QSize(0, 56));
+                m_list->addItem(item);
+                m_list->setItemWidget(item, card);
+            }
+        }
+    }
+
     if (notes.isEmpty()) {
         QWidget *emptyWidget = new QWidget(this);
         QVBoxLayout *emptyLayout = new QVBoxLayout(emptyWidget);
@@ -678,11 +757,52 @@ void NoteListWidget::onContextMenu(const QPoint &pos)
 {
     QListWidgetItem *item = m_list->itemAt(pos);
     if (!item) return;
-    int noteId = item->data(Qt::UserRole).toInt();
+    int rawId = item->data(Qt::UserRole).toInt();
+    auto *app = ShorthandApplication::instance();
+    if (!app) return;
+
+    // 回收站中的会议条目用负 id 标记（TC09 ①）
+    if (m_mode == Trash && rawId < 0) {
+        int meetingId = -rawId;
+        QMenu menu(this);
+        menu.setStyleSheet(R"(
+            QMenu { background: palette(window); border: 1px solid palette(mid); border-radius: 6px; padding: 4px; }
+            QMenu::item { padding: 6px 24px; border-radius: 4px; font-size: 13px; }
+            QMenu::item:selected { background: palette(highlight); color: palette(highlightedText); }
+            QMenu::separator { height: 1px; background: palette(midlight); margin: 4px 8px; }
+        )");
+        QAction *restoreAction = menu.addAction(tr("♻️ 恢复会议"));
+        connect(restoreAction, &QAction::triggered, this, [this, app, meetingId]() {
+            app->meetingManager()->restoreMeeting(meetingId);
+            refresh();
+        });
+        QAction *deleteAction = menu.addAction(tr("🗑 永久删除会议"));
+        connect(deleteAction, &QAction::triggered, this, [this, app, meetingId]() {
+            auto reply = QMessageBox::question(this, tr("永久删除会议"),
+                                               tr("确定要永久删除该会议吗？此操作不可恢复。"));
+            if (reply == QMessageBox::Yes) {
+                app->meetingManager()->permanentDeleteMeeting(meetingId);
+                refresh();
+            }
+        });
+        menu.addSeparator();
+        QAction *clearAction = menu.addAction(tr("🧹 清空回收站会议"));
+        connect(clearAction, &QAction::triggered, this, [this, app]() {
+            auto reply = QMessageBox::question(this, tr("清空回收站会议"),
+                                               tr("确定要永久删除回收站中的所有会议吗？"));
+            if (reply == QMessageBox::Yes) {
+                app->meetingManager()->permanentDeleteAllMeetings();
+                refresh();
+            }
+        });
+        menu.exec(m_list->viewport()->mapToGlobal(pos));
+        return;
+    }
+
+    int noteId = rawId;
     if (noteId <= 0) return;
 
-    auto *app = ShorthandApplication::instance();
-    if (!app || !app->noteManager()) return;
+    if (!app->noteManager()) return;
 
     QMenu menu(this);
     menu.setStyleSheet(R"(

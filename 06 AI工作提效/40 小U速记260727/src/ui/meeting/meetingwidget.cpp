@@ -755,21 +755,20 @@ void MeetingWidget::refresh()
 void MeetingWidget::populateMeetingList(const QList<MeetingData> &meetings)
 {
     m_meetingList->clear();
-    // 主内容区保持「空状态引导页」模式（TC08 ①：喇叭 + 开始会议 + 新建会议），
-    // 历史会议通过右侧清单栏访问（点击条目打开详情）。搜索时切换到列表页显示结果。
-    if (m_searching) {
+    // 有历史会议时显示列表页（支持多选/全选删除，TC09 ②）；
+    // 无会议时显示空状态引导页（喇叭 + 开始会议，TC08 ①）；搜索时始终显示列表页结果。
+    if (!meetings.isEmpty()) {
         m_stack->setCurrentWidget(m_listPage);
-        if (meetings.isEmpty()) {
-            QListWidgetItem *hint = new QListWidgetItem(tr("没有匹配的会议"));
-            hint->setFlags(Qt::NoItemFlags);
-            hint->setForeground(palette().color(QPalette::PlaceholderText));
-            hint->setTextAlignment(Qt::AlignCenter);
-            hint->setSizeHint(QSize(0, 80));
-            m_meetingList->addItem(hint);
-            return;
-        }
+    } else if (m_searching) {
+        m_stack->setCurrentWidget(m_listPage);
+        QListWidgetItem *hint = new QListWidgetItem(tr("没有匹配的会议"));
+        hint->setFlags(Qt::NoItemFlags);
+        hint->setForeground(palette().color(QPalette::PlaceholderText));
+        hint->setTextAlignment(Qt::AlignCenter);
+        hint->setSizeHint(QSize(0, 80));
+        m_meetingList->addItem(hint);
+        return;
     } else {
-        // 非搜索：主区域始终显示空状态引导页
         m_stack->setCurrentWidget(m_emptyPage);
     }
 
@@ -784,6 +783,23 @@ void MeetingWidget::populateMeetingList(const QList<MeetingData> &meetings)
         QListWidgetItem *item = new QListWidgetItem(display, m_meetingList);
         item->setData(Qt::UserRole, m.id);
         item->setToolTip(m.title);
+        // 多选模式下：用带 selectCheck 复选框的自定义条目，支持全选/批量删除（TC09 ②）
+        if (m_multiSelectMode) {
+            QWidget *row = new QWidget(m_meetingList);
+            QHBoxLayout *rl = new QHBoxLayout(row);
+            rl->setContentsMargins(8, 4, 8, 4);
+            rl->setSpacing(8);
+            QCheckBox *cb = new QCheckBox(row);
+            cb->setObjectName("selectCheck");
+            cb->setFocusPolicy(Qt::NoFocus);
+            rl->addWidget(cb);
+            QLabel *txt = new QLabel(display, row);
+            txt->setWordWrap(true);
+            txt->setStyleSheet("color: palette(windowText); font-size: 13px;");
+            rl->addWidget(txt, 1);
+            item->setSizeHint(QSize(0, 52));
+            m_meetingList->setItemWidget(item, row);
+        }
     }
 }
 

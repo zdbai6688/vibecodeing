@@ -50,6 +50,32 @@ bool MeetingManager::batchDeleteMeetings(const QList<int> &ids)
     return ok;
 }
 
+bool MeetingManager::restoreMeeting(int id)
+{
+    bool ok = m_storage->restoreMeeting(id);
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+bool MeetingManager::permanentDeleteMeeting(int id)
+{
+    bool ok = m_storage->permanentDeleteMeeting(id);
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+bool MeetingManager::permanentDeleteAllMeetings()
+{
+    bool ok = m_storage->permanentDeleteAllMeetings();
+    if (ok) emit dataChanged();
+    return ok;
+}
+
+QList<MeetingData> MeetingManager::getDeletedMeetings() const
+{
+    return m_storage->getDeletedMeetings();
+}
+
 MeetingData MeetingManager::getMeeting(int id) const { return m_storage->getMeeting(id); }
 QList<MeetingData> MeetingManager::getAllMeetings() const { return m_storage->getAllMeetings(); }
 QList<MeetingData> MeetingManager::searchMeetings(const QString &keyword) const { return m_storage->searchMeetings(keyword); }

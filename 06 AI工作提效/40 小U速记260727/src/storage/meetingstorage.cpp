@@ -91,12 +91,10 @@ bool MeetingStorage::updateMeeting(const MeetingData &meeting)
 
 bool MeetingStorage::deleteMeeting(int id)
 {
+    // 软删除：标记 is_deleted=1，进入回收站（TC09 ①）
     QSqlQuery query(m_db->connection());
-    query.prepare("DELETE FROM meeting_transcripts WHERE meeting_id=:mid");
-    query.bindValue(":mid", id);
-    query.exec();
-
-    query.prepare("DELETE FROM meetings WHERE id=:id");
+    query.prepare("UPDATE meetings SET is_deleted=1, deleted_at=:dt WHERE id=:id");
+    query.bindValue(":dt", QDateTime::currentSecsSinceEpoch());
     query.bindValue(":id", id);
     return query.exec();
 }
@@ -104,28 +102,39 @@ bool MeetingStorage::deleteMeeting(int id)
 bool MeetingStorage::batchDeleteMeetings(const QList<int> &ids)
 {
     if (ids.isEmpty()) return true;
-    
     QSqlQuery query(m_db->connection());
-    // 构建占位符列表
     QStringList placeholders;
-    for (int i = 0; i < ids.size(); ++i) {
-        placeholders << QString(":id%1").arg(i);
-    }
-    QString placeholdersStr = placeholders.join(", ");
-    
-    // 删除关联转写
-    query.prepare(QString("DELETE FROM meeting_transcripts WHERE meeting_id IN (%1)").arg(placeholdersStr));
-    for (int i = 0; i < ids.size(); ++i) {
-        query.bindValue(QString(":id%1").arg(i), ids[i]);
-    }
-    query.exec();
-    
-    // 删除会议记录
-    query.prepare(QString("DELETE FROM meetings WHERE id IN (%1)").arg(placeholdersStr));
-    for (int i = 0; i < ids.size(); ++i) {
-        query.bindValue(QString(":id%1").arg(i), ids[i]);
-    }
+    for (int i = 0; i < ids.size(); ++i) placeholders << QString(":id%1").arg(i);
+    query.prepare(QString("UPDATE meetings SET is_deleted=1, deleted_at=:dt WHERE id IN (%1)").arg(placeholders.join(", ")));
+    query.bindValue(":dt", QDateTime::currentSecsSinceEpoch());
+    for (int i = 0; i < ids.size(); ++i) query.bindValue(QString(":id%1").arg(i), ids[i]);
     return query.exec();
+}
+
+bool MeetingStorage::restoreMeeting(int id)
+{
+    QSqlQuery query(m_db->connection());
+    query.prepare("UPDATE meetings SET is_deleted=0, deleted_at=0 WHERE id=:id");
+    query.bindValue(":id", id);
+    return query.exec();
+}
+
+bool MeetingStorage::permanentDeleteMeeting(int id)
+{
+    QSqlQuery query(m_db->connection());
+    query.prepare("DELETE FROM meeting_transcripts WHERE meeting_id=:mid");
+    query.bindValue(":mid", id);
+    query.exec();
+    query.prepare("DELETE FROM meetings WHERE id=:id");
+    query.bindValue(":id", id);
+    return query.exec();
+}
+
+bool MeetingStorage::permanentDeleteAllMeetings()
+{
+    QSqlQuery query(m_db->connection());
+    query.exec("DELETE FROM meeting_transcripts WHERE meeting_id IN (SELECT id FROM meetings WHERE is_deleted=1)");
+    return query.exec("DELETE FROM meetings WHERE is_deleted=1");
 }
 
 MeetingData MeetingStorage::getMeeting(int id) const
@@ -143,7 +152,19 @@ QList<MeetingData> MeetingStorage::getAllMeetings() const
 {
     QList<MeetingData> list;
     QSqlQuery query(m_db->connection());
-    if (query.exec("SELECT * FROM meetings ORDER BY created_at DESC")) {
+    if (query.exec("SELECT * FROM meetings WHERE is_deleted=0 ORDER BY created_at DESC")) {
+        while (query.next()) {
+            list.append(rowToMeeting(queryToMap(query)));
+        }
+    }
+    return list;
+}
+
+QList<MeetingData> MeetingStorage::getDeletedMeetings() const
+{
+    QList<MeetingData> list;
+    QSqlQuery query(m_db->connection());
+    if (query.exec("SELECT * FROM meetings WHERE is_deleted=1 ORDER BY deleted_at DESC")) {
         while (query.next()) {
             list.append(rowToMeeting(queryToMap(query)));
         }
@@ -155,7 +176,7 @@ QList<MeetingData> MeetingStorage::searchMeetings(const QString &keyword) const
 {
     QList<MeetingData> list;
     QSqlQuery query(m_db->connection());
-    query.prepare("SELECT * FROM meetings WHERE title LIKE :kw OR ai_summary LIKE :kw2 ORDER BY created_at DESC");
+    query.prepare("SELECT * FROM meetings WHERE is_deleted=0 AND (title LIKE :kw OR ai_summary LIKE :kw2) ORDER BY created_at DESC");
     QString like = "%" + keyword + "%";
     query.bindValue(":kw", like);
     query.bindValue(":kw2", like);
@@ -223,6 +244,8 @@ MeetingData MeetingStorage::rowToMeeting(const QVariantMap &row) const
     m.manualNotes = row.value("manual_notes").toString();
     m.status = row.value("status").toString();
     m.createdAt = row.value("created_at").toLongLong();
+    m.isDeleted = row.value("is_deleted").toInt() != 0;
+    m.deletedAt = row.value("deleted_at").toLongLong();
     return m;
 }
 

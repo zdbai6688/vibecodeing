@@ -19,9 +19,16 @@ public:
     bool deleteMeeting(int id);
     /// 批量删除会议记录
     bool batchDeleteMeetings(const QList<int> &ids);
+    /// 恢复回收站中的会议
+    bool restoreMeeting(int id);
+    /// 永久删除会议
+    bool permanentDeleteMeeting(int id);
+    /// 清空回收站中的会议
+    bool permanentDeleteAllMeetings();
 
     MeetingData getMeeting(int id) const;
     QList<MeetingData> getAllMeetings() const;
+    QList<MeetingData> getDeletedMeetings() const;
     QList<MeetingData> searchMeetings(const QString &keyword) const;
 
     int addTranscript(const TranscriptData &transcript);
