@@ -49,8 +49,6 @@ private slots:
     void onNewNote();
     void onNewTodo();
     void onNewMeeting();
-    void onNewNoteWithTag();
-    void onUnifiedCreate();
     void onNoteSelected(int noteId);
     void onSwitchToNotes();
     void onSwitchToTodos();
@@ -70,7 +68,6 @@ private:
     void setupGlobalShortcut();
     void applyGlobalShortcut();
     void showMiddleWidget(QWidget *w);
-    void updateCreateButtonTooltip();
     MeetingWidget *meetingWidget();
     WeeklyReportWidget *weeklyWidget();
 
@@ -93,10 +90,7 @@ private:
     QFrame *m_sep1 = nullptr;
 
     // 标题栏按钮
-    DToolButton *m_createBtn = nullptr;
     DToolButton *m_moreBtn = nullptr;
-    DToolButton *m_exportBtn = nullptr;
-    DMenu *m_createMenu = nullptr;
 };
 
 #endif // MAINWINDOW_H

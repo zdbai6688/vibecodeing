@@ -117,6 +117,10 @@ bool AudioRecorder::startRecording(const QString &filePath)
         g_object_set(m_sink, "location", path.toUtf8().constData(), nullptr);
     } else {
         qWarning() << "录音管道缺少 filesink 元素";
+        // 清理已获取的子元素引用，避免泄漏
+        if (m_source) { gst_object_unref(m_source); m_source = nullptr; }
+        if (m_volume) { gst_object_unref(m_volume); m_volume = nullptr; }
+        if (m_level)  { gst_object_unref(m_level);  m_level = nullptr; }
         gst_element_set_state(m_pipeline, GST_STATE_NULL);
         gst_object_unref(m_pipeline);
         m_pipeline = nullptr;
@@ -133,6 +137,10 @@ bool AudioRecorder::startRecording(const QString &filePath)
     GstStateChangeReturn ret = gst_element_set_state(m_pipeline, GST_STATE_PLAYING);
     if (ret == GST_STATE_CHANGE_FAILURE) {
         qWarning() << "录音启动失败";
+        if (m_source) { gst_object_unref(m_source); m_source = nullptr; }
+        if (m_volume) { gst_object_unref(m_volume); m_volume = nullptr; }
+        if (m_level)  { gst_object_unref(m_level);  m_level = nullptr; }
+        if (m_sink)   { gst_object_unref(m_sink);   m_sink = nullptr; }
         gst_element_set_state(m_pipeline, GST_STATE_NULL);
         gst_object_unref(m_pipeline);
         m_pipeline = nullptr;
@@ -201,12 +209,14 @@ bool AudioRecorder::stopRecording()
             gst_object_unref(bus);
         }
         gst_element_set_state(m_pipeline, GST_STATE_NULL);
+        // 先释放子元素引用（gst_bin_get_by_name 会 +1 ref），再释放管道本身，
+        // 否则子元素残留引用指向已释放管道 → 第二次录音时 use-after-free 闪退（TC19）
+        if (m_source) { gst_object_unref(m_source); m_source = nullptr; }
+        if (m_volume) { gst_object_unref(m_volume); m_volume = nullptr; }
+        if (m_level)  { gst_object_unref(m_level);  m_level = nullptr; }
+        if (m_sink)   { gst_object_unref(m_sink);   m_sink = nullptr; }
         gst_object_unref(m_pipeline);
         m_pipeline = nullptr;
-        m_source = nullptr;
-        m_volume = nullptr;
-        m_level = nullptr;
-        m_sink = nullptr;
     }
 
     m_state = Idle;

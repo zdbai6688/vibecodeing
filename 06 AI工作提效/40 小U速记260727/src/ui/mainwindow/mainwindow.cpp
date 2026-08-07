@@ -68,48 +68,7 @@ void MainWindow::initUI()
     titlebar->setTitle("");
     titlebar->setIcon(QIcon::fromTheme("uos-shorthand"));
 
-    // ===== 统一新建入口（PRD §4.1）=====
-    m_createBtn = new DToolButton(this);
-    m_createBtn->setIcon(QIcon::fromTheme("list-add"));
-    m_createBtn->setToolTip(tr("新建 (Ctrl+N)"));
-    m_createBtn->setFixedSize(32, 32);
-
-    // 新建菜单（按上下文创建）
-    m_createMenu = new DMenu(this);
-    QAction *actNewNote = m_createMenu->addAction(QIcon::fromTheme("document-new"),
-                                                   tr("新建笔记 (Ctrl+N)"));
-    actNewNote->setData("note");
-    QAction *actNewTodo = m_createMenu->addAction(QIcon::fromTheme("task-new"),
-                                                   tr("新建待办 (Ctrl+Shift+N)"));
-    actNewTodo->setData("todo");
-    QAction *actNewMeeting = m_createMenu->addAction(QIcon::fromTheme("audio-input-microphone"),
-                                                      tr("新建会议"));
-    actNewMeeting->setData("meeting");
-    QAction *actNewNoteWithTag = m_createMenu->addAction(QIcon::fromTheme("document-new"),
-                                                          tr("新建笔记并选择标签"));
-    actNewNoteWithTag->setData("note-tag");
-
-    connect(m_createMenu, &DMenu::triggered, this, [this](QAction *act) {
-        QString data = act->data().toString();
-        if (data == "note") onNewNote();
-        else if (data == "todo") onNewTodo();
-        else if (data == "meeting") onNewMeeting();
-        else if (data == "note-tag") onNewNoteWithTag();
-    });
-
-    // 点击新建按钮：按当前上下文创建（PRD §4.1）
-    connect(m_createBtn, &DToolButton::clicked, this, &MainWindow::onUnifiedCreate);
-
-    titlebar->addWidget(m_createBtn, Qt::AlignRight);
-
-    // 导出按钮
-    m_exportBtn = new DToolButton(this);
-    m_exportBtn->setIcon(QIcon::fromTheme("document-save"));
-    m_exportBtn->setToolTip(tr("导出"));
-    m_exportBtn->setFixedSize(32, 32);
-    titlebar->addWidget(m_exportBtn, Qt::AlignRight);
-
-    // 更多按钮
+    // 更多菜单（TC03 二轮②：标题栏图标收敛，新建/导出等并入「⋯」，侧栏已有「＋ 新建笔记」主按钮）
     m_moreBtn = new DToolButton(this);
     m_moreBtn->setText("⋯");
     m_moreBtn->setToolTip(tr("更多"));
@@ -117,6 +76,13 @@ void MainWindow::initUI()
     DMenu *moreMenu = new DMenu(this);
     QAction *actQuickEntry = moreMenu->addAction(tr("快速录入 (%1)").arg(QString(SHORTCUT_QUICK_ENTRY)));
     connect(actQuickEntry, &QAction::triggered, this, &MainWindow::onShowQuickEntry);
+    moreMenu->addSeparator();
+    QAction *actNewNote = moreMenu->addAction(tr("新建笔记 (Ctrl+N)"));
+    connect(actNewNote, &QAction::triggered, this, &MainWindow::onNewNote);
+    QAction *actNewTodo = moreMenu->addAction(tr("新建待办 (Ctrl+Shift+N)"));
+    connect(actNewTodo, &QAction::triggered, this, &MainWindow::onNewTodo);
+    QAction *actNewMeeting = moreMenu->addAction(tr("新建会议"));
+    connect(actNewMeeting, &QAction::triggered, this, &MainWindow::onNewMeeting);
     moreMenu->addSeparator();
     QAction *actSettings = moreMenu->addAction(QIcon::fromTheme("settings-configure"),
                                                 tr("设置"));
@@ -239,10 +205,6 @@ void MainWindow::initConnections()
     connect(m_noteList, &NoteListWidget::noteSelected, this, &MainWindow::onNoteSelected);
     // 待办
     connect(m_todoWidget, &TodoWidget::todoSelected, this, &MainWindow::onTodoSelected);
-    // 界面切换时更新创建按钮提示
-    connect(m_middleStack, &QStackedWidget::currentChanged, this, [this]() {
-        updateCreateButtonTooltip();
-    });
 
     // 数据变更自动刷新
     connect(app->noteManager(), &NoteManager::dataChanged, this, [this]() {
@@ -321,7 +283,6 @@ void MainWindow::applyGlobalShortcut()
         shortcutKey = QString(SHORTCUT_QUICK_ENTRY);
         settings.setValue("shortcut/quick_entry", shortcutKey);
     }
-    QKeySequence seq(shortcutKey);
 
     if (!m_globalShortcut) {
         m_globalShortcut = ShorthandApplication::instance()->globalShortcut();
@@ -339,7 +300,33 @@ void MainWindow::applyGlobalShortcut()
         m_fallbackShortcut = nullptr;
     }
 
-    bool registered = m_globalShortcut->registerShortcut(seq, ShortcutQuickEntry);
+    // 候选键列表：依次尝试全局注册，取第一个成功者（TC13）。
+    // Ctrl+Alt+Space 在部分 UOS/DDE 桌面被 WM 抢占（XGrabKey BadAccess 错误码 10），
+    // 此时自动回退到其他组合键，保证「全局」快速录入始终可用，而非退化成仅限窗口聚焦的 QShortcut。
+    QStringList candidates;
+    candidates << shortcutKey;
+    const QStringList fallbacks = {
+        QStringLiteral("Ctrl+Shift+Space"),
+        QStringLiteral("Ctrl+Alt+Q"),
+        QStringLiteral("Ctrl+Alt+E"),
+        QStringLiteral("F9"),
+    };
+    for (const QString &fb : fallbacks) {
+        if (!candidates.contains(fb)) candidates << fb;
+    }
+
+    bool registered = false;
+    QString registeredKey;
+    for (const QString &cand : candidates) {
+        QKeySequence seq(cand);
+        if (seq.isEmpty()) continue;
+        if (m_globalShortcut->registerShortcut(seq, ShortcutQuickEntry)) {
+            registered = true;
+            registeredKey = cand;
+            break;
+        }
+    }
+
     if (registered) {
         connect(m_globalShortcut, &GlobalShortcutManager::shortcutActivated,
                 this, [this](quint32 id) {
@@ -347,14 +334,21 @@ void MainWindow::applyGlobalShortcut()
                 onShowQuickEntry();
             }
         });
-        qInfo() << "[MainWindow] 全局快捷键注册成功:" << shortcutKey;
+        // 若注册成功的是回退键而非用户设置值，回写设置，让设置页与提示保持一致
+        if (registeredKey != shortcutKey) {
+            settings.setValue("shortcut/quick_entry", registeredKey);
+            qInfo() << "[MainWindow] 用户设置键被占用，自动改用全局可用快捷键:" << registeredKey;
+        }
+        qInfo() << "[MainWindow] 全局快捷键注册成功:" << registeredKey;
     } else {
-        // Wayland / 注册失败时退化为应用内快捷键
-        qWarning() << "[MainWindow] 全局快捷键注册失败，使用应用内快捷键回退:" << shortcutKey;
-        m_fallbackShortcut = new QShortcut(seq, this);
+        // 全部候选均失败（如 Wayland），退化为应用内快捷键
+        qWarning() << "[MainWindow] 所有全局快捷键注册失败，使用应用内快捷键回退:" << shortcutKey;
+        QKeySequence fbSeq(shortcutKey);
+        if (fbSeq.isEmpty()) fbSeq = QKeySequence(QStringLiteral("Ctrl+Alt+Space"));
+        m_fallbackShortcut = new QShortcut(fbSeq, this);
         connect(m_fallbackShortcut, &QShortcut::activated,
                 this, &MainWindow::onShowQuickEntry);
-        qInfo() << "[MainWindow] 使用应用内快捷键(回退):" << shortcutKey;
+        qInfo() << "[MainWindow] 使用应用内快捷键(回退):" << fbSeq.toString();
     }
 }
 
@@ -362,32 +356,6 @@ void MainWindow::onSidebarCollapseChanged(bool collapsed)
 {
     // 调整分隔线可见性
     m_sep1->setVisible(!collapsed);
-    updateCreateButtonTooltip();
-}
-
-void MainWindow::updateCreateButtonTooltip()
-{
-    QWidget *current = m_middleStack->currentWidget();
-    if (current == m_todoWidget) {
-        m_createBtn->setToolTip(tr("新建待办 (Ctrl+Shift+N)"));
-    } else if (current == m_meetingWidget || current == m_meetingPlaceholder) {
-        m_createBtn->setToolTip(tr("新建会议"));
-    } else {
-        m_createBtn->setToolTip(tr("新建笔记 (Ctrl+N)"));
-    }
-}
-
-void MainWindow::onUnifiedCreate()
-{
-    // PRD §4.1: "+" 按当前上下文新建
-    QWidget *current = m_middleStack->currentWidget();
-    if (current == m_todoWidget) {
-        onNewTodo();
-    } else if (current == m_meetingWidget || current == m_meetingPlaceholder) {
-        onNewMeeting();
-    } else {
-        onNewNote();
-    }
 }
 
 void MainWindow::onNewNote()
@@ -430,13 +398,6 @@ void MainWindow::onNewMeeting()
     meetingWidget()->refresh();
     // 触发新建会议
     meetingWidget()->onNewMeeting();
-}
-
-void MainWindow::onNewNoteWithTag()
-{
-    // 新建笔记并弹出标签选择
-    onNewNote();
-    // 后续可在 NoteEditorWidget 中处理标签选择
 }
 
 void MainWindow::showMiddleWidget(QWidget *w)

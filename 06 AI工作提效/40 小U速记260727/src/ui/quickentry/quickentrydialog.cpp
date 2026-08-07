@@ -109,19 +109,9 @@ void QuickEntryDialog::initUI()
     QVBoxLayout *outerLayout = new QVBoxLayout(this);
     outerLayout->setContentsMargins(0, 0, 0, 0);
 
-    m_modeStack = new QStackedWidget(this);
-
-    initCompactUI();
-    initFullUI();
-
-    m_modeStack->setCurrentWidget(m_compactPage);
-    outerLayout->addWidget(m_modeStack);
-}
-
-void QuickEntryDialog::initCompactUI()
-{
-    m_compactPage = new QWidget(this);
-    m_compactPage->setObjectName("compactContainer");
+    // 统一单页窗口（TC14 二轮）：取消「紧凑/全屏」双尺寸切换，输入随内容自动增高
+    m_page = new QWidget(this);
+    m_page->setObjectName("compactContainer");
 
     QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(this);
     shadow->setBlurRadius(20);
@@ -129,23 +119,17 @@ void QuickEntryDialog::initCompactUI()
     auto *helper = DGuiApplicationHelper::instance();
     bool isDark = helper && helper->themeType() == DGuiApplicationHelper::DarkType;
     shadow->setColor(isDark ? QColor(0, 0, 0, 120) : QColor(0, 0, 0, 40));
-    m_compactPage->setGraphicsEffect(shadow);
+    m_page->setGraphicsEffect(shadow);
 
-    QVBoxLayout *layout = new QVBoxLayout(m_compactPage);
+    QVBoxLayout *layout = new QVBoxLayout(m_page);
     layout->setContentsMargins(12, 8, 12, 8);
     layout->setSpacing(6);
 
-    // Top row: drag handle + expand + continuous switch + close
+    // Top row: drag handle + continuous switch + close
     QHBoxLayout *topRow = new QHBoxLayout();
-    m_dragBarCompact = new DragHandle(m_edgeHide, this);
-    m_dragBarCompact->setObjectName("compactBtn");
-    topRow->addWidget(m_dragBarCompact);
-
-    m_expandBtn = new QPushButton(tr("□"), this);
-    m_expandBtn->setObjectName("compactBtn");
-    m_expandBtn->setToolTip(tr("展开"));
-    m_expandBtn->setFixedSize(24, 24);
-    topRow->addWidget(m_expandBtn);
+    m_dragBar = new DragHandle(m_edgeHide, this);
+    m_dragBar->setObjectName("compactBtn");
+    topRow->addWidget(m_dragBar);
 
     DLabel *contLabel = new DLabel(tr("连续"), this);
     contLabel->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
@@ -157,23 +141,24 @@ void QuickEntryDialog::initCompactUI()
     topRow->addWidget(m_continuousSwitch);
 
     topRow->addStretch();
-    m_compactBtn = new QPushButton(tr("✕"), this);
-    m_compactBtn->setObjectName("compactBtn");
-    m_compactBtn->setFixedSize(24, 24);
-    m_compactBtn->setToolTip(tr("关闭"));
-    topRow->addWidget(m_compactBtn);
+    QPushButton *closeBtn = new QPushButton(tr("✕"), this);
+    closeBtn->setObjectName("compactBtn");
+    closeBtn->setFixedSize(24, 24);
+    closeBtn->setToolTip(tr("关闭"));
+    topRow->addWidget(closeBtn);
     layout->addLayout(topRow);
 
-    // Content
-    m_compactEdit = new QTextEdit(this);
-    m_compactEdit->setObjectName("compactInput");
-    m_compactEdit->setPlaceholderText(tr("快速记录..."));
-    m_compactEdit->setAcceptRichText(false);
-    m_compactEdit->setFixedHeight(84);
-    m_compactEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    layout->addWidget(m_compactEdit);
+    // Content：单编辑器，随内容自动增高（最多 3 行高度，超出滚动）
+    m_contentEdit = new QTextEdit(this);
+    m_contentEdit->setObjectName("compactInput");
+    m_contentEdit->setPlaceholderText(tr("快速记录...\n支持 #标签 和 !高/中/低 优先级，Enter 保存，Ctrl+Enter 换行"));
+    m_contentEdit->setAcceptRichText(false);
+    m_contentEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_contentEdit->setMinimumHeight(64);
+    m_contentEdit->setMaximumHeight(140);
+    layout->addWidget(m_contentEdit, 1);
 
-    // Bottom row: voice, screenshot, save, pin-to-desktop
+    // Bottom row: voice, screenshot, hint, save, pin-to-desktop
     QHBoxLayout *bottomRow = new QHBoxLayout();
     bottomRow->setSpacing(4);
     QPushButton *voiceBtn = new QPushButton(tr("🎤"), this);
@@ -186,6 +171,10 @@ void QuickEntryDialog::initCompactUI()
     ssBtn->setToolTip(tr("截图"));
     bottomRow->addWidget(voiceBtn);
     bottomRow->addWidget(ssBtn);
+
+    m_hintLabel = new DLabel(tr("Enter 保存 · Ctrl+Enter 换行"), this);
+    m_hintLabel->setStyleSheet("font-size: 10px; color: palette(placeholderText);");
+    bottomRow->addWidget(m_hintLabel);
     bottomRow->addStretch();
 
     m_pinToDesktopBtn = new QPushButton(tr("📌 贴到桌面"), this);
@@ -194,131 +183,26 @@ void QuickEntryDialog::initCompactUI()
     m_pinToDesktopBtn->setToolTip(tr("保存并贴到桌面便签"));
     bottomRow->addWidget(m_pinToDesktopBtn);
 
-    QPushButton *saveBtn = new QPushButton(tr("保存"), this);
-    saveBtn->setObjectName("compactSave");
-    saveBtn->setFixedHeight(30);
-    bottomRow->addWidget(saveBtn);
+    m_saveBtn = new QPushButton(tr("保存"), this);
+    m_saveBtn->setObjectName("compactSave");
+    m_saveBtn->setFixedHeight(30);
+    bottomRow->addWidget(m_saveBtn);
     layout->addLayout(bottomRow);
+
+    outerLayout->addWidget(m_page);
 
     connect(voiceBtn, &QPushButton::clicked, this, &QuickEntryDialog::onVoiceInput);
     connect(ssBtn, &QPushButton::clicked, this, &QuickEntryDialog::onScreenshot);
-    connect(saveBtn, &QPushButton::clicked, this, &QuickEntryDialog::onSave);
+    connect(m_saveBtn, &QPushButton::clicked, this, &QuickEntryDialog::onSave);
     connect(m_pinToDesktopBtn, &QPushButton::clicked, this, &QuickEntryDialog::onPinToDesktop);
-    connect(m_expandBtn, &QPushButton::clicked, this, [this]() {
-        m_compactMode = false;
-        m_modeStack->setCurrentWidget(m_fullPage);
-        m_contentEdit->setPlainText(m_compactEdit->toPlainText());
-        m_contentEdit->setFocus();
-        setFixedSize(560, 320);
-        centerOnScreen();
-    });
-    connect(m_compactBtn, &QPushButton::clicked, this, [this]() {
+    connect(closeBtn, &QPushButton::clicked, this, [this]() {
         // 关闭：未保存内容以本窗口草稿保留，供下一个新窗口恢复
         dismissWithDraft();
     });
-    connect(m_compactEdit, &QTextEdit::textChanged, this, [this]() {
-        if (m_compactEdit->toPlainText().contains('\n')) {
-            QString text = m_compactEdit->toPlainText();
-            m_contentEdit->setPlainText(text);
-            m_compactMode = false;
-            m_modeStack->setCurrentWidget(m_fullPage);
-            setFixedSize(560, 320);
-            centerOnScreen();
-            m_contentEdit->moveCursor(QTextCursor::End);
-            m_contentEdit->setFocus();
-        }
-    });
-
     connect(m_continuousSwitch, &DSwitchButton::toggled, this, [this](bool checked) {
         m_continuousAdd = checked;
         QSettings().setValue("desktop/continuous_add", checked);
     });
-
-    m_modeStack->addWidget(m_compactPage);
-}
-
-void QuickEntryDialog::initFullUI()
-{
-    m_fullPage = new QWidget(this);
-    m_fullPage->setObjectName("compactContainer");
-    QVBoxLayout *layout = new QVBoxLayout(m_fullPage);
-    layout->setContentsMargins(12, 8, 12, 8);
-    layout->setSpacing(6);
-
-    QHBoxLayout *topRow = new QHBoxLayout();
-    m_dragBarFull = new DragHandle(m_edgeHide, this);
-    m_dragBarFull->setObjectName("compactBtn");
-    topRow->addWidget(m_dragBarFull);
-
-    QPushButton *compactToggleBtn = new QPushButton(tr("−"), this);
-    compactToggleBtn->setObjectName("compactBtn");
-    compactToggleBtn->setToolTip(tr("收缩"));
-    compactToggleBtn->setFixedSize(24, 24);
-    topRow->addWidget(compactToggleBtn);
-
-    DLabel *contLabel = new DLabel(tr("连续"), this);
-    contLabel->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
-    topRow->addWidget(contLabel);
-    DSwitchButton *contSwitch = new DSwitchButton(this);
-    contSwitch->setChecked(m_continuousAdd);
-    contSwitch->setFixedSize(36, 20);
-    contSwitch->setToolTip(tr("连续新增：保存后不关闭窗口"));
-    topRow->addWidget(contSwitch);
-    connect(contSwitch, &DSwitchButton::toggled, this, [this](bool checked) {
-        m_continuousAdd = checked;
-        QSettings().setValue("desktop/continuous_add", checked);
-    });
-
-    topRow->addStretch();
-    QPushButton *cancelBtn = new QPushButton(tr("✕"), this);
-    cancelBtn->setObjectName("compactBtn");
-    cancelBtn->setFixedSize(24, 24);
-    cancelBtn->setToolTip(tr("关闭"));
-    topRow->addWidget(cancelBtn);
-    layout->addLayout(topRow);
-
-    m_contentEdit = new QTextEdit(this);
-    m_contentEdit->setObjectName("compactInput");
-    m_contentEdit->setPlaceholderText(tr("记录笔记内容...\n\n支持 #标签 和 !优先级"));
-    m_contentEdit->setAcceptRichText(false);
-    m_contentEdit->setFixedHeight(160);
-    layout->addWidget(m_contentEdit, 1);
-
-    QHBoxLayout *bottomRow = new QHBoxLayout();
-    bottomRow->setSpacing(4);
-    m_hintLabel = new DLabel(tr("按 Enter 保存 | Ctrl+Enter 换行"), this);
-    m_hintLabel->setStyleSheet("font-size: 10px; color: palette(placeholderText);");
-    bottomRow->addWidget(m_hintLabel);
-    bottomRow->addStretch();
-
-    QPushButton *pinBtn = new QPushButton(tr("📌 贴到桌面"), this);
-    pinBtn->setObjectName("pinBtn");
-    pinBtn->setFixedHeight(30);
-    pinBtn->setToolTip(tr("保存并贴到桌面便签"));
-    bottomRow->addWidget(pinBtn);
-    connect(pinBtn, &QPushButton::clicked, this, &QuickEntryDialog::onPinToDesktop);
-
-    QPushButton *fullSaveBtn = new QPushButton(tr("保存"), this);
-    fullSaveBtn->setObjectName("compactSave");
-    fullSaveBtn->setFixedHeight(30);
-    bottomRow->addWidget(fullSaveBtn);
-    layout->addLayout(bottomRow);
-
-    connect(compactToggleBtn, &QPushButton::clicked, this, [this]() {
-        m_compactEdit->setPlainText(m_contentEdit->toPlainText());
-        m_compactMode = true;
-        m_modeStack->setCurrentWidget(m_compactPage);
-        setFixedSize(360, 220);
-        centerOnScreen();
-        m_compactEdit->setFocus();
-    });
-    connect(cancelBtn, &QPushButton::clicked, this, [this]() {
-        // 关闭：未保存内容以本窗口草稿保留，供下一个新窗口恢复
-        dismissWithDraft();
-    });
-    connect(fullSaveBtn, &QPushButton::clicked, this, &QuickEntryDialog::onSave);
-
-    m_modeStack->addWidget(m_fullPage);
 }
 
 void QuickEntryDialog::initConnections()
@@ -343,19 +227,13 @@ void QuickEntryDialog::showCompact()
         QString draft = QString::fromUtf8(draftFile.readAll()).trimmed();
         draftFile.close();
         if (!draft.isEmpty()) {
-            m_compactEdit->setPlainText(draft);
+            m_contentEdit->setPlainText(draft);
         }
         // Clear draft after restore
         QFile::remove(draftPath);
     }
 
-    if (m_compactMode) {
-        m_modeStack->setCurrentWidget(m_compactPage);
-        setFixedSize(360, 220);
-    } else {
-        m_modeStack->setCurrentWidget(m_fullPage);
-        setFixedSize(560, 320);
-    }
+    setFixedSize(440, 240);
     centerOnScreen();
     show();
     activateWindow();
@@ -387,11 +265,7 @@ void QuickEntryDialog::setFocus()
         showCompact();
     }
     QWidget::setFocus();
-    if (m_compactMode) {
-        m_compactEdit->setFocus();
-    } else {
-        m_contentEdit->setFocus();
-    }
+    m_contentEdit->setFocus();
     m_ghostState = false;
     setWindowOpacity(1.0);
 }
@@ -403,31 +277,13 @@ void QuickEntryDialog::showEvent(QShowEvent *event)
     m_contentEdit->setFocus();
 }
 
-void QuickEntryDialog::toggleCompactMode()
-{
-    m_compactMode = !m_compactMode;
-    if (m_compactMode) {
-        m_compactEdit->setPlainText(m_contentEdit->toPlainText());
-        m_modeStack->setCurrentWidget(m_compactPage);
-        setFixedSize(360, 220);
-    } else {
-        m_contentEdit->setPlainText(m_compactEdit->toPlainText());
-        m_modeStack->setCurrentWidget(m_fullPage);
-        setFixedSize(560, 320);
-    }
-    centerOnScreen();
-}
-
 void QuickEntryDialog::enterGhostState()
 {
     if (m_ghostState || m_hidden) return;
     m_ghostState = true;
 
     // Save draft
-    QString content;
-    if (m_compactMode) content = m_compactEdit->toPlainText();
-    else content = m_contentEdit->toPlainText();
-
+    QString content = m_contentEdit->toPlainText();
     if (!content.trimmed().isEmpty()) {
         // 本窗口独立草稿，避免多窗口互相覆盖
         QString draftDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/drafts";
@@ -459,11 +315,7 @@ void QuickEntryDialog::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
         if (event->modifiers() & Qt::ControlModifier) {
-            if (m_compactMode) {
-                m_compactEdit->insertPlainText("\n");
-            } else {
-                m_contentEdit->insertPlainText("\n");
-            }
+            m_contentEdit->insertPlainText("\n");
         } else {
             onSave();
         }
@@ -481,10 +333,7 @@ void QuickEntryDialog::keyPressEvent(QKeyEvent *event)
 void QuickEntryDialog::focusOutEvent(QFocusEvent *event)
 {
     // Enter ghost state if there's unsaved content
-    QString content;
-    if (m_compactMode) content = m_compactEdit->toPlainText();
-    else content = m_contentEdit->toPlainText();
-
+    QString content = m_contentEdit->toPlainText();
     if (!content.trimmed().isEmpty() && !m_hidden) {
         enterGhostState();
     }
@@ -495,9 +344,7 @@ void QuickEntryDialog::changeEvent(QEvent *event)
 {
     if (event->type() == QEvent::ActivationChange) {
         if (!isActiveWindow() && !m_hidden) {
-            QString content;
-            if (m_compactMode) content = m_compactEdit->toPlainText();
-            else content = m_contentEdit->toPlainText();
+            QString content = m_contentEdit->toPlainText();
             if (!content.trimmed().isEmpty()) {
                 enterGhostState();
             }
@@ -584,11 +431,7 @@ void QuickEntryDialog::onVoiceInput()
                                                      dir, tr("音频文件 (*.wav *.mp3 *.ogg *.m4a)"));
     if (!filePath.isEmpty()) {
         QString text = tr("[语音: %1]").arg(QFileInfo(filePath).fileName());
-        if (m_compactMode) {
-            m_compactEdit->insertPlainText(text);
-        } else {
-            m_contentEdit->insertPlainText(text);
-        }
+        m_contentEdit->insertPlainText(text);
     }
 }
 
@@ -596,21 +439,12 @@ void QuickEntryDialog::onScreenshot()
 {
     QString ts = QString::number(QDateTime::currentSecsSinceEpoch());
     QString text = tr("[截图: %1.png]").arg(ts);
-    if (m_compactMode) {
-        m_compactEdit->insertPlainText(text);
-    } else {
-        m_contentEdit->insertPlainText(text);
-    }
+    m_contentEdit->insertPlainText(text);
 }
 
 void QuickEntryDialog::onSave()
 {
-    QString content;
-    if (m_compactMode) {
-        content = m_compactEdit->toPlainText().trimmed();
-    } else {
-        content = m_contentEdit->toPlainText().trimmed();
-    }
+    QString content = m_contentEdit->toPlainText().trimmed();
 
     if (content.isEmpty()) {
         hide();
@@ -661,13 +495,10 @@ void QuickEntryDialog::onSave()
 
     if (m_continuousAdd) {
         // Clear but don't close
-        if (m_compactMode) m_compactEdit->clear();
-        else m_contentEdit->clear();
-        if (m_compactMode) m_compactEdit->setFocus();
-        else m_contentEdit->setFocus();
+        m_contentEdit->clear();
+        m_contentEdit->setFocus();
     } else {
-        if (m_compactMode) m_compactEdit->clear();
-        else m_contentEdit->clear();
+        m_contentEdit->clear();
         hide();
         m_hidden = true;
         emit dismissed();
@@ -677,10 +508,7 @@ void QuickEntryDialog::onSave()
 void QuickEntryDialog::onPinToDesktop()
 {
     // Save first, then pin
-    QString content;
-    if (m_compactMode) content = m_compactEdit->toPlainText().trimmed();
-    else content = m_contentEdit->toPlainText().trimmed();
-
+    QString content = m_contentEdit->toPlainText().trimmed();
     if (content.isEmpty()) return;
 
     m_waitingForPin = true;
@@ -689,7 +517,6 @@ void QuickEntryDialog::onPinToDesktop()
 
 void QuickEntryDialog::onDiscard()
 {
-    m_compactEdit->clear();
     m_contentEdit->clear();
     // Clear draft（仅清除本窗口草稿）
     QFile::remove(draftPath());
@@ -713,9 +540,7 @@ QString QuickEntryDialog::draftPath() const
 
 void QuickEntryDialog::dismissWithDraft()
 {
-    QString content;
-    if (m_compactMode) content = m_compactEdit->toPlainText();
-    else content = m_contentEdit->toPlainText();
+    QString content = m_contentEdit->toPlainText();
 
     // 未保存内容以本窗口草稿保留，供下一个新窗口恢复
     if (!content.trimmed().isEmpty()) {
@@ -729,7 +554,6 @@ void QuickEntryDialog::dismissWithDraft()
         }
     }
 
-    m_compactEdit->clear();
     m_contentEdit->clear();
     hide();
     m_hidden = true;
@@ -745,7 +569,7 @@ void QuickEntryDialog::restorePendingDraft()
         QString draft = QString::fromUtf8(draftFile.readAll()).trimmed();
         draftFile.close();
         if (!draft.isEmpty()) {
-            m_compactEdit->setPlainText(draft);
+            m_contentEdit->setPlainText(draft);
         }
     }
     QFile::remove(s_pendingDraftPath);

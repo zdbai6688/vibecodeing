@@ -185,7 +185,7 @@ TodoWidget::TodoWidget(QWidget *parent)
 
 QWidget *TodoWidget::createSectionHeader(const QString &title, const QString &color)
 {
-    // 胶囊徽章式分组头：彩色圆点 + 文字 + 圆角底色，替代原先易溢出的纯文字标题
+    // 统一分组头：中性深色标题 + 彩色圆点 + 彩色计数徽章（TC10 二轮：层级一致，不再黑/蓝混杂）
     QWidget *header = new QWidget(this);
     QHBoxLayout *hl = new QHBoxLayout(header);
     hl->setContentsMargins(2, 10, 2, 4);
@@ -197,11 +197,24 @@ QWidget *TodoWidget::createSectionHeader(const QString &title, const QString &co
 
     DLabel *label = new DLabel(title, header);
     label->setObjectName("sectionLabel");
-    label->setStyleSheet(QString("font-size: 12px; font-weight: 600; color: %1;").arg(color));
-    label->setFixedHeight(18);
+    label->setStyleSheet("font-size: 13px; font-weight: 700; color: palette(windowText);");
+    label->setFixedHeight(20);
 
     hl->addWidget(dot);
     hl->addWidget(label);
+
+    // 计数徽章：与标题同色，突出数量
+    QRegularExpressionMatch m = QRegularExpression("（(\\d+)）").match(title);
+    if (m.hasMatch()) {
+        DLabel *count = new DLabel(m.captured(1), header);
+        count->setFixedHeight(18);
+        count->setMinimumWidth(18);
+        count->setAlignment(Qt::AlignCenter);
+        count->setStyleSheet(QString("background: %1; color: white; font-size: 10px; font-weight: 600;"
+                                     " border-radius: 9px; padding: 0 5px;").arg(color));
+        hl->addWidget(count);
+    }
+
     hl->addStretch();
     return header;
 }
@@ -570,6 +583,61 @@ void TodoWidget::showTodoContextMenu(QListWidget *list, const QPoint &pos)
     QAction *dueAction = menu.addAction(tr("设置截止日期"));
     connect(dueAction, &QAction::triggered, this, [this, todoId]() { setTodoDueDate(todoId); });
 
+    // 设置优先级（TC10 二轮②：右键菜单丰富）
+    QMenu *priorityMenu = menu.addMenu(tr("设置优先级"));
+    struct { const char *label; int v; } prios[] = {
+        {"高", 3}, {"中", 2}, {"低", 1}, {"无优先级", 0}
+    };
+    for (const auto &p : prios) {
+        QAction *a = priorityMenu->addAction(tr(p.label));
+        a->setCheckable(true);
+        a->setChecked(todo.priority == p.v);
+        connect(a, &QAction::triggered, this, [this, todoId, p]() {
+            ShorthandApplication::instance()->todoManager()->setPriority(todoId, p.v);
+            refresh();
+        });
+    }
+
+    // 标签归类（TC10 二轮②）：列出已有标签，勾选当前标签；可新建标签
+    QMenu *tagMenu = menu.addMenu(tr("设置标签"));
+    QList<TagData> allTags = app->tagManager()->getAllTags();
+    QStringList currentTags = todo.tags;
+    if (currentTags.isEmpty() && !todo.tag.isEmpty()) currentTags << todo.tag;
+    for (const TagData &t : allTags) {
+        QAction *a = tagMenu->addAction(t.name);
+        a->setCheckable(true);
+        a->setChecked(currentTags.contains(t.name));
+        connect(a, &QAction::triggered, this, [this, todoId, t, currentTags, allTags](bool checked) {
+            QStringList newTags = currentTags;
+            if (checked) { if (!newTags.contains(t.name)) newTags << t.name; }
+            else { newTags.removeAll(t.name); }
+            // 无标签则写空
+            ShorthandApplication::instance()->todoManager()->setTodoTags(todoId, newTags);
+            refresh();
+        });
+    }
+    tagMenu->addSeparator();
+    QAction *clearTagAction = tagMenu->addAction(tr("清除全部标签"));
+    connect(clearTagAction, &QAction::triggered, this, [this, todoId]() {
+        ShorthandApplication::instance()->todoManager()->setTodoTags(todoId, {});
+        refresh();
+    });
+    QAction *newTagAction = tagMenu->addAction(tr("＋ 新建标签..."));
+    connect(newTagAction, &QAction::triggered, this, [this, todoId]() {
+        bool ok = false;
+        QString name = QInputDialog::getText(this, tr("新建标签"), tr("标签名称："), QLineEdit::Normal, QString(), &ok);
+        if (!ok || name.trimmed().isEmpty()) return;
+        name = name.trimmed();
+        auto *app = ShorthandApplication::instance();
+        if (app->tagManager()->getTagByName(name).id <= 0) {
+            app->tagManager()->createTag(name);
+        }
+        QStringList newTags = app->todoManager()->getTodoTags(todoId);
+        if (!newTags.contains(name)) newTags << name;
+        app->todoManager()->setTodoTags(todoId, newTags);
+        refresh();
+    });
+
     menu.addSeparator();
 
     QAction *deleteAction = menu.addAction(tr("删除"));
@@ -808,7 +876,7 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
         }
         if (!other.isEmpty()) {
             // 未安排 = 无截止日期或截止日期在更晚的周，用说明性文案避免歧义
-            addSection(m_pendingList, tr("未安排 / 其他（%1）· 无截止日期或晚于本周").arg(other.size()), "palette(placeholderText)");
+            addSection(m_pendingList, tr("未安排 / 其他（%1）").arg(other.size()), "#8a8a8a");
             fill(m_pendingList, other);
         }
     }

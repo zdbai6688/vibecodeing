@@ -138,13 +138,12 @@ void NoteEditorWidget::setupToolbar(QVBoxLayout *mainLayout)
     };
 
     // 记住上次选择的颜色：下次打开取色器时直接沿用，避免每次都要重新选色（TC03）
-    QColor lastTextColor;
-    connect(colorBtn, &QToolButton::clicked, this, [this, applyCharFormat, &lastTextColor]() {
-        QColor defaultColor = lastTextColor.isValid()
-                ? lastTextColor : palette().color(QPalette::WindowText);
+    connect(colorBtn, &QToolButton::clicked, this, [this, applyCharFormat]() {
+        QColor defaultColor = m_lastTextColor.isValid()
+                ? m_lastTextColor : palette().color(QPalette::WindowText);
         QColor c = QColorDialog::getColor(defaultColor, this, tr("选择文字颜色"));
         if (c.isValid()) {
-            lastTextColor = c;
+            m_lastTextColor = c;
             applyCharFormat([c](QTextCharFormat &fmt) { fmt.setForeground(c); });
             m_contentEdit->setFocus();
         }

@@ -32,8 +32,6 @@ public:
     explicit QuickEntryDialog(QWidget *parent = nullptr);
 
     void setFocus();
-    void toggleCompactMode();
-    bool isCompact() const { return m_compactMode; }
     bool isVisible() const { return !m_hidden; }
     void setPasteToDesktopMode(bool on);
     void setCascadeIndex(int index);
@@ -64,8 +62,6 @@ private slots:
 
 private:
     void initUI();
-    void initCompactUI();
-    void initFullUI();
     void initConnections();
     void showCompact();
     void showFull();
@@ -73,33 +69,21 @@ private:
     int parsePriority(const QString &text, QString &outText);
     void updateHint();
     void centerOnScreen();
-    void applyCompactLayout();
-    void applyFullLayout();
     void enterGhostState();
     void leaveGhostState();
     QString draftPath() const;
     void restorePendingDraft();
 
-    QStackedWidget *m_modeStack;
-    QWidget *m_compactPage;
-    QWidget *m_fullPage;
+    QWidget *m_page = nullptr;         // 统一单页（TC14 二轮：取消紧凑/全屏双尺寸切换）
 
     QTextEdit *m_contentEdit;
-    QTextEdit *m_compactEdit;
     QLabel *m_hintLabel;
-    QPushButton *m_voiceBtn;
-    QPushButton *m_screenshotBtn;
     QPushButton *m_saveBtn;
-    QPushButton *m_cancelBtn;
-    QPushButton *m_expandBtn;
-    QPushButton *m_compactBtn;
     QPushButton *m_pinToDesktopBtn;
-    QWidget *m_dragBarCompact;
-    QWidget *m_dragBarFull;
+    QWidget *m_dragBar;
     EdgeAutoHide *m_edgeHide = nullptr;
     DSwitchButton *m_continuousSwitch;
     QFrame *m_bottomBar;
-    bool m_compactMode = true;
     bool m_hidden = true;
     bool m_ghostState = false;
     bool m_continuousAdd = false;

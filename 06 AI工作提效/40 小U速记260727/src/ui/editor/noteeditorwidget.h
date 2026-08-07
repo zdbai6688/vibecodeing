@@ -5,6 +5,7 @@
 #include <QTextEdit>
 #include <QLineEdit>
 #include <QLabel>
+#include <QColor>
 #include <QComboBox>
 #include <QPushButton>
 #include <QToolButton>
@@ -63,6 +64,8 @@ private:
     int m_currentNoteId = -1;
     bool m_modified = false;
     bool m_previewMode = false;
+    // 上次选择的文字颜色（TC03）：必须为成员变量，lambda 在栈变量析构后仍可能触发
+    QColor m_lastTextColor;
 
     QLineEdit *m_titleEdit;
     QLabel *m_wordCountLabel;

@@ -575,7 +575,6 @@ void NoteListWidget::populateList(const QList<NoteData> &notes)
 
     for (const auto &note : notes) {
         QString title = note.title.isEmpty() ? tr("无标题") : note.title;
-        QString preview = note.previewText(100);
         QString timeStr = note.createdAt().toString("MM-dd HH:mm");
         QString tagStr = note.tag.isEmpty() ? "" : QString("  #%1").arg(note.tag);
         // 标签颜色：从 TagManager 查询，未找到用主题高亮色
@@ -600,6 +599,7 @@ void NoteListWidget::populateList(const QList<NoteData> &notes)
             cardLayout->addWidget(checkBox, 0, Qt::AlignCenter);
         }
 
+        // 列表仅显示标题 + 时间 + 标签（TC03 二轮③：正文只在右侧编辑器展示，列表保持简洁）
         QVBoxLayout *textLayout = new QVBoxLayout();
         textLayout->setContentsMargins(checkBox ? 0 : 8, 0, 0, 0);
         textLayout->setSpacing(3);
@@ -609,6 +609,10 @@ void NoteListWidget::populateList(const QList<NoteData> &notes)
         DLabel *titleLabel = new DLabel(title, this);
         titleLabel->setStyleSheet("font-size: 13px; font-weight: 600;");
         titleLabel->setFixedHeight(20);
+        titleLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+        QFontMetrics tfm(titleLabel->font());
+        titleLabel->setText(tfm.elidedText(title, Qt::ElideRight, 320));
+        titleLabel->setToolTip(title);
         topRow->addWidget(titleLabel, 1);
         topRow->addStretch();
         DLabel *timeLabel = new DLabel(timeStr, this);
@@ -616,14 +620,6 @@ void NoteListWidget::populateList(const QList<NoteData> &notes)
         timeLabel->setFixedHeight(20);
         topRow->addWidget(timeLabel);
         textLayout->addLayout(topRow);
-
-        if (!preview.isEmpty()) {
-            DLabel *previewLabel = new DLabel(preview, this);
-            previewLabel->setStyleSheet("font-size: 11px; color: palette(windowText);");
-            previewLabel->setWordWrap(true);
-            previewLabel->setFixedHeight(20);
-            textLayout->addWidget(previewLabel);
-        }
 
         if (!tagStr.isEmpty()) {
             DLabel *tagLabel = new DLabel(tagStr, this);
@@ -637,8 +633,8 @@ void NoteListWidget::populateList(const QList<NoteData> &notes)
 
         QListWidgetItem *item = new QListWidgetItem();
         item->setData(Qt::UserRole, note.id);
-        card->setFixedHeight(72);
-        item->setSizeHint(QSize(0, 72));
+        card->setFixedHeight(58);
+        item->setSizeHint(QSize(0, 58));
         m_list->addItem(item);
         m_list->setItemWidget(item, card);
     }
