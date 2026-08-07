@@ -77,8 +77,9 @@ bool AudioRecorder::startRecording(const QString &filePath)
     //   → audioresample     重采样至 16000Hz
     //   → audiorate         校准采样率，保证输出严格 16000Hz（ASR 依赖精确采样率）
     //   → audiochebband     80–4000Hz 带通滤波，滤除低频噪声/高频杂音，突出人声
-    //   → volume            适度增益 1.5x（原 2.0x 容易削波，此处降低）
-    //   → audiodynamic      软拐点压缩器，压制突发高峰，防止削波失真
+    //   → volume            增益 1.0x（TC19：原 1.5x 会放大麦克风底噪，导致「沙沙声」明显）
+    //   → audiodynamic      扩展器（mode=2 expander，低于阈值的安静片段自动压低），
+    //                       抑制说话间隙的底噪/沙沙声；参数沿用已验证可解析的 threshold/ratio
     //   → audioconvert      转换回 S16LE
     //   → capsfilter        设置格式: 16000Hz, mono, S16LE（与 ASR 引擎一致）
     //   → level             实时电平检测（替换原来的假电平）
@@ -90,8 +91,8 @@ bool AudioRecorder::startRecording(const QString &filePath)
         "autoaudiosrc name=src ! "
         "audioconvert ! audioresample ! audiorate ! "
         "audiochebband name=band mode=1 lower-frequency=80 upper-frequency=4000 ! "
-        "volume name=volume volume=1.5 ! "
-        "audiodynamic name=dynamic mode=0 characteristics=0 threshold=0.25 ratio=3.0 ! "
+        "volume name=volume volume=1.0 ! "
+        "audiodynamic name=dynamic mode=expander threshold=0.25 ratio=3.0 ! "
         "audioconvert ! "
         "audio/x-raw, format=S16LE, rate=16000, channels=1 ! "
         "level name=level interval=200000000 ! "

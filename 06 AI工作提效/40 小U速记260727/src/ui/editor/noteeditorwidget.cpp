@@ -230,9 +230,35 @@ void NoteEditorWidget::onInsertImage()
     QString filePath = QFileDialog::getOpenFileName(this, tr("选择图片"), QString(), tr("图片 (*.png *.jpg *.jpeg *.gif *.bmp)"));
     if (!filePath.isEmpty()) {
         QString stored = saveImageToAppData(filePath);
-        m_contentEdit->textCursor().insertText(QString("![](%1)").arg(stored));
+        insertImageMarkdown(stored);
         m_modified = true;
     }
+}
+
+// 插入图片：正文中写入 Markdown 引用（便于保存/迁移），同时在编辑区以内联图片显示，
+// 避免只看到 `![](...)` 链接文字（TC03 二轮③）
+void NoteEditorWidget::insertImageMarkdown(const QString &path)
+{
+    const QString md = QString("![](%1)").arg(path);
+    QTextCursor cursor = m_contentEdit->textCursor();
+    const int startPos = cursor.position();
+    cursor.insertText(md);
+    cursor.setPosition(startPos);
+    cursor.setPosition(startPos + md.length(), QTextCursor::KeepAnchor);
+
+    // 用实际的图片覆盖该片段，使编辑区直接显示图片（toPlainText 仍保留 Markdown 文本）
+    QImage image(path);
+    if (image.isNull()) return;
+    QTextImageFormat imgFmt;
+    imgFmt.setName(path);
+    // 等比缩放，避免大图撑爆编辑器
+    const int maxW = 260;
+    if (image.width() > maxW) {
+        imgFmt.setWidth(maxW);
+        imgFmt.setHeight(image.height() * maxW / image.width());
+    }
+    m_contentEdit->document()->addResource(QTextDocument::ImageResource, QUrl(path), image);
+    cursor.mergeCharFormat(imgFmt);
 }
 
 void NoteEditorWidget::onInsertScreenshot()
@@ -253,7 +279,7 @@ bool NoteEditorWidget::onPasteImageFromClipboard()
     const QString path = dir + "/img_" + QString::number(QDateTime::currentSecsSinceEpoch())
                          + "_" + QString::number(QRandomGenerator::global()->bounded(100000)) + ".png";
     if (pix.save(path, "PNG")) {
-        m_contentEdit->textCursor().insertText(QString("![](%1)").arg(path));
+        insertImageMarkdown(path);
         m_modified = true;
         return true;
     }
@@ -477,7 +503,7 @@ void NoteEditorWidget::initConnections()
     // 截图插入：截图成功后复制到应用目录并插入（此前 ScreenshotManager 从未连接，截图功能无效）
     connect(m_screenshotMgr, &ScreenshotManager::screenshotTaken, this, [this](const QString &filePath) {
         QString stored = saveImageToAppData(filePath);
-        m_contentEdit->textCursor().insertText(QString("![](%1)").arg(stored));
+        insertImageMarkdown(stored);
         m_modified = true;
     });
     connect(m_screenshotMgr, &ScreenshotManager::screenshotFailed, this, [this](const QString &errorMessage) {

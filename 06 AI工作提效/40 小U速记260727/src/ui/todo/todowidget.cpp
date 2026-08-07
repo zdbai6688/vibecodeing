@@ -855,6 +855,8 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
     };
 
     const bool hasPending = !(overdue.isEmpty() && today.isEmpty() && thisWeek.isEmpty() && other.isEmpty());
+    // TC10 二轮③：分组场景下每个分组自带彩色分组头，顶部独立的「待办」标题冗余，隐藏之
+    m_pendingHeader->setVisible(!hasPending);
     if (!hasPending) {
         QListWidgetItem *hint = new QListWidgetItem(tr("没有待办事项，点击「+ 新建待办」，或从会议纪要中提取"));
         hint->setFlags(Qt::NoItemFlags);
@@ -876,7 +878,7 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
         }
         if (!other.isEmpty()) {
             // 未安排 = 无截止日期或截止日期在更晚的周，用说明性文案避免歧义
-            addSection(m_pendingList, tr("未安排 / 其他（%1）").arg(other.size()), "#8a8a8a");
+            addSection(m_pendingList, tr("未安排 / 无截止日期（%1）").arg(other.size()), "#8a8a8a");
             fill(m_pendingList, other);
         }
     }
@@ -885,7 +887,6 @@ void TodoWidget::populateList(const QList<TodoData> &todos)
         fill(m_completedList, completed);
     }
 
-    m_pendingHeader->setVisible(true);
     m_completedHeader->setVisible(!completed.isEmpty());
     m_completedList->setVisible(!completed.isEmpty());
 }

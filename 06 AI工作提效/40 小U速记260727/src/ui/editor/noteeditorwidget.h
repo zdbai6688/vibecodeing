@@ -11,6 +11,9 @@
 #include <QToolButton>
 #include <QStackedWidget>
 #include <QTextBrowser>
+#include <QTextImageFormat>
+#include <QImage>
+#include <QUrl>
 #include <QVBoxLayout>
 #include <QMenu>
 #include <QTimer>
@@ -60,6 +63,7 @@ private:
                       std::function<void(const QString &)> onResult);
     QString renderPreviewHtml() const;
     QString saveImageToAppData(const QString &srcPath) const;
+    void insertImageMarkdown(const QString &path);
 
     int m_currentNoteId = -1;
     bool m_modified = false;

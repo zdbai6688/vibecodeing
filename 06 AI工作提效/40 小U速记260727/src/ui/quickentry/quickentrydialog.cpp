@@ -8,6 +8,7 @@
 #include "core/tagmanager.h"
 #include "ui/desktop/desktopmodemanager.h"
 #include "ui/edgeautohide.h"
+#include "ui/tray/traymanager.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -131,20 +132,27 @@ void QuickEntryDialog::initUI()
     m_dragBar->setObjectName("compactBtn");
     topRow->addWidget(m_dragBar);
 
-    DLabel *contLabel = new DLabel(tr("连续"), this);
+    // 连续新增开关（TC14 二轮：说明更明确，避免用户不知道「连续」作用）
+    DLabel *contLabel = new DLabel(tr("连续添加"), this);
     contLabel->setStyleSheet("font-size: 11px; color: palette(placeholderText);");
+    contLabel->setToolTip(tr("开启后保存不关闭窗口，可连续录入多条"));
     topRow->addWidget(contLabel);
     m_continuousSwitch = new DSwitchButton(this);
     m_continuousSwitch->setChecked(m_continuousAdd);
     m_continuousSwitch->setFixedSize(36, 20);
-    m_continuousSwitch->setToolTip(tr("连续新增：保存后不关闭窗口"));
+    m_continuousSwitch->setToolTip(tr("连续添加：保存后不关闭窗口，可直接继续录入下一条"));
     topRow->addWidget(m_continuousSwitch);
 
     topRow->addStretch();
     QPushButton *closeBtn = new QPushButton(tr("✕"), this);
-    closeBtn->setObjectName("compactBtn");
-    closeBtn->setFixedSize(24, 24);
-    closeBtn->setToolTip(tr("关闭"));
+    closeBtn->setObjectName("compactClose");
+    closeBtn->setFixedSize(28, 28);
+    closeBtn->setCursor(Qt::PointingHandCursor);
+    closeBtn->setToolTip(tr("关闭（Esc）"));
+    closeBtn->setStyleSheet(
+        "QPushButton#compactClose { background: transparent; border: none; border-radius: 14px;"
+        " font-size: 14px; color: palette(windowText); }"
+        "QPushButton#compactClose:hover { background: rgba(128,128,128,0.15); }");
     topRow->addWidget(closeBtn);
     layout->addLayout(topRow);
 
@@ -491,6 +499,10 @@ void QuickEntryDialog::onSave()
             app->desktopModeManager()->enterDesktopMode();
         }
         m_waitingForPin = false;
+        // TC14 二轮：贴到桌面后明确提示便签位置与返回方式，避免用户找不到
+        app->trayManager()->showMessage(
+            tr("已贴到桌面"),
+            tr("便签已显示在桌面右侧，可拖动调整位置；点击系统托盘图标可管理/返回主窗口"));
     }
 
     if (m_continuousAdd) {

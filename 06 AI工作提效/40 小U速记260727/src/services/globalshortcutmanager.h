@@ -54,7 +54,7 @@ private:
     void cleanupX11();
 
     bool m_isX11 = false;
-    void *m_display = nullptr;
+    void *m_connection = nullptr;   // Qt 自身的 xcb_connection_t（TC13：必须用它 GrabKey，事件才能进 Qt 事件循环）
     void *m_rootWindow = nullptr;
     QHash<quint32, QKeySequence> m_registered;
 };

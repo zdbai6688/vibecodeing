@@ -129,3 +129,16 @@
 | TC13 | 快捷键无效 | 根因：Ctrl+Alt+Space 被 DDE 抢占（BadAccess）；改为候选键依次探测全局注册，自动回写 |
 | TC14 | 双尺寸混乱 | 统一单窗口 440×240 单编辑器，输入区随内容自动增高 |
 | TC19 | 第二次录音闪退 | `gst_bin_get_by_name` 子元素引用停止时未 unref → use-after-free，已统一释放 |
+
+## 12. 四轮实施记录（2026-08-07 用户复测备注修复）
+| 编号 | 问题 | 修复 |
+|------|------|------|
+| TC13 | 快捷键仍无效 | 根因两处：① Qt6/xcb 的 native 事件是 `xcb_generic_event_t*`，原代码按 Xlib `XEvent*` 解析（内存布局不同）→ 事件永远匹配不上；② GrabKey 必须用 **Qt 自己的 xcb 连接**（`QNativeInterface::QX11Application::connection()`），另开 Xlib Display 抓到的键事件不会进入 Qt 事件循环。已重写：Qt xcb 连接 + `xcb_grab_key` + 按 `xcb_key_press_event_t` 解析。真机验证 Ctrl+Alt+E 全局触发、输入保存落库成功 |
+| TC14① | 快捷录入窗右上角 ✕ 显示不完整 | 关闭按钮改为独立样式 `compactClose`（28×28、圆角、hover 反馈），不再被 `compactBtn` 的 padding 裁剪 |
+| TC14② | 「连续」含义不清 | 标签改「连续添加」并加 tooltip 说明「开启后保存不关闭窗口，可连续录入多条」 |
+| TC14③ | 贴到桌面后找不到便签 | 贴到桌面成功后发送系统托盘通知，明确「便签显示在桌面右侧，点托盘图标可管理/返回」 |
+| TC19 | 录音沙沙声较多 | 增益 1.5→1.0（原放大麦克风底噪）；audiodynamic 由 soft-knee 压缩改为 `mode=expander`（低于阈值安静段自动压低，抑制底噪）；已验证新管道可解析并产出 16kHz mono WAV |
+| TC03② | 图片在编辑区显示为链接 | 新增 `insertImageMarkdown`：正文保留 `![](...)` Markdown（便于保存/迁移），同时将实际图片作为 QTextDocument 资源内联显示，编辑区直接看到图（等比缩放≤260px）；截图/粘贴/文件三路统一 |
+| TC03③ | 标题栏「⋯」渲染成三角+点且错位 | 改用主题图标 `view-more-symbolic` 代替文本「⋯」 |
+| TC10 | 顶部「待办」标题冗余、「未安排/其他」意义不明 | 分组场景隐藏顶部独立「待办」标题（各组自带分组头）；「未安排 / 其他」改名「未安排 / 无截止日期」，文案更明确 |
+| TC22 | ASR「测试连接」显示占位提示 | 接入 `AsrServiceManager::testEngine`，与设置 Widget 一致：离线检查模型文件、在线校验凭据 |

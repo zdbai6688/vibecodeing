@@ -7,16 +7,14 @@
 #include <QGuiApplication>
 #include <QKeySequence>
 #include <QHash>
+#include <QtGui/qguiapplication_platform.h>
 
 #if defined(Q_OS_LINUX) && defined(QT_GUI_LIB)
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/Xutil.h>
-
-// NumLockMask 在某些 X11 环境中未定义，使用 Mod2Mask
-#ifndef NumLockMask
-#define NumLockMask Mod2Mask
-#endif
+#include <xcb/xcb.h>
+#include <xcb/xproto.h>
 #endif
 
 // ─── 工具：将 Qt::Key 转换为 X11 KeySym ─────────────────────────────
@@ -67,30 +65,16 @@ static KeySym qtKeyToX11KeySym(int qtKey)
     return NoSymbol;
 }
 
-static unsigned int qtModsToX11Mods(int qtMods)
+static unsigned int qtModsToXcbMods(int qtMods)
 {
     unsigned int mods = 0;
-    if (qtMods & Qt::ShiftModifier)   mods |= ShiftMask;
-    if (qtMods & Qt::ControlModifier) mods |= ControlMask;
-    if (qtMods & Qt::AltModifier)     mods |= Mod1Mask;
-    if (qtMods & Qt::MetaModifier)    mods |= Mod4Mask;
+    if (qtMods & Qt::ShiftModifier)   mods |= XCB_MOD_MASK_SHIFT;
+    if (qtMods & Qt::ControlModifier) mods |= XCB_MOD_MASK_CONTROL;
+    if (qtMods & Qt::AltModifier)     mods |= XCB_MOD_MASK_1;
+    if (qtMods & Qt::MetaModifier)    mods |= XCB_MOD_MASK_4;
     return mods;
 }
 #endif
-
-// ─── XGrabKey 失败检测 ─────────────────────────────────────────────
-// XGrabKey 的错误是异步返回的（BadAccess = 与其他客户端/WM 抢键冲突）。
-// 这里用临时 error handler + XSync 同步捕获，注册失败时返回 false，
-// 让上层走应用内快捷键回退，而不是“假装注册成功”。
-#if defined(Q_OS_LINUX)
-static int s_grabErrorCode = 0;
-static int grabKeyErrorHandler(Display *, XErrorEvent *e)
-{
-    s_grabErrorCode = e->error_code;
-    return 0;
-}
-#endif
-
 
 // ─── 构造 / 析构 ─────────────────────────────────────────────────────
 GlobalShortcutManager::GlobalShortcutManager(QObject *parent)
@@ -116,14 +100,31 @@ GlobalShortcutManager::~GlobalShortcutManager()
 bool GlobalShortcutManager::initX11()
 {
 #if defined(Q_OS_LINUX)
-    m_display = XOpenDisplay(nullptr);
-    if (!m_display) {
-        qWarning() << "GlobalShortcutManager: 无法打开 X11 Display";
+    // 关键：必须使用 Qt 自己的 xcb 连接来 GrabKey，
+    // 这样被捕获的按键事件会进入 Qt 事件循环，nativeEventFilter 才能收到。
+    // 如果另开 Xlib Display 去 GrabKey，事件会落在那条从未被读取的连接上，快捷键永不生效（TC13 根因）。
+    QGuiApplication *app = qobject_cast<QGuiApplication *>(QGuiApplication::instance());
+    auto *x11App = app ? app->nativeInterface<QNativeInterface::QX11Application>() : nullptr;
+    if (!x11App || !x11App->connection()) {
+        qWarning() << "GlobalShortcutManager: 无法获取 Qt xcb 连接";
         m_isX11 = false;
         return false;
     }
-    m_rootWindow = (void*)(long)DefaultRootWindow((Display*)m_display);
-    qInfo() << "GlobalShortcutManager: X11 全局热键初始化成功";
+    m_connection = reinterpret_cast<void *>(x11App->connection());
+
+    const xcb_setup_t *setup = xcb_get_setup(reinterpret_cast<xcb_connection_t *>(m_connection));
+    const xcb_screen_t *screen = nullptr;
+    for (xcb_screen_iterator_t it = xcb_setup_roots_iterator(setup); it.rem; xcb_screen_next(&it)) {
+        screen = it.data;
+        break;
+    }
+    if (!screen) {
+        qWarning() << "GlobalShortcutManager: 无法获取根窗口";
+        m_isX11 = false;
+        return false;
+    }
+    m_rootWindow = reinterpret_cast<void *>(static_cast<quintptr>(screen->root));
+    qInfo() << "GlobalShortcutManager: xcb 全局热键初始化成功";
     return true;
 #else
     return false;
@@ -133,10 +134,9 @@ bool GlobalShortcutManager::initX11()
 void GlobalShortcutManager::cleanupX11()
 {
 #if defined(Q_OS_LINUX)
-    if (m_display) {
-        XCloseDisplay((Display*)m_display);
-        m_display = nullptr;
-    }
+    // m_connection 由 Qt 持有，无需关闭
+    m_connection = nullptr;
+    m_rootWindow = nullptr;
 #endif
 }
 
@@ -144,13 +144,13 @@ void GlobalShortcutManager::cleanupX11()
 bool GlobalShortcutManager::registerShortcut(const QKeySequence &key, quint32 shortcutId)
 {
 #if defined(Q_OS_LINUX)
-    if (!m_isX11 || !m_display) {
+    if (!m_isX11 || !m_connection) {
         qWarning() << "GlobalShortcutManager: 无法注册热键 - 非 X11 环境";
         return false;
     }
 
-    Display *display = (Display*)m_display;
-    Window root = (Window)(long)m_rootWindow;
+    xcb_connection_t *conn = reinterpret_cast<xcb_connection_t *>(m_connection);
+    xcb_window_t root = static_cast<xcb_window_t>(reinterpret_cast<quintptr>(m_rootWindow));
 
     unsigned int keycode = 0;
     unsigned int modifiers = 0;
@@ -159,33 +159,35 @@ bool GlobalShortcutManager::registerShortcut(const QKeySequence &key, quint32 sh
         return false;
     }
 
-    // 使用 XGrabKey 注册全局热键
-    // 需要同时注册 IgnoreMods（CapsLock / NumLock 等不影响触发）
+    // 使用 xcb_grab_key 注册全局热键。
+    // 同时注册忽略修饰键（CapsLock / NumLock 等）的变体，避免锁定键影响触发。
     const unsigned int ignoreMods[] = {
         0,
-        LockMask,
-        Mod2Mask,
-        Mod2Mask | LockMask,
-        NumLockMask ? NumLockMask : 0,
+        XCB_MOD_MASK_LOCK,
+        XCB_MOD_MASK_2,
+        XCB_MOD_MASK_2 | XCB_MOD_MASK_LOCK,
     };
 
-    s_grabErrorCode = 0;
-    XErrorHandler oldHandler = XSetErrorHandler(grabKeyErrorHandler);
+    bool anyOk = false;
     for (unsigned int ignore : ignoreMods) {
-        XGrabKey(display, keycode, modifiers | ignore, root, True,
-                 GrabModeAsync, GrabModeAsync);
+        xcb_void_cookie_t cookie = xcb_grab_key(conn, 0, root, modifiers | ignore, keycode,
+                                                XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+        xcb_generic_error_t *err = xcb_request_check(conn, cookie);
+        if (err) {
+            qWarning() << "GlobalShortcutManager: 全局热键注册被拒绝(错误码" << err->error_code
+                       << "，可能与其他应用/WM 冲突):" << key.toString();
+            free(err);
+            continue;
+        }
+        anyOk = true;
     }
-    XSync(display, False);
-    XSetErrorHandler(oldHandler);
 
-    if (s_grabErrorCode != 0) {
-        qWarning() << "GlobalShortcutManager: 全局热键注册被拒绝(错误码" << s_grabErrorCode
-                   << "，可能与其他应用/WM 冲突):" << key.toString();
+    if (!anyOk) {
         // 回滚可能已部分成功的 grab
         for (unsigned int ignore : ignoreMods) {
-            XUngrabKey(display, keycode, modifiers | ignore, root);
+            xcb_ungrab_key(conn, keycode, modifiers | ignore, root);
         }
-        XSync(display, False);
+        xcb_flush(conn);
         return false;
     }
 
@@ -197,6 +199,7 @@ bool GlobalShortcutManager::registerShortcut(const QKeySequence &key, quint32 sh
     if (m_registered.size() == 1) {
         QCoreApplication::instance()->installNativeEventFilter(this);
     }
+    xcb_flush(conn);
 
     return true;
 #else
@@ -211,20 +214,20 @@ void GlobalShortcutManager::unregisterShortcut(quint32 shortcutId)
 #if defined(Q_OS_LINUX)
     if (!m_isX11 || !m_registered.contains(shortcutId)) return;
 
-    Display *display = (Display*)m_display;
-    Window root = (Window)(long)m_rootWindow;
+    xcb_connection_t *conn = reinterpret_cast<xcb_connection_t *>(m_connection);
+    xcb_window_t root = static_cast<xcb_window_t>(reinterpret_cast<quintptr>(m_rootWindow));
 
     auto key = m_registered.value(shortcutId);
     unsigned int keycode = 0;
     unsigned int modifiers = 0;
     if (nativeKeyToKeycode(key, keycode, modifiers)) {
         const unsigned int ignoreMods[] = {
-            0, LockMask, Mod2Mask, Mod2Mask | LockMask, NumLockMask ? NumLockMask : 0
+            0, XCB_MOD_MASK_LOCK, XCB_MOD_MASK_2, XCB_MOD_MASK_2 | XCB_MOD_MASK_LOCK
         };
         for (unsigned int ignore : ignoreMods) {
-            XUngrabKey(display, keycode, modifiers | ignore, root);
+            xcb_ungrab_key(conn, keycode, modifiers | ignore, root);
         }
-        XSync(display, False);
+        xcb_flush(conn);
     }
 
     m_registered.remove(shortcutId);
@@ -252,28 +255,33 @@ bool GlobalShortcutManager::nativeKeyToKeycode(const QKeySequence &key,
                                                unsigned int &modifiers)
 {
 #if defined(Q_OS_LINUX)
-    if (!m_display) return false;
+    if (!m_connection) return false;
 
-    Display *display = (Display*)m_display;
     int qtKey = key[0].key();
     int qtMods = key[0].keyboardModifiers();
 
     KeySym ks = qtKeyToX11KeySym(qtKey);
     if (ks == NoSymbol) {
-        // 尝试用 Qt 内部的字符转换
-        ks = XK_space;  // fallback
         qWarning() << "GlobalShortcutManager: 无法转换 Qt key" << qtKey;
         return false;
     }
 
-    KeyCode kc = XKeysymToKeycode(display, ks);
+    // 用临时 Xlib 连接转换 KeySym → KeyCode（KeyCode 是服务器级全局值，任意连接可转）
+    Display *dpy = XOpenDisplay(nullptr);
+    if (!dpy) {
+        qWarning() << "GlobalShortcutManager: 无法打开 X11 Display 做键位转换";
+        return false;
+    }
+    KeyCode kc = XKeysymToKeycode(dpy, ks);
+    XCloseDisplay(dpy);
+
     if (kc == 0) {
         qWarning() << "GlobalShortcutManager: 无法获取 KeyCode 对于 KeySym" << ks;
         return false;
     }
 
     keycode = (unsigned int)kc;
-    modifiers = qtModsToX11Mods(qtMods);
+    modifiers = qtModsToXcbMods(qtMods);
     return true;
 #else
     Q_UNUSED(key);
@@ -284,6 +292,8 @@ bool GlobalShortcutManager::nativeKeyToKeycode(const QKeySequence &key,
 }
 
 // ─── Native Event Filter ───────────────────────────────────────────
+// 注意：Qt6 xcb 插件传入的 message 是 `xcb_generic_event_t*`（不是 Xlib XEvent*）。
+// 两者内存布局不同，直接当 XEvent 用会读到错位数据导致快捷键永不触发（TC13 根因）。
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 bool GlobalShortcutManager::nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result)
 #else
@@ -297,15 +307,20 @@ bool GlobalShortcutManager::nativeEventFilter(const QByteArray &eventType, void 
         return false;
     }
 
-    // 使用 X11 事件处理
-    XEvent *xevent = static_cast<XEvent*>(message);
-    if (xevent->type != KeyPress) {
+    auto *generic = static_cast<xcb_generic_event_t *>(message);
+    const uint8_t responseType = generic->response_type & ~0x80; // 去掉发送方标记位
+    if (responseType != XCB_KEY_PRESS) {
         return false;
     }
 
-    // 检查是否是我们要处理的 KeyPress
-    KeyCode pressedKc = xevent->xkey.keycode;
-    unsigned int pressedMods = xevent->xkey.state & (ShiftMask | ControlMask | Mod1Mask | Mod4Mask);
+    auto *keyEvent = reinterpret_cast<xcb_key_press_event_t *>(generic);
+    const xcb_keycode_t pressedKc = keyEvent->detail;
+    const uint16_t state = keyEvent->state;
+
+    // 归一化修饰键（屏蔽 CapsLock=Lock, NumLock=Mod2，仅比对 Shift/Ctrl/Alt/Meta）
+    const unsigned int relevant = XCB_MOD_MASK_SHIFT | XCB_MOD_MASK_CONTROL
+                                | XCB_MOD_MASK_1 | XCB_MOD_MASK_4;
+    const unsigned int pressedMods = state & relevant;
 
     for (auto it = m_registered.constBegin(); it != m_registered.constEnd(); ++it) {
         unsigned int regKc = 0;

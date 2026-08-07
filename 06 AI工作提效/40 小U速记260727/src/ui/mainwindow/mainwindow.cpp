@@ -33,6 +33,7 @@
 #include <QLabel>
 #include <QFrame>
 #include <QSettings>
+#include <QFile>
 #include <QAction>
 #include <QDialog>
 
@@ -70,9 +71,11 @@ void MainWindow::initUI()
 
     // 更多菜单（TC03 二轮②：标题栏图标收敛，新建/导出等并入「⋯」，侧栏已有「＋ 新建笔记」主按钮）
     m_moreBtn = new DToolButton(this);
-    m_moreBtn->setText("⋯");
+    // 用主题图标而非文本「⋯」：文本在部分字体下会渲染成三角+点且错位（TC03 二轮③）
+    m_moreBtn->setIcon(QIcon::fromTheme("view-more-symbolic"));
     m_moreBtn->setToolTip(tr("更多"));
     m_moreBtn->setFixedSize(32, 32);
+    m_moreBtn->setIconSize(QSize(20, 20));
     DMenu *moreMenu = new DMenu(this);
     QAction *actQuickEntry = moreMenu->addAction(tr("快速录入 (%1)").arg(QString(SHORTCUT_QUICK_ENTRY)));
     connect(actQuickEntry, &QAction::triggered, this, &MainWindow::onShowQuickEntry);

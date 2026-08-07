@@ -407,11 +407,28 @@ QWidget *SettingsDialog::createAsrPage()
     updateCredVisibility();
 
     connect(m_asrTestBtn, &DPushButton::clicked, this, [this]() {
-        DDialog d(this);
-        d.setTitle(tr("提示"));
-        d.setMessage(tr("ASR 连接测试功能将在后续版本中实现。"));
-        d.addButton(tr("确定"));
-        d.exec();
+        auto *app = ShorthandApplication::instance();
+        auto *asr = app ? app->asrService() : nullptr;
+        if (!asr) {
+            DDialog d(this);
+            d.setTitle(tr("测试连接"));
+            d.setMessage(tr("ASR 服务未初始化"));
+            d.addButton(tr("确定"));
+            d.exec();
+            return;
+        }
+        m_asrTestBtn->setEnabled(false);
+        m_asrTestBtn->setText(tr("测试中..."));
+        AsrServiceManager::Engine engine = AsrServiceManager::engineFromName(m_asrEngineCombo->currentText());
+        asr->testEngine(engine, [this](bool ok, const QString &msg) {
+            m_asrTestBtn->setEnabled(true);
+            m_asrTestBtn->setText(tr("测试连接"));
+            DDialog d(this);
+            d.setTitle(tr("测试连接"));
+            d.setMessage(ok ? tr("✅ %1").arg(msg) : tr("❌ %1").arg(msg));
+            d.addButton(tr("确定"));
+            d.exec();
+        });
     });
 
     layout->addStretch();
