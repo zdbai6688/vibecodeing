@@ -46,6 +46,7 @@ private:
     void showMeetingList();
     void showMeetingDetail(int meetingId);
     void populateMeetingList(const QList<MeetingData> &meetings);
+    void populateHistoryList(const QList<MeetingData> &meetings);
     // 批量操作
     void enterMultiSelectMode();
     void exitMultiSelectMode();
@@ -59,6 +60,12 @@ private:
     QWidget *m_emptyPage;
     QWidget *m_listPage;
     QWidget *m_detailPage;
+
+    // 右侧历史会议清单栏（TC07 ②：保留原设计，最右侧新增历史清单，切分为三块布局）
+    QWidget *m_historyPanel;
+    QListWidget *m_historyList;
+    QLineEdit *m_historySearch;
+    QLabel *m_historyCountLabel;
 
     QListWidget *m_meetingList;
     QLineEdit *m_searchEdit;

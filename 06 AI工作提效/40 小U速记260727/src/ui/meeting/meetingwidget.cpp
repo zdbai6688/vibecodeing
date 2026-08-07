@@ -71,8 +71,60 @@ void MeetingWidget::initUI()
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
 
+    // 会议页切分为三块：左=主内容区(原设计：空状态/列表/详情)，右=历史会议清单栏（TC07 ②）
+    QHBoxLayout *bodyLayout = new QHBoxLayout();
+    bodyLayout->setContentsMargins(0, 0, 0, 0);
+    bodyLayout->setSpacing(0);
+
     m_stack = new QStackedWidget(this);
-    mainLayout->addWidget(m_stack);
+    bodyLayout->addWidget(m_stack, 1);
+
+    // ─── 右侧历史会议清单栏 ───────────────────────────────────
+    m_historyPanel = new QWidget(this);
+    m_historyPanel->setObjectName("historyPanel");
+    m_historyPanel->setFixedWidth(230);
+    m_historyPanel->setStyleSheet(
+        "#historyPanel { background: palette(alternateBase); border-left: 1px solid rgba(128,128,128,0.12); }");
+    QVBoxLayout *hpLayout = new QVBoxLayout(m_historyPanel);
+    hpLayout->setContentsMargins(12, 12, 12, 12);
+    hpLayout->setSpacing(8);
+
+    QHBoxLayout *hpTitleRow = new QHBoxLayout();
+    DLabel *hpTitle = new DLabel(tr("🗂 历史会议"), m_historyPanel);
+    hpTitle->setStyleSheet("font-size: 13px; font-weight: 600; color: palette(windowText);");
+    hpTitleRow->addWidget(hpTitle);
+    hpTitleRow->addStretch();
+    QLabel *hpCount = new QLabel("0", m_historyPanel);
+    hpCount->setObjectName("hpCount");
+    hpCount->setStyleSheet("background: palette(highlight); color: white; font-size: 10px;"
+                           " border-radius: 8px; padding: 0 6px;");
+    hpTitleRow->addWidget(hpCount);
+    m_historyCountLabel = hpCount;
+    hpLayout->addLayout(hpTitleRow);
+
+    m_historySearch = new QLineEdit(m_historyPanel);
+    m_historySearch->setPlaceholderText(tr("搜索历史会议..."));
+    m_historySearch->setFixedHeight(28);
+    m_historySearch->setStyleSheet(
+        "QLineEdit { border:1px solid palette(mid); border-radius:6px; padding:2px 8px;"
+        " font-size:12px; background:palette(window); }"
+        "QLineEdit:focus { border-color:palette(highlight); }");
+    hpLayout->addWidget(m_historySearch);
+
+    m_historyList = new QListWidget(m_historyPanel);
+    m_historyList->setFrameShape(QFrame::NoFrame);
+    m_historyList->setSpacing(3);
+    m_historyList->setStyleSheet(R"(
+        QListWidget { background: transparent; border: none; }
+        QListWidget::item { border-radius: 8px; padding: 8px 10px; margin: 1px 0;
+            background: transparent; }
+        QListWidget::item:hover { background: rgba(128,128,128,0.10); }
+        QListWidget::item:selected { background: palette(highlight); color: palette(highlightedText); }
+    )");
+    hpLayout->addWidget(m_historyList, 1);
+
+    bodyLayout->addWidget(m_historyPanel);
+    mainLayout->addLayout(bodyLayout);
 
     // ─── 空状态页 ─────────────────────────────────────────────
     m_emptyPage = new QWidget(this);
@@ -470,6 +522,40 @@ void MeetingWidget::initConnections()
         menu.exec(m_meetingList->viewport()->mapToGlobal(pos));
     });
     connect(m_searchEdit, &QLineEdit::textChanged, this, &MeetingWidget::onSearch);
+
+    // 历史会议清单：点击打开详情；搜索过滤
+    connect(m_historyList, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
+        int meetingId = item->data(Qt::UserRole).toInt();
+        if (meetingId > 0) showMeetingDetail(meetingId);
+    });
+    connect(m_historySearch, &QLineEdit::textChanged, this, [this](const QString &kw) {
+        QList<MeetingData> all = ShorthandApplication::instance()->meetingManager()->getAllMeetings();
+        if (!kw.trimmed().isEmpty()) {
+            all = ShorthandApplication::instance()->meetingManager()->searchMeetings(kw.trimmed());
+        }
+        populateHistoryList(all);
+    });
+}
+
+void MeetingWidget::populateHistoryList(const QList<MeetingData> &meetings)
+{
+    m_historyList->clear();
+    if (m_historyCountLabel) m_historyCountLabel->setText(QString::number(meetings.size()));
+    for (const auto &m : meetings) {
+        QString text = m.title;
+        if (m.createdAt > 0) {
+            text += "\n" + QDateTime::fromSecsSinceEpoch(m.createdAt).toString("yyyy-MM-dd HH:mm");
+        }
+        QListWidgetItem *item = new QListWidgetItem(text, m_historyList);
+        item->setData(Qt::UserRole, m.id);
+        item->setToolTip(m.title);
+    }
+    if (meetings.isEmpty()) {
+        QListWidgetItem *hint = new QListWidgetItem(tr("暂无历史会议"), m_historyList);
+        hint->setFlags(Qt::NoItemFlags);
+        hint->setForeground(palette().color(QPalette::PlaceholderText));
+        hint->setTextAlignment(Qt::AlignCenter);
+    }
 }
 
 void MeetingWidget::showMeetingList()
@@ -634,6 +720,8 @@ void MeetingWidget::refresh()
     auto *app = ShorthandApplication::instance();
     QList<MeetingData> meetings = app->meetingManager()->getAllMeetings();
     populateMeetingList(meetings);
+    // 右侧历史清单始终显示全部历史会议（TC07 ②）
+    populateHistoryList(meetings);
 }
 
 void MeetingWidget::populateMeetingList(const QList<MeetingData> &meetings)
