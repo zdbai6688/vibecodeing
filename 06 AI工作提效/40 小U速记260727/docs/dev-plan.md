@@ -357,7 +357,7 @@ extra-cmake-modules              # KF6GlobalAccel (Wayland)
 | P0-T2 | 合并分叉: rebase 到 origin(拉取 ffbbece/3c95c5a), 解决 sidebarwidget 冲突并推送; 打 v1.0.0 tag | 梳理报告 P0-2 | M | P0-T1 | ahead=0 behind=0; git tag 含 v1.0.0 |Done|
 | P0-T3 | 清理残留(.bak/bak2/todowidget_clean.cpp/new_ui.py)与失效 build 目录 | 梳理报告 P2-9 | S | P0-T1 | 无 .bak; 干净目录可构建 |Done|
 | P1-T1 | IDE-178 置 done(开发/审查/验收均完成) | IDE-178 | S | - | issue status=done |Done|
-| P1-T2 | IDE-169 功能验证测试: 36 项 GUI 用例逐项执行并出报告; 修复单测 QWARN | IDE-169; 梳理报告 P2-7 | M | P0-T2 | test-report 全勾选; ctest 无 QWARN |In Progress|
+| P1-T2 | IDE-169 功能验证测试: 36 项 GUI 用例逐项执行并出报告; 修复单测 QWARN | IDE-169; 梳理报告 P2-7 | M | P0-T2 | test-report 全勾选; ctest 无 QWARN |Done|
 | P1-T3 | 例行任务收口: IDE-175 每日代码审查 done; IDE-167/168 按流程推进 | - | S | - | 看板状态更新 |Done|
 | P2-T1 | 生成 docs/project-context.md(sdlc-context 8 节) | 梳理报告 P2-6 | S | P0-T2 | 文件存在且与 git 状态一致 |Done|
 | P2-T2 | dev-plan.md 更新入库 + remaining-work.md 状态刷新 | 本计划 | S | P2-T1 | 文档与代码一致 |Done|
