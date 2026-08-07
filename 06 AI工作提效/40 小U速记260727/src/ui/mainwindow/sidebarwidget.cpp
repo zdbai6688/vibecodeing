@@ -475,6 +475,10 @@ void SidebarWidget::updateItemVisibility()
     QList<QLabel*> textLabels = findChildren<QLabel*>("navText");
     for (auto *label : textLabels) label->setVisible(show);
 
+    // 折叠时隐藏数字角标（navBadge），避免折叠后残留数字显得怪异（TC08 ②）
+    QList<QLabel*> badges = findChildren<QLabel*>("navBadge");
+    for (auto *label : badges) label->setVisible(show);
+
     if (m_tagList) m_tagList->setVisible(show);
 
     QList<DLabel*> sectionLabels = findChildren<DLabel*>();

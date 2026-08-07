@@ -727,20 +727,22 @@ void MeetingWidget::refresh()
 void MeetingWidget::populateMeetingList(const QList<MeetingData> &meetings)
 {
     m_meetingList->clear();
-    // 始终停留在列表页（TC06 六轮④：保证「会议主页右侧始终有历史会议清单」入口，
-    // 不切回纯空状态页导致看不到入口）
-    m_stack->setCurrentWidget(m_listPage);
-
-    if (meetings.isEmpty()) {
-        // 搜索时显示「无匹配结果」；非搜索时显示「暂无历史会议」引导
-        QListWidgetItem *hint = new QListWidgetItem(
-            m_searching ? tr("没有匹配的会议") : tr("暂无历史会议，点击右上角「＋ 新建」或「🎤 开始录音」创建"));
-        hint->setFlags(Qt::NoItemFlags);
-        hint->setForeground(palette().color(QPalette::PlaceholderText));
-        hint->setTextAlignment(Qt::AlignCenter);
-        hint->setSizeHint(QSize(0, 80));
-        m_meetingList->addItem(hint);
-        return;
+    // 主内容区保持「空状态引导页」模式（TC08 ①：喇叭 + 开始会议 + 新建会议），
+    // 历史会议通过右侧清单栏访问（点击条目打开详情）。搜索时切换到列表页显示结果。
+    if (m_searching) {
+        m_stack->setCurrentWidget(m_listPage);
+        if (meetings.isEmpty()) {
+            QListWidgetItem *hint = new QListWidgetItem(tr("没有匹配的会议"));
+            hint->setFlags(Qt::NoItemFlags);
+            hint->setForeground(palette().color(QPalette::PlaceholderText));
+            hint->setTextAlignment(Qt::AlignCenter);
+            hint->setSizeHint(QSize(0, 80));
+            m_meetingList->addItem(hint);
+            return;
+        }
+    } else {
+        // 非搜索：主区域始终显示空状态引导页
+        m_stack->setCurrentWidget(m_emptyPage);
     }
 
     for (const auto &m : meetings) {
